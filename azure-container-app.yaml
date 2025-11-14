@@ -1,0 +1,63 @@
+# Azure Container App configuration
+# Deploy with: az containerapp create --resource-group <rg> --name nebulous-bot --yaml azure-container-app.yaml
+
+properties:
+  environmentId: /subscriptions/<subscription-id>/resourceGroups/<resource-group>/providers/Microsoft.App/managedEnvironments/<environment-name>
+  configuration:
+    ingress:
+      external: false
+      targetPort: 8000
+      transport: http
+    secrets:
+      - name: discord-token
+        value: <your-discord-token>
+      - name: steam-api-key
+        value: <your-steam-api-key>
+      - name: django-secret-key
+        value: <your-django-secret-key>
+    activeRevisionsMode: Single
+  template:
+    containers:
+      - image: <your-registry>.azurecr.io/nebulous-bot:latest
+        name: nebulous-bot
+        resources:
+          cpu: 0.5
+          memory: 1Gi
+        env:
+          - name: DISCORD_TOKEN
+            secretRef: discord-token
+          - name: STEAM_API_KEY
+            secretRef: steam-api-key
+          - name: DJANGO_SECRET_KEY
+            secretRef: django-secret-key
+          - name: APPLICATION_ID
+            value: "<your-application-id>"
+          - name: SERVER_CONFIGS
+            value: '[{"guild_id": 1234567890, "status_channel_id": 0987654321}]'
+          - name: DJANGO_SETTINGS_MODULE
+            value: "nebulous_project.settings"
+          - name: PYTHONUNBUFFERED
+            value: "1"
+          - name: DEBUG
+            value: "False"
+          - name: PLAYER_THRESHOLD
+            value: "40"
+          - name: NOTIFICATION_INTERVAL
+            value: "3600"
+        probes:
+          - type: liveness
+            httpGet:
+              path: /health/
+              port: 8000
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          - type: readiness
+            httpGet:
+              path: /health/
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+    scale:
+      minReplicas: 1
+      maxReplicas: 1
+

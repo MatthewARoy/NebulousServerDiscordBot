@@ -1,0 +1,28 @@
+# Discord Bot Configuration
+DISCORD_TOKEN=your_discord_bot_token_here
+APPLICATION_ID=your_application_id_here
+
+# Server Configuration (Required)
+# Use JSON array format to support one or multiple Discord servers
+# Required fields: guild_id, status_channel_id
+# Optional fields: notification_channel_id, notification_role_id (for player threshold notifications)
+# Single server example:
+SERVER_CONFIGS=[{"guild_id": 1400973312963645551, "status_channel_id": 1400976297408069682}]
+
+# With notifications:
+# SERVER_CONFIGS=[{"guild_id": 1400973312963645551, "status_channel_id": 1400976297408069682, "notification_channel_id": 1400976297408069682, "notification_role_id": 1234567890123456789}]
+
+# Multiple servers example:
+# SERVER_CONFIGS=[{"guild_id": 1400973312963645551, "status_channel_id": 1400976297408069682}, {"guild_id": 9999999999, "status_channel_id": 8888888888}]
+
+# Steam API Configuration  
+STEAM_API_KEY=your_steam_api_key_here
+
+# Optional Configuration (uncomment to customize)
+# UPDATE_INTERVAL=30
+# STATUS_MESSAGE_REFRESH_INTERVAL=86400  # Seconds between creating new status messages (default: 86400 = 24 hours / 1 day)
+# MAX_SERVERS_DISPLAY=20
+
+# Notification Configuration
+# PLAYER_THRESHOLD=40  # Minimum players online to trigger notification (default: 40)
+# NOTIFICATION_INTERVAL=3600  # Minimum seconds between notifications (default: 3600 = 1 hour) 
