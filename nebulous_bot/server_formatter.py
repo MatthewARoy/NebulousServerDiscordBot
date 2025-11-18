@@ -237,12 +237,9 @@ class ServerFormatter:
         # Add timestamp to title to distinguish from persistent status messages
         from datetime import timezone, timedelta
         PST = timezone(timedelta(hours=-8))
-        update_time = last_update or datetime.now()
-        # Convert to PST if not already timezone-aware
-        if update_time.tzinfo is None:
-            update_time = update_time.replace(tzinfo=timezone.utc).astimezone(PST)
-        else:
-            update_time = update_time.astimezone(PST)
+        update_time = last_update or datetime.now(timezone.utc)
+        # Convert to PST
+        update_time = update_time.astimezone(PST)
         time_str = update_time.strftime("%I:%M:%S %p PST")
         title_with_time = f"{title} @ {time_str}"
         
@@ -257,7 +254,7 @@ class ServerFormatter:
             title=title_with_time,
             description=description or f"Found {len(servers)} servers",
             color=Config.EMBED_COLOR,
-            timestamp=last_update or datetime.now()
+            timestamp=last_update or datetime.now(timezone.utc)
         )
         
         # Sort and add server fields
@@ -284,12 +281,9 @@ class ServerFormatter:
         # Add timestamp to title to distinguish from persistent status messages
         from datetime import timezone, timedelta
         PST = timezone(timedelta(hours=-8))
-        update_time = last_update or datetime.now()
-        # Convert to PST if not already timezone-aware
-        if update_time.tzinfo is None:
-            update_time = update_time.replace(tzinfo=timezone.utc).astimezone(PST)
-        else:
-            update_time = update_time.astimezone(PST)
+        update_time = last_update or datetime.now(timezone.utc)
+        # Convert to PST
+        update_time = update_time.astimezone(PST)
         time_str = update_time.strftime("%I:%M:%S %p PST")
         
         if not servers:
@@ -303,7 +297,7 @@ class ServerFormatter:
             title=f"🚀 {Config.GAME_NAME} - Open Lobbies @ {time_str}",
             description=f"Found {len(servers)} servers with available slots",
             color=Config.EMBED_COLOR,
-            timestamp=last_update or datetime.now()
+            timestamp=last_update or datetime.now(timezone.utc)
         )
         
         # Sort by lobby priority (closest to starting first)
@@ -331,7 +325,7 @@ class ServerFormatter:
                 title=f"🚀 {Config.GAME_NAME} - Server Status",
                 description="No active servers found",
                 color=Config.EMBED_COLOR_NO_SERVERS,
-                timestamp=last_update or datetime.now()
+                timestamp=last_update or datetime.now(timezone.utc)
             )
             embed.set_footer(text=f"🟢 = Open Lobby • 🔴 = Game In Progress • 🟡 = Debrief • Updates every 30s")
             return embed
@@ -347,7 +341,7 @@ class ServerFormatter:
             title=f"🚀 {Config.GAME_NAME} - Live Server Status",
             description=f"**{total_players}** active players • **{len(sorted_servers)}** servers • **{open_lobbies}** open lobbies",
             color=Config.EMBED_COLOR,
-            timestamp=last_update or datetime.now()
+            timestamp=last_update or datetime.now(timezone.utc)
         )
         
         # Add server fields

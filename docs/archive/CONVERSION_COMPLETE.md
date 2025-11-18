@@ -82,7 +82,7 @@ docker-compose down
 ```bash
 # Configure Azure settings
 export AZURE_RESOURCE_GROUP="nebulous-bot-rg"
-export AZURE_LOCATION="eastus"
+export AZURE_LOCATION="westus"
 export ACR_NAME="nebulousbot"
 
 # Deploy (automated script)

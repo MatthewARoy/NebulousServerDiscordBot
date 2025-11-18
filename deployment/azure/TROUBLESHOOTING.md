@@ -59,12 +59,12 @@ Check available locations:
 az account list-locations --query "[].name" -o table
 
 # Use a different location in deploy script
-export AZURE_LOCATION="eastus"  # or westus, centralus, etc.
+export AZURE_LOCATION="westus"  # or westus, centralus, etc.
 ./deploy-azure.sh
 ```
 
 Common locations:
-- `eastus` (East US)
+- `westus` (East US)
 - `westus` (West US)
 - `westeurope` (West Europe)
 - `eastasia` (East Asia)
@@ -99,7 +99,7 @@ Operation could not be completed as it results in exceeding approved quota
 **Solution:**
 ```bash
 # Check your quotas
-az vm list-usage --location eastus -o table
+az vm list-usage --location westus -o table
 
 # Request quota increase
 # Visit: https://portal.azure.com → Subscriptions → Usage + quotas
@@ -131,7 +131,7 @@ az containerapp env list --resource-group nebulous-bot-rg
 az containerapp env create \
   --name nebulous-bot-env \
   --resource-group nebulous-bot-rg \
-  --location eastus
+  --location westus
 
 # Then re-run deployment
 ./deploy-azure.sh

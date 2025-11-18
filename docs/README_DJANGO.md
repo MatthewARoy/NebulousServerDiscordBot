@@ -88,7 +88,7 @@ Registration takes 2-5 minutes. You only need to do this once per Azure subscrip
 ```bash
 # Set your Azure configuration
 export AZURE_RESOURCE_GROUP="nebulous-bot-rg"
-export AZURE_LOCATION="eastus"
+export AZURE_LOCATION="westus"
 export ACR_NAME="nebulousbot"
 
 # Run deployment script
@@ -99,7 +99,7 @@ export ACR_NAME="nebulousbot"
 
 1. **Create Resource Group**:
    ```bash
-   az group create --name nebulous-bot-rg --location eastus
+   az group create --name nebulous-bot-rg --location westus
    ```
 
 2. **Create Azure Container Registry**:
@@ -125,7 +125,7 @@ export ACR_NAME="nebulousbot"
    az containerapp env create \
      --name nebulous-bot-env \
      --resource-group nebulous-bot-rg \
-     --location eastus
+     --location westus
    ```
 
 5. **Deploy Container App**:
@@ -172,7 +172,7 @@ Use the included `azure-pipelines.yml` for CI/CD:
 az keyvault create \
   --name nebulous-bot-kv \
   --resource-group nebulous-bot-rg \
-  --location eastus
+  --location westus
 
 # Add secrets
 az keyvault secret set --vault-name nebulous-bot-kv --name discord-token --value "YOUR_TOKEN"
@@ -234,7 +234,7 @@ No additional configuration needed. Database file: `db.sqlite3`
    az postgres flexible-server create \
      --resource-group nebulous-bot-rg \
      --name nebulous-db \
-     --location eastus \
+     --location westus \
      --admin-user botadmin \
      --admin-password YourSecurePassword \
      --sku-name Standard_B1ms \

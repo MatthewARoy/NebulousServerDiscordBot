@@ -42,6 +42,9 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 # Copy application code
 COPY --chown=botuser:botuser . .
 
+# Make startup script executable (before switching to non-root user)
+RUN chmod +x /app/start-server.sh
+
 # Switch to non-root user
 USER botuser
 

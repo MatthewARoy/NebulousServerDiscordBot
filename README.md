@@ -30,6 +30,7 @@ The instructions below are for the standalone Python version. Both versions are 
 - Automatically updates server status every 30 seconds
 - Displays active servers with player counts, maps, and game modes
 - Maintains a persistent status message that updates automatically
+- **Live updating messages**: Last 10 bot messages per channel stay up-to-date automatically
 - **Multi-server support**: Use the bot across multiple Discord servers simultaneously
 
 🔔 **Player Threshold Notifications**
@@ -43,6 +44,17 @@ The instructions below are for the standalone Python version. Both versions are 
 - `!openlobbies` - Show servers with available player slots
 - `!refresh` - Force update server information
 - `!status` - Display bot status and information
+- `!stats` - View game statistics (all-time, today, week, month)
+- `!mapstats` - View map play frequency statistics
+- `!serverstats` - View server usage statistics
+
+📈 **Statistics Tracking** (NEW!)
+- Persistent database storage of game sessions and player activity
+- Tracks games played (lobby → in-game 5+ mins → debrief)
+- Player count history with 5-minute snapshots
+- Map frequency analysis (most played maps)
+- Server usage metrics (most active servers)
+- Detailed statistics via Discord commands
 
 📊 **Rich Information Display**
 - Server player counts and capacity
@@ -239,7 +251,11 @@ The bot requires the following Discord permissions:
 - Read Message History
 - Mention Roles (optional, required for player threshold notifications)
 
-## Status Message
+## Live Updating Messages
+
+The bot provides two types of live-updating messages:
+
+### 1. Persistent Status Message
 
 The bot maintains a persistent status message in the configured channel(s) that updates automatically every 30 seconds. A new status message is created once per day (configurable). This message shows:
 
@@ -248,6 +264,17 @@ The bot maintains a persistent status message in the configured channel(s) that 
 - Maps and game modes
 - Server security indicators (🔒 for password, 🛡️ for VAC)
 - Total player summary
+
+### 2. Command Response Tracking
+
+When you use commands like `!listservers` or `!openlobbies`, the bot automatically tracks the last **10 messages per channel** and keeps them updated every 30 seconds with fresh data. This means:
+
+- ✅ No need to spam commands for updates
+- ✅ Multiple users can see the same live data
+- ✅ Server information stays current automatically
+- ✅ Old messages (beyond 10) are automatically removed from tracking
+
+**Example**: Run `!listservers` three times, and all three messages will update automatically every 30 seconds!
 
 ### Multi-Server Support
 

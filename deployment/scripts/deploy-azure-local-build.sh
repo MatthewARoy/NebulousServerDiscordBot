@@ -7,7 +7,7 @@ set -e
 
 # Configuration
 RESOURCE_GROUP="${AZURE_RESOURCE_GROUP:-nebulous-bot-rg}"
-LOCATION="${AZURE_LOCATION:-eastus}"
+LOCATION="${AZURE_LOCATION:-westus}"
 CONTAINER_APP_NAME="${CONTAINER_APP_NAME:-nebulous-discord-bot}"
 CONTAINER_APP_ENV="${CONTAINER_APP_ENV:-nebulous-bot-env}"
 ACR_NAME="${ACR_NAME:-nebulousbot}"

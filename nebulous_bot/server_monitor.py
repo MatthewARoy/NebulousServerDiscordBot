@@ -5,6 +5,7 @@ from typing import List, Dict, Optional
 import discord
 from nebulous_bot.steam_api import SteamAPI
 from nebulous_bot.config import Config
+from nebulous_bot.statistics_tracker import StatisticsService
 
 # PST timezone
 PST = timezone(timedelta(hours=-8))
@@ -22,11 +23,17 @@ class ServerMonitor:
         # Format: {guild_id: {'message': Message, 'created_at': datetime}}
         self.status_messages = {}
         
+        # Track the last 10 bot messages per channel for live updates
+        # Format: {channel_id: [{'message': Message, 'created_at': datetime}, ...]}
+        self.tracked_messages = {}
+        self.max_tracked_messages = 10
+        
         # Track player threshold notifications per guild
         # Format: {guild_id: {'last_notification_time': datetime, 'last_player_count': int}}
         self.notification_state = {}
         
         self.monitoring_task = None
+        self.health_check_task = None  # Self-healing health check
         
         # Formatter will be set by main.py to avoid duplicate instances
         self.formatter = None
@@ -34,19 +41,45 @@ class ServerMonitor:
         # Track state transition times for servers
         # Format: {server_id: {'transition_time': datetime, 'previous_status': str, 'current_state': str}}
         self.game_start_times = {}
+        
+        # Statistics tracking service
+        self.statistics_service = StatisticsService()
     
     def set_formatter(self, formatter):
         """Set the formatter instance to use for embed creation"""
         self.formatter = formatter
+    
+    def track_message(self, message):
+        """Track a bot message for automatic updates"""
+        channel_id = message.channel.id
+        
+        if channel_id not in self.tracked_messages:
+            self.tracked_messages[channel_id] = []
+        
+        # Add message to the beginning of the list
+        self.tracked_messages[channel_id].insert(0, {
+            'message': message,
+            'created_at': datetime.now(timezone.utc)
+        })
+        
+        # Keep only the last N messages
+        self.tracked_messages[channel_id] = self.tracked_messages[channel_id][:self.max_tracked_messages]
+        
+        logger.info(f"Now tracking {len(self.tracked_messages[channel_id])} messages in channel {channel_id}")
         
     async def start_monitoring(self):
-        """Start the server monitoring loop"""
+        """Start the server monitoring loop and health check"""
         if self.monitoring_task is None or self.monitoring_task.done():
             self.monitoring_task = asyncio.create_task(self._monitoring_loop())
             logger.info("Server monitoring started")
+        
+        # Start health check if not already running
+        if self.health_check_task is None or self.health_check_task.done():
+            self.health_check_task = asyncio.create_task(self._health_check_loop())
+            logger.info("Health check started")
     
     async def stop_monitoring(self):
-        """Stop the server monitoring loop"""
+        """Stop the server monitoring loop and health check"""
         if self.monitoring_task and not self.monitoring_task.done():
             self.monitoring_task.cancel()
             try:
@@ -54,10 +87,19 @@ class ServerMonitor:
             except asyncio.CancelledError:
                 pass
             logger.info("Server monitoring stopped")
+        
+        if self.health_check_task and not self.health_check_task.done():
+            self.health_check_task.cancel()
+            try:
+                await self.health_check_task
+            except asyncio.CancelledError:
+                pass
+            logger.info("Health check stopped")
     
     async def _monitoring_loop(self):
         """Main monitoring loop that runs every UPDATE_INTERVAL seconds"""
         logger.info(f"Monitoring loop started - will update every {Config.UPDATE_INTERVAL} seconds")
+        logger.info(f"Bot is connected to {len(self.bot.guilds)} guilds")
         iteration = 0
         while True:
             try:
@@ -70,17 +112,67 @@ class ServerMonitor:
                 await self._update_status_message()
                 logger.info(f"📤 Status message update cycle completed")
                 
+                await self._update_tracked_messages()
+                logger.debug("Tracked messages updated")
+                
                 await self._check_and_send_notifications()
                 logger.debug("Notifications checked")
+                
+                await self._update_statistics()
+                logger.debug("Statistics updated")
                 
                 logger.info(f"Monitoring loop iteration {iteration} complete. Sleeping {Config.UPDATE_INTERVAL}s...")
                 await asyncio.sleep(Config.UPDATE_INTERVAL)
             except asyncio.CancelledError:
-                logger.info("Monitoring loop cancelled")
-                break
+                logger.warning("⚠️ Monitoring loop cancelled - this should only happen on bot shutdown")
+                raise  # Re-raise so the task shows as cancelled
             except Exception as e:
-                logger.error(f"Error in monitoring loop iteration {iteration}: {e}", exc_info=True)
+                logger.error(f"❌ CRITICAL: Error in monitoring loop iteration {iteration}: {e}", exc_info=True)
+                logger.error(f"Exception type: {type(e).__name__}")
+                logger.error(f"Exception args: {e.args}")
+                # Continue running even after errors
+                logger.info(f"Continuing monitoring loop despite error. Sleeping {Config.UPDATE_INTERVAL}s...")
                 await asyncio.sleep(Config.UPDATE_INTERVAL)
+        
+        logger.error("❌ CRITICAL: Monitoring loop exited unexpectedly!")
+    
+    async def _health_check_loop(self):
+        """Self-healing health check that restarts monitoring if it stops"""
+        logger.info("Health check loop started - checking every 60 seconds")
+        await asyncio.sleep(60)  # Wait 1 minute before first check
+        
+        while True:
+            try:
+                # Check if monitoring task is still running
+                if self.monitoring_task is None or self.monitoring_task.done():
+                    logger.error("⚠️ HEALTH CHECK: Monitoring loop has stopped! Attempting restart...")
+                    
+                    # Log the reason if possible
+                    if self.monitoring_task and self.monitoring_task.done():
+                        try:
+                            exc = self.monitoring_task.exception()
+                            if exc:
+                                logger.error(f"Monitoring loop exception: {exc}")
+                            else:
+                                logger.error("Monitoring loop exited cleanly (no exception)")
+                        except:
+                            pass
+                    
+                    # Restart the monitoring loop
+                    self.monitoring_task = asyncio.create_task(self._monitoring_loop())
+                    logger.info("✅ HEALTH CHECK: Monitoring loop restarted")
+                else:
+                    logger.debug("Health check: Monitoring loop is running")
+                
+                # Sleep for 1 minute before next check
+                await asyncio.sleep(60)
+                
+            except asyncio.CancelledError:
+                logger.info("Health check loop cancelled")
+                raise
+            except Exception as e:
+                logger.error(f"Error in health check loop: {e}", exc_info=True)
+                await asyncio.sleep(60)
     
     async def _update_server_list(self):
         """Fetch latest server information from Steam API with server rules"""
@@ -96,7 +188,7 @@ class ServerMonitor:
                 
                 # Servers now come with real status from server rules
                 self.cached_servers = servers
-                self.last_update = datetime.now()
+                self.last_update = datetime.now(timezone.utc)
                 
                 # Log stats
                 total_servers = len(servers)
@@ -181,7 +273,7 @@ class ServerMonitor:
                 return
                 
             embed = self._create_server_status_embed(self.formatter)
-            now = datetime.now()
+            now = datetime.now(timezone.utc)
             
             # Get or initialize status message tracking for this guild
             guild_status = self.status_messages.get(guild_id, {})
@@ -276,6 +368,97 @@ class ServerMonitor:
             logger.error(f"Error searching for recent bot message: {e}")
             return None, None
     
+    async def _update_tracked_messages(self):
+        """Update all tracked bot messages with current server data"""
+        if not self.formatter:
+            return
+        
+        total_updated = 0
+        total_removed = 0
+        
+        # Iterate through all channels with tracked messages
+        for channel_id, messages in list(self.tracked_messages.items()):
+            channel = self.bot.get_channel(channel_id)
+            if not channel:
+                # Channel no longer accessible, remove all tracked messages
+                del self.tracked_messages[channel_id]
+                logger.warning(f"Channel {channel_id} no longer accessible, removed tracked messages")
+                continue
+            
+            # Update each tracked message in this channel
+            messages_to_remove = []
+            for idx, msg_info in enumerate(messages):
+                message = msg_info['message']
+                
+                try:
+                    # Check if message still has an embed
+                    if not message.embeds:
+                        messages_to_remove.append(idx)
+                        continue
+                    
+                    # Get the original embed title to determine message type
+                    original_embed = message.embeds[0]
+                    original_title = original_embed.title
+                    
+                    # Don't update if this is the persistent status message
+                    if "Live Server Status" in original_title:
+                        continue
+                    
+                    # Create updated embed based on message type
+                    if "Open Lobbies" in original_title:
+                        open_servers = self.get_open_lobbies()
+                        new_embed = self.formatter.create_lobby_list_embed(open_servers, self.last_update)
+                    elif "Active Servers" in original_title:
+                        # Extract filters if any (basic implementation)
+                        servers = self.cached_servers
+                        title_parts = original_title.split(" @ ")
+                        base_title = title_parts[0] if title_parts else original_title
+                        
+                        # Add timestamp
+                        from datetime import timezone, timedelta
+                        PST = timezone(timedelta(hours=-8))
+                        update_time = self.last_update or datetime.now(timezone.utc)
+                        # Convert to PST
+                        update_time = update_time.astimezone(PST)
+                        time_str = update_time.strftime("%I:%M:%S %p PST")
+                        title_with_time = f"{base_title} @ {time_str}"
+                        
+                        description = f"Found {len(servers)} servers" if servers else "No servers available."
+                        new_embed = self.formatter.create_server_list_embed(
+                            servers, title_with_time, description, max_servers=15,
+                            last_update=self.last_update, game_start_times=self.game_start_times
+                        )
+                        # Restore original footer if it exists
+                        if original_embed.footer and original_embed.footer.text:
+                            new_embed.set_footer(text=original_embed.footer.text)
+                    else:
+                        # Unknown message type, skip
+                        continue
+                    
+                    # Update the message
+                    await message.edit(embed=new_embed)
+                    total_updated += 1
+                    
+                except discord.NotFound:
+                    # Message was deleted
+                    messages_to_remove.append(idx)
+                    total_removed += 1
+                except discord.Forbidden:
+                    logger.warning(f"No permission to edit message {message.id} in channel {channel_id}")
+                except Exception as e:
+                    logger.error(f"Error updating tracked message {message.id}: {e}")
+            
+            # Remove deleted messages (reverse order to maintain indices)
+            for idx in reversed(messages_to_remove):
+                del messages[idx]
+            
+            # Remove channel if no messages left
+            if not messages:
+                del self.tracked_messages[channel_id]
+        
+        if total_updated > 0 or total_removed > 0:
+            logger.info(f"Updated {total_updated} tracked messages, removed {total_removed} deleted messages")
+    
     async def _check_and_send_notifications(self):
         """Check if player count exceeds threshold and send notifications if needed"""
         # Calculate total active players across all servers
@@ -297,7 +480,7 @@ class ServerMonitor:
         
         try:
             # Check if we should send a notification
-            now = datetime.now()
+            now = datetime.now(timezone.utc)
             guild_notification_state = self.notification_state.get(guild_id, {})
             last_notification_time = guild_notification_state.get('last_notification_time')
             
@@ -395,4 +578,14 @@ class ServerMonitor:
         """Force an immediate update of server data"""
         await self._update_server_list()
         await self._update_status_message()
-        logger.info("Forced server update completed") 
+        logger.info("Forced server update completed")
+    
+    async def _update_statistics(self):
+        """Update statistics tracking with current server data"""
+        try:
+            # Run statistics update in a thread pool to avoid blocking
+            import asyncio
+            loop = asyncio.get_event_loop()
+            await loop.run_in_executor(None, self.statistics_service.update, self.cached_servers)
+        except Exception as e:
+            logger.error(f"Error updating statistics: {e}", exc_info=True) 
