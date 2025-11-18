@@ -31,7 +31,8 @@ The Nebulous Server Discord Bot now tracks and displays comprehensive statistics
 ### What Do I See?
 
 **`!stats` shows:**
-- Total games played
+- Total games played (all time)
+- **Games played today** (in default view)
 - Average game duration
 - Total playtime (hours)
 - Average/peak players online
@@ -145,6 +146,33 @@ For detailed information, see:
 - **[STATISTICS_IMPLEMENTATION_SUMMARY.md](STATISTICS_IMPLEMENTATION_SUMMARY.md)** - Technical details
 
 ## Examples
+
+### Example Output: `!stats` (default/all-time)
+
+```
+📊 Game Statistics - All Time
+
+🎮 Games Played
+Total Games: 523
+Games Today: 12
+Avg Duration: 18 minutes
+Total Playtime: 157 hours
+
+👥 Player Activity
+Avg Players Online: 24.3
+Peak Players: 45
+Avg Players/Game: 7.2
+
+📈 Current Status
+Players Online: 28
+Active Servers: 4
+Games In Progress: 2
+
+🗺️ Most Played Maps
+1. Arroyo (8P): 132 games
+2. Salar (10P): 98 games
+3. Pillars (8P): 87 games
+```
 
 ### Example Output: `!stats week`
 

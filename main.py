@@ -231,6 +231,7 @@ async def bot_status(ctx):
             "`!stats` - View game statistics\n"
             "`!mapstats` - View map statistics\n"
             "`!serverstats` - View server statistics\n"
+            "`!nextgame` - Get notified when a game is ready\n"
             "`!refresh` - Force update\n"
             "`!status` - This message"
         ),
@@ -280,6 +281,15 @@ async def show_statistics(ctx, timeframe: str = "all"):
     
     total_games = games.count()
     
+    # Always get today's games count for the default view
+    games_today = 0
+    if timeframe == "all":
+        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        games_today = GameSession.objects.filter(
+            is_valid_game=True,
+            game_start__gte=today_start
+        ).count()
+    
     if total_games == 0:
         embed = discord.Embed(
             title=f"📊 Game Statistics - {timeframe_text}",
@@ -324,13 +334,16 @@ async def show_statistics(ctx, timeframe: str = "all"):
     avg_duration_mins = int(stats['avg_duration'] / 60) if stats['avg_duration'] else 0
     total_duration_hours = int(stats['total_duration'] / 3600) if stats['total_duration'] else 0
     
+    # Build games played text with optional "Games Today" for all-time view
+    games_text = f"**Total Games:** {total_games:,}\n"
+    if timeframe == "all" and games_today > 0:
+        games_text += f"**Games Today:** {games_today:,}\n"
+    games_text += f"**Avg Duration:** {avg_duration_mins} minutes\n"
+    games_text += f"**Total Playtime:** {total_duration_hours:,} hours"
+    
     embed.add_field(
         name="🎮 Games Played",
-        value=(
-            f"**Total Games:** {total_games:,}\n"
-            f"**Avg Duration:** {avg_duration_mins} minutes\n"
-            f"**Total Playtime:** {total_duration_hours:,} hours"
-        ),
+        value=games_text,
         inline=True
     )
     
@@ -504,6 +517,125 @@ async def force_update_statistics(ctx):
     except Exception as e:
         logger.error(f"Error updating statistics: {e}")
         await update_msg.edit(content="❌ Failed to update statistics. Check logs for details.")
+
+@bot.command(name='nextgame', aliases=['notify', 'notifyme'])
+async def next_game_notify(ctx):
+    """
+    Get notified when the next game is ready to join.
+    
+    You'll be pinged once when either:
+    - A game enters debrief (game just ended, new one might start)
+    - A lobby is at least half full (game about to start)
+    """
+    if not server_monitor:
+        await ctx.send("❌ Server monitoring not initialized yet.")
+        return
+    
+    user_id = ctx.author.id
+    channel_id = ctx.channel.id
+    username = str(ctx.author)
+    
+    # Check if user is already waiting
+    if user_id in server_monitor.next_game_waiters:
+        embed = discord.Embed(
+            title="🔔 Already Waiting",
+            description="You're already on the notification list! I'll ping you when a game is ready.",
+            color=Config.EMBED_COLOR
+        )
+        
+        # Show current wait time
+        wait_info = server_monitor.next_game_waiters[user_id]
+        wait_start = wait_info['timestamp']
+        wait_duration = datetime.now(timezone.utc) - wait_start
+        minutes_waiting = int(wait_duration.total_seconds() / 60)
+        
+        embed.add_field(
+            name="⏱️ Waiting Time",
+            value=f"{minutes_waiting} minute(s)",
+            inline=False
+        )
+        
+        embed.add_field(
+            name="Cancel",
+            value="Use `!nextgame cancel` to cancel your notification",
+            inline=False
+        )
+        
+        await ctx.send(embed=embed)
+        return
+    
+    # Add user to waitlist
+    server_monitor.add_next_game_waiter(user_id, channel_id, username)
+    
+    # Create confirmation embed
+    embed = discord.Embed(
+        title="🔔 Notification Set!",
+        description="I'll ping you here when a game is ready!",
+        color=Config.EMBED_COLOR,
+        timestamp=datetime.now()
+    )
+    
+    embed.add_field(
+        name="I'll notify you when:",
+        value=(
+            "• A game enters debrief (game just ended)\n"
+            "• A lobby is at least half full (filling up)\n"
+        ),
+        inline=False
+    )
+    
+    # Show current server status
+    debrief_count = len([s for s in server_monitor.cached_servers if s.get('status') == 'debrief'])
+    half_full = []
+    for server in server_monitor.cached_servers:
+        if server.get('status') == 'lobby':
+            players = server.get('players', 0)
+            capacity = server.get('map_capacity', 8)
+            if players >= capacity / 2 and players > 0:
+                half_full.append(server)
+    
+    status_text = ""
+    if debrief_count > 0:
+        status_text += f"• {debrief_count} game(s) in debrief right now\n"
+    if half_full:
+        status_text += f"• {len(half_full)} lobby(ies) half full right now\n"
+    if not status_text:
+        status_text = "• No games in debrief or lobbies filling up currently\n"
+    
+    embed.add_field(
+        name="📊 Current Status",
+        value=status_text.strip(),
+        inline=False
+    )
+    
+    waiters_count = server_monitor.get_next_game_waiters_count()
+    embed.set_footer(text=f"{waiters_count} user(s) waiting for next game • Use !nextgame cancel to cancel")
+    
+    await ctx.send(embed=embed)
+
+@bot.command(name='cancelnextgame', aliases=['nextgamecancel'])
+async def cancel_next_game_notify(ctx):
+    """Cancel your next game notification"""
+    if not server_monitor:
+        await ctx.send("❌ Server monitoring not initialized yet.")
+        return
+    
+    user_id = ctx.author.id
+    
+    if server_monitor.remove_next_game_waiter(user_id):
+        embed = discord.Embed(
+            title="✅ Notification Cancelled",
+            description="You've been removed from the notification list.",
+            color=Config.EMBED_COLOR
+        )
+        await ctx.send(embed=embed)
+    else:
+        embed = discord.Embed(
+            title="❌ Not on Waitlist",
+            description="You're not currently waiting for a notification. Use `!nextgame` to sign up!",
+            color=Config.EMBED_COLOR_NO_SERVERS
+        )
+        await ctx.send(embed=embed)
 
 @bot.event
 async def on_command_error(ctx, error):

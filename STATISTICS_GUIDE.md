@@ -95,12 +95,15 @@ Display general game statistics.
 **Timeframes:** `all` (default), `today`, `week`, `month`
 
 **Shows:**
-- Total games played
+- Total games played (all time)
+- **Games played today** (displayed in default all-time view)
 - Average game duration
 - Total playtime hours
 - Average/peak players online
 - Current server status
 - Top 3 most played maps
+
+Note: When viewing `!stats` without a timeframe (default = all time), you'll see both the total games ever played AND how many games were played today.
 
 **Examples:**
 ```

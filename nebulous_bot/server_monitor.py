@@ -44,6 +44,10 @@ class ServerMonitor:
         
         # Statistics tracking service
         self.statistics_service = StatisticsService()
+        
+        # Track users waiting for next game notifications
+        # Format: {user_id: {'channel_id': int, 'timestamp': datetime, 'username': str}}
+        self.next_game_waiters = {}
     
     def set_formatter(self, formatter):
         """Set the formatter instance to use for embed creation"""
@@ -120,6 +124,9 @@ class ServerMonitor:
                 
                 await self._update_statistics()
                 logger.debug("Statistics updated")
+                
+                await self._check_next_game_notifications()
+                logger.debug("Next game notifications checked")
                 
                 logger.info(f"Monitoring loop iteration {iteration} complete. Sleeping {Config.UPDATE_INTERVAL}s...")
                 await asyncio.sleep(Config.UPDATE_INTERVAL)
@@ -285,6 +292,11 @@ class ServerMonitor:
                 status_message, status_message_created_at = await self._find_recent_bot_message(channel, now)
                 if status_message:
                     logger.info(f"Found existing status message (ID: {status_message.id}) from {status_message_created_at} for guild {guild_id}")
+                    # Save the found message to tracking immediately
+                    self.status_messages[guild_id] = {
+                        'message': status_message,
+                        'created_at': status_message_created_at
+                    }
             
             # Check if we need to create a new message (based on configured interval or if no message exists)
             should_create_new = (
@@ -588,4 +600,110 @@ class ServerMonitor:
             loop = asyncio.get_event_loop()
             await loop.run_in_executor(None, self.statistics_service.update, self.cached_servers)
         except Exception as e:
-            logger.error(f"Error updating statistics: {e}", exc_info=True) 
+            logger.error(f"Error updating statistics: {e}", exc_info=True)
+    
+    async def _check_next_game_notifications(self):
+        """Check if any waiters should be notified about game availability"""
+        if not self.next_game_waiters:
+            return
+        
+        try:
+            # Check for games in debrief (game just ended)
+            debrief_games = [s for s in self.cached_servers if s.get('status') == 'debrief']
+            
+            # Check for lobbies that are at least half full
+            half_full_lobbies = []
+            for server in self.cached_servers:
+                if server.get('status') == 'lobby':
+                    players = server.get('players', 0)
+                    capacity = server.get('map_capacity', 8)
+                    if players >= capacity / 2 and players > 0:
+                        half_full_lobbies.append(server)
+            
+            # If we have games ready, notify all waiters
+            if debrief_games or half_full_lobbies:
+                await self._notify_next_game_waiters(debrief_games, half_full_lobbies)
+        
+        except Exception as e:
+            logger.error(f"Error checking next game notifications: {e}", exc_info=True)
+    
+    async def _notify_next_game_waiters(self, debrief_games: List[Dict], half_full_lobbies: List[Dict]):
+        """Notify all waiting users about available games"""
+        if not self.next_game_waiters:
+            return
+        
+        # Build notification message
+        notification_parts = []
+        
+        if debrief_games:
+            game_names = [g.get('name', 'Unknown')[:30] for g in debrief_games[:3]]
+            notification_parts.append(f"🎮 **{len(debrief_games)} game(s) just finished** (in debrief):\n" + 
+                                    "\n".join([f"• {name}" for name in game_names]))
+        
+        if half_full_lobbies:
+            lobby_list = []
+            for lobby in half_full_lobbies[:3]:
+                name = lobby.get('name', 'Unknown')[:30]
+                players = lobby.get('players', 0)
+                capacity = lobby.get('map_capacity', 8)
+                lobby_list.append(f"• {name} - {players}/{capacity} players")
+            notification_parts.append(f"🚀 **{len(half_full_lobbies)} lobby(ies) filling up**:\n" + 
+                                    "\n".join(lobby_list))
+        
+        if not notification_parts:
+            return
+        
+        notification_text = "\n\n".join(notification_parts)
+        notification_text += "\n\nUse `!listservers` or `!openlobbies` to see all servers!"
+        
+        # Notify all waiters
+        waiters_to_remove = []
+        for user_id, waiter_info in list(self.next_game_waiters.items()):
+            try:
+                channel = self.bot.get_channel(waiter_info['channel_id'])
+                if channel:
+                    await channel.send(f"<@{user_id}> {notification_text}")
+                    logger.info(f"Notified {waiter_info['username']} (ID: {user_id}) about next game")
+                    waiters_to_remove.append(user_id)
+                else:
+                    # Channel not found, try DM
+                    try:
+                        user = await self.bot.fetch_user(user_id)
+                        await user.send(f"Game alert! 🎮\n\n{notification_text}")
+                        logger.info(f"Notified {waiter_info['username']} (ID: {user_id}) via DM about next game")
+                        waiters_to_remove.append(user_id)
+                    except Exception as dm_error:
+                        logger.error(f"Failed to notify user {user_id} via DM: {dm_error}")
+                        waiters_to_remove.append(user_id)  # Remove them anyway after failed attempt
+            except Exception as e:
+                logger.error(f"Error notifying user {user_id}: {e}")
+                waiters_to_remove.append(user_id)  # Remove on error
+        
+        # Remove notified users
+        for user_id in waiters_to_remove:
+            del self.next_game_waiters[user_id]
+        
+        if waiters_to_remove:
+            logger.info(f"Removed {len(waiters_to_remove)} users from next game waitlist after notification")
+    
+    def add_next_game_waiter(self, user_id: int, channel_id: int, username: str):
+        """Add a user to the next game waitlist"""
+        self.next_game_waiters[user_id] = {
+            'channel_id': channel_id,
+            'timestamp': datetime.now(timezone.utc),
+            'username': username
+        }
+        logger.info(f"Added {username} (ID: {user_id}) to next game waitlist")
+    
+    def remove_next_game_waiter(self, user_id: int) -> bool:
+        """Remove a user from the next game waitlist. Returns True if user was in list."""
+        if user_id in self.next_game_waiters:
+            username = self.next_game_waiters[user_id]['username']
+            del self.next_game_waiters[user_id]
+            logger.info(f"Removed {username} (ID: {user_id}) from next game waitlist")
+            return True
+        return False
+    
+    def get_next_game_waiters_count(self) -> int:
+        """Get the number of users waiting for next game notifications"""
+        return len(self.next_game_waiters) 

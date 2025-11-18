@@ -42,6 +42,7 @@ The instructions below are for the standalone Python version. Both versions are 
 🎮 **Discord Commands**
 - `!listservers` - List all active servers with filtering options
 - `!openlobbies` - Show servers with available player slots
+- `!nextgame` - Get notified when a game is ready (one-time ping)
 - `!refresh` - Force update server information
 - `!status` - Display bot status and information
 - `!stats` - View game statistics (all-time, today, week, month)

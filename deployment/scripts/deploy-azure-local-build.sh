@@ -78,7 +78,7 @@ az acr login --name $ACR_NAME
 echo "🔨 Building Docker image locally for linux/amd64..."
 echo "   This may take several minutes..."
 echo "   Note: Building for AMD64 even if you're on Apple Silicon"
-docker build --platform linux/amd64 -t $ACR_SERVER/$IMAGE_NAME:$IMAGE_TAG .
+docker build --platform linux/amd64 -f deployment/docker/Dockerfile -t $ACR_SERVER/$IMAGE_NAME:$IMAGE_TAG .
 
 echo "✅ Image built successfully"
 
