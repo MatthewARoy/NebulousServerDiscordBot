@@ -234,24 +234,19 @@ class ServerFormatter:
     def create_server_list_embed(self, servers: List[Dict], title: str, description: str = None, 
                                 max_servers: int = 15, last_update: datetime = None, game_start_times: Dict = None) -> discord.Embed:
         """Create embed for server list commands"""
-        # Add timestamp to title to distinguish from persistent status messages
-        from datetime import timezone, timedelta
-        PST = timezone(timedelta(hours=-8))
-        update_time = last_update or datetime.now(timezone.utc)
-        # Convert to PST
-        update_time = update_time.astimezone(PST)
-        time_str = update_time.strftime("%I:%M:%S %p PST")
-        title_with_time = f"{title} @ {time_str}"
+        # Use Discord's native timestamp feature for clean, localized timestamps
+        from datetime import timezone
         
         if not servers:
             return discord.Embed(
-                title=title_with_time,
+                title=title,
                 description=description or "No servers found matching your criteria.",
-                color=Config.EMBED_COLOR_NO_SERVERS
+                color=Config.EMBED_COLOR_NO_SERVERS,
+                timestamp=last_update or datetime.now(timezone.utc)
             )
         
         embed = discord.Embed(
-            title=title_with_time,
+            title=title,
             description=description or f"Found {len(servers)} servers",
             color=Config.EMBED_COLOR,
             timestamp=last_update or datetime.now(timezone.utc)
@@ -278,23 +273,19 @@ class ServerFormatter:
     
     def create_lobby_list_embed(self, servers: List[Dict], last_update: datetime = None) -> discord.Embed:
         """Create embed for open lobby command"""
-        # Add timestamp to title to distinguish from persistent status messages
-        from datetime import timezone, timedelta
-        PST = timezone(timedelta(hours=-8))
-        update_time = last_update or datetime.now(timezone.utc)
-        # Convert to PST
-        update_time = update_time.astimezone(PST)
-        time_str = update_time.strftime("%I:%M:%S %p PST")
+        # Use Discord's native timestamp feature for clean, localized timestamps
+        from datetime import timezone
         
         if not servers:
             return discord.Embed(
-                title=f"🚀 {Config.GAME_NAME} - No Open Lobbies @ {time_str}",
+                title=f"🚀 {Config.GAME_NAME} - No Open Lobbies",
                 description="All servers are currently full or no servers are available.",
-                color=Config.EMBED_COLOR_NO_SERVERS
+                color=Config.EMBED_COLOR_NO_SERVERS,
+                timestamp=last_update or datetime.now(timezone.utc)
             )
         
         embed = discord.Embed(
-            title=f"🚀 {Config.GAME_NAME} - Open Lobbies @ {time_str}",
+            title=f"🚀 {Config.GAME_NAME} - Open Lobbies",
             description=f"Found {len(servers)} servers with available slots",
             color=Config.EMBED_COLOR,
             timestamp=last_update or datetime.now(timezone.utc)
