@@ -360,13 +360,16 @@ class ServerMonitor:
                         # Only match persistent status messages, not command responses
                         embed = message.embeds[0]
                         if embed.title and "Live Server Status" in embed.title:
+                            # Ensure both timestamps are timezone-aware for comparison
+                            message_time = message.created_at if message.created_at.tzinfo else message.created_at.replace(tzinfo=timezone.utc)
+                            
                             # Check if the message is within the time range
-                            if message.created_at.replace(tzinfo=None) >= time_limit:
-                                logger.info(f"Found recent status message from {message.created_at}")
-                                return message, message.created_at.replace(tzinfo=None)
+                            if message_time >= time_limit:
+                                logger.info(f"Found recent status message from {message_time}")
+                                return message, message_time
                             else:
                                 # Message is too old, no point searching further
-                                logger.info(f"Found status message but it's too old ({message.created_at}), creating new one")
+                                logger.info(f"Found status message but it's too old ({message_time}), creating new one")
                                 return None, None
             
             # No suitable message found

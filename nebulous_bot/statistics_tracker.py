@@ -33,9 +33,15 @@ class GameSessionTracker:
         """
         Recover ongoing games from database on bot restart.
         This allows us to continue tracking games that started before the bot restarted.
+        
+        Note: This is called from __init__ in a synchronous context,
+        but the StatisticsService is instantiated in an async context (the bot startup).
+        We use list() to force evaluation of the queryset within the try block,
+        avoiding lazy evaluation issues.
         """
         try:
-            ongoing_games = GameSession.objects.filter(is_ongoing=True)
+            # Force immediate evaluation with list() to avoid async context issues
+            ongoing_games = list(GameSession.objects.filter(is_ongoing=True))
             recovered_count = 0
             
             for game in ongoing_games:
