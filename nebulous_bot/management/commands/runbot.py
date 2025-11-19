@@ -352,6 +352,10 @@ class Command(BaseCommand):
             from django.utils import timezone as django_timezone
             from datetime import timedelta
             from asgiref.sync import sync_to_async
+            import pytz
+            
+            # PST timezone for consistent display
+            pst = pytz.timezone('America/Los_Angeles')
             
             @sync_to_async
             def get_statistics():
@@ -412,6 +416,11 @@ class Command(BaseCommand):
                 # Get most recent snapshot
                 recent_snapshot = PlayerSnapshot.objects.order_by('-timestamp').first()
                 
+                # Get first game for "tracked since" timestamp (for all-time stats only)
+                first_game = None
+                if timeframe == "all":
+                    first_game = GameSession.objects.filter(is_valid_game=True).order_by('game_start').first()
+                
                 # Top 3 maps
                 top_maps = games.values('map_name').annotate(
                     count=Count('id')
@@ -424,6 +433,7 @@ class Command(BaseCommand):
                     'player_stats': player_stats,
                     'max_players': max_players,
                     'recent_snapshot': recent_snapshot,
+                    'first_game': first_game,
                     'top_maps': list(top_maps)
                 }, timeframe_text
             
@@ -444,6 +454,14 @@ class Command(BaseCommand):
                 color=Config.EMBED_COLOR,
                 timestamp=datetime.now(timezone.utc)
             )
+            
+            # Add "tracked since" to description for all-time stats
+            if timeframe == "all" and result.get('first_game'):
+                first_game = result['first_game']
+                # Convert to PST for display
+                first_game_pst = first_game.game_start.astimezone(pst)
+                tracked_since = first_game_pst.strftime("%B %d, %Y at %I:%M %p PST")
+                embed.description = f"📅 *Stats tracked since {tracked_since}*"
             
             # Game statistics
             avg_duration_mins = int(result['stats']['avg_duration'] / 60) if result['stats']['avg_duration'] else 0
@@ -505,19 +523,23 @@ class Command(BaseCommand):
 
         @bot.command(name='mapstats', aliases=['maps'])
         async def show_map_statistics(ctx, limit: int = 10):
-            """Show map play frequency statistics"""
+            """Show map play frequency statistics (calculated from games in real-time)"""
             if not server_monitor:
                 await ctx.send("❌ Server monitoring not initialized yet.")
                 return
             
-            from nebulous_bot.models import MapStatistics
+            from nebulous_bot.models import GameSession
+            from django.db.models import Count, Avg, Max
             from asgiref.sync import sync_to_async
             
             @sync_to_async
             def get_map_stats():
-                return list(MapStatistics.objects.filter(
-                    total_valid_games__gt=0
-                ).order_by('-total_valid_games')[:limit])
+                return list(GameSession.objects.filter(is_valid_game=True).values('map_name').annotate(
+                    total_games=Count('id'),
+                    avg_duration=Avg('duration_seconds'),
+                    avg_players=Avg('players_at_start'),
+                    last_played=Max('game_start')
+                ).order_by('-total_games')[:limit])
             
             map_stats = await get_map_stats()
             
@@ -537,38 +559,52 @@ class Command(BaseCommand):
             )
             
             for i, map_stat in enumerate(map_stats, 1):
-                avg_duration_mins = int(map_stat.avg_game_duration / 60) if map_stat.avg_game_duration else 0
-                last_played_text = f"<t:{int(map_stat.last_played.timestamp())}:R>" if map_stat.last_played else "Never"
+                avg_duration_mins = int(map_stat['avg_duration'] / 60) if map_stat['avg_duration'] else 0
+                last_played_text = f"<t:{int(map_stat['last_played'].timestamp())}:R>" if map_stat['last_played'] else "Never"
                 
                 embed.add_field(
-                    name=f"{i}. {map_stat.map_name}",
+                    name=f"{i}. {map_stat['map_name']}",
                     value=(
-                        f"**Games:** {map_stat.total_valid_games}\n"
+                        f"**Games:** {map_stat['total_games']}\n"
                         f"**Avg Duration:** {avg_duration_mins}m\n"
-                        f"**Avg Players:** {map_stat.avg_players_per_game:.1f}\n"
+                        f"**Avg Players:** {map_stat['avg_players']:.1f}\n"
                         f"**Last Played:** {last_played_text}"
                     ),
                     inline=True
                 )
             
-            embed.set_footer(text="Only valid games (5+ minutes) are counted")
+            embed.set_footer(text="Only valid games (5+ minutes) are counted • Calculated in real-time")
             await ctx.send(embed=embed)
 
         @bot.command(name='serverstats', aliases=['serverinfo'])
         async def show_server_statistics(ctx, limit: int = 10):
-            """Show server usage statistics"""
+            """Show server usage statistics (calculated from games in real-time)"""
             if not server_monitor:
                 await ctx.send("❌ Server monitoring not initialized yet.")
                 return
             
-            from nebulous_bot.models import ServerStatistics
+            from nebulous_bot.models import GameSession
+            from django.db.models import Count, Avg, Max
             from asgiref.sync import sync_to_async
             
             @sync_to_async
             def get_server_stats():
-                return list(ServerStatistics.objects.filter(
-                    total_valid_games__gt=0
-                ).order_by('-total_valid_games')[:limit])
+                stats = list(GameSession.objects.filter(is_valid_game=True).values('server_id', 'server_name').annotate(
+                    total_games=Count('id'),
+                    avg_players=Avg('players_at_start'),
+                    last_game=Max('game_start')
+                ).order_by('-total_games')[:limit])
+                
+                # Calculate player-hours for each server
+                for stat in stats:
+                    games = GameSession.objects.filter(
+                        server_id=stat['server_id'],
+                        is_valid_game=True,
+                        duration_seconds__isnull=False
+                    )
+                    stat['player_hours'] = sum(g.players_at_start * g.duration_seconds / 3600 for g in games)
+                
+                return stats
             
             server_stats = await get_server_stats()
             
@@ -588,55 +624,25 @@ class Command(BaseCommand):
             )
             
             for i, srv_stat in enumerate(server_stats, 1):
-                last_game_text = f"<t:{int(srv_stat.last_game_date.timestamp())}:R>" if srv_stat.last_game_date else "Never"
-                player_hours = int(srv_stat.total_player_minutes / 60) if srv_stat.total_player_minutes else 0
+                last_game_text = f"<t:{int(srv_stat['last_game'].timestamp())}:R>" if srv_stat['last_game'] else "Never"
+                player_hours = int(srv_stat['player_hours'])
                 
                 # Truncate long server names
-                server_name = srv_stat.server_name[:40] + "..." if len(srv_stat.server_name) > 40 else srv_stat.server_name
+                server_name = srv_stat['server_name'][:40] + "..." if len(srv_stat['server_name']) > 40 else srv_stat['server_name']
                 
                 embed.add_field(
                     name=f"{i}. {server_name}",
                     value=(
-                        f"**Games:** {srv_stat.total_valid_games}\n"
-                        f"**Avg Players:** {srv_stat.avg_players_per_game:.1f}\n"
+                        f"**Games:** {srv_stat['total_games']}\n"
+                        f"**Avg Players:** {srv_stat['avg_players']:.1f}\n"
                         f"**Player-Hours:** {player_hours:,}\n"
                         f"**Last Game:** {last_game_text}"
                     ),
                     inline=True
                 )
             
-            embed.set_footer(text="Only valid games (5+ minutes) are counted")
+            embed.set_footer(text="Only valid games (5+ minutes) are counted • Calculated in real-time")
             await ctx.send(embed=embed)
-
-        @bot.command(name='updatestats', aliases=['refreshstats'])
-        @commands.has_permissions(administrator=True)
-        async def force_update_statistics(ctx):
-            """Force update statistics aggregation (Admin only)"""
-            if not server_monitor:
-                await ctx.send("❌ Server monitoring not initialized yet.")
-                return
-            
-            update_msg = await ctx.send("🔄 Updating statistics...")
-            
-            try:
-                from asgiref.sync import sync_to_async
-                
-                @sync_to_async
-                def update_stats():
-                    server_monitor.statistics_service.force_aggregation()
-                
-                await update_stats()
-                
-                embed = discord.Embed(
-                    title="✅ Statistics Updated",
-                    description="All statistics have been recalculated from game data.",
-                    color=Config.EMBED_COLOR,
-                    timestamp=datetime.now(timezone.utc)
-                )
-                await update_msg.edit(content="", embed=embed)
-            except Exception as e:
-                logger.error(f"Error updating statistics: {e}")
-                await update_msg.edit(content="❌ Failed to update statistics. Check logs for details.")
 
         @bot.command(name='nextgame', aliases=['notify', 'notifyme'])
         async def next_game_notify(ctx):

@@ -5,7 +5,7 @@ import asyncio
 import ssl
 import certifi
 import aiohttp
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List
 
 from nebulous_bot.config import Config
@@ -258,6 +258,10 @@ async def show_statistics(ctx, timeframe: str = "all"):
     from django.db.models import Count, Avg, Sum
     from django.utils import timezone
     from datetime import timedelta
+    import pytz
+    
+    # PST timezone for consistent display
+    pst = pytz.timezone('America/Los_Angeles')
     
     # Calculate timeframe
     now = timezone.now()
@@ -323,12 +327,24 @@ async def show_statistics(ctx, timeframe: str = "all"):
     # Get most recent snapshot for current stats
     recent_snapshot = PlayerSnapshot.objects.order_by('-timestamp').first()
     
+    # Get first game for "tracked since" timestamp (for all-time stats only)
+    first_game = None
+    if timeframe == "all":
+        first_game = GameSession.objects.filter(is_valid_game=True).order_by('game_start').first()
+    
     # Create embed
     embed = discord.Embed(
         title=f"📊 Game Statistics - {timeframe_text}",
         color=Config.EMBED_COLOR,
         timestamp=datetime.now()
     )
+    
+    # Add "tracked since" to description for all-time stats
+    if timeframe == "all" and first_game:
+        # Convert to PST for display
+        first_game_pst = first_game.game_start.astimezone(pst)
+        tracked_since = first_game_pst.strftime("%B %d, %Y at %I:%M %p PST")
+        embed.description = f"📅 *Stats tracked since {tracked_since}*"
     
     # Game statistics
     avg_duration_mins = int(stats['avg_duration'] / 60) if stats['avg_duration'] else 0
@@ -393,7 +409,7 @@ async def show_statistics(ctx, timeframe: str = "all"):
 @bot.command(name='mapstats', aliases=['maps'])
 async def show_map_statistics(ctx, limit: int = 10):
     """
-    Show map play frequency statistics
+    Show map play frequency statistics (calculated from games in real-time)
     
     Usage: !mapstats [limit]
     """
@@ -401,12 +417,19 @@ async def show_map_statistics(ctx, limit: int = 10):
         await ctx.send("❌ Server monitoring not initialized yet.")
         return
     
-    from nebulous_bot.models import MapStatistics
+    from nebulous_bot.models import GameSession
+    from django.db.models import Count, Avg
     
-    # Get map statistics
-    map_stats = MapStatistics.objects.filter(total_valid_games__gt=0).order_by('-total_valid_games')[:limit]
+    # Calculate map statistics directly from GameSession
+    from django.db.models import Max
+    map_stats = GameSession.objects.filter(is_valid_game=True).values('map_name').annotate(
+        total_games=Count('id'),
+        avg_duration=Avg('duration_seconds'),
+        avg_players=Avg('players_at_start'),
+        last_played=Max('game_start')
+    ).order_by('-total_games')[:limit]
     
-    if not map_stats.exists():
+    if not map_stats:
         embed = discord.Embed(
             title="🗺️ Map Statistics",
             description="No map data available yet. Maps are tracked as games complete.",
@@ -423,27 +446,27 @@ async def show_map_statistics(ctx, limit: int = 10):
     
     # Create a table-like display
     for i, map_stat in enumerate(map_stats, 1):
-        avg_duration_mins = int(map_stat.avg_game_duration / 60) if map_stat.avg_game_duration else 0
-        last_played_text = f"<t:{int(map_stat.last_played.timestamp())}:R>" if map_stat.last_played else "Never"
+        avg_duration_mins = int(map_stat['avg_duration'] / 60) if map_stat['avg_duration'] else 0
+        last_played_text = f"<t:{int(map_stat['last_played'].timestamp())}:R>" if map_stat['last_played'] else "Never"
         
         embed.add_field(
-            name=f"{i}. {map_stat.map_name}",
+            name=f"{i}. {map_stat['map_name']}",
             value=(
-                f"**Games:** {map_stat.total_valid_games}\n"
+                f"**Games:** {map_stat['total_games']}\n"
                 f"**Avg Duration:** {avg_duration_mins}m\n"
-                f"**Avg Players:** {map_stat.avg_players_per_game:.1f}\n"
+                f"**Avg Players:** {map_stat['avg_players']:.1f}\n"
                 f"**Last Played:** {last_played_text}"
             ),
             inline=True
         )
     
-    embed.set_footer(text="Only valid games (5+ minutes) are counted")
+    embed.set_footer(text="Only valid games (5+ minutes) are counted • Calculated in real-time")
     await ctx.send(embed=embed)
 
 @bot.command(name='serverstats', aliases=['serverinfo'])
 async def show_server_statistics(ctx, limit: int = 10):
     """
-    Show server usage statistics
+    Show server usage statistics (calculated from games in real-time)
     
     Usage: !serverstats [limit]
     """
@@ -451,12 +474,17 @@ async def show_server_statistics(ctx, limit: int = 10):
         await ctx.send("❌ Server monitoring not initialized yet.")
         return
     
-    from nebulous_bot.models import ServerStatistics
+    from nebulous_bot.models import GameSession
+    from django.db.models import Count, Avg, Max, F
     
-    # Get server statistics
-    server_stats = ServerStatistics.objects.filter(total_valid_games__gt=0).order_by('-total_valid_games')[:limit]
+    # Calculate server statistics directly from GameSession
+    server_stats = GameSession.objects.filter(is_valid_game=True).values('server_id', 'server_name').annotate(
+        total_games=Count('id'),
+        avg_players=Avg('players_at_start'),
+        last_game=Max('game_start')
+    ).order_by('-total_games')[:limit]
     
-    if not server_stats.exists():
+    if not server_stats:
         embed = discord.Embed(
             title="🖥️ Server Statistics",
             description="No server data available yet. Servers are tracked as games complete.",
@@ -473,50 +501,32 @@ async def show_server_statistics(ctx, limit: int = 10):
     
     # Create a table-like display
     for i, srv_stat in enumerate(server_stats, 1):
-        last_game_text = f"<t:{int(srv_stat.last_game_date.timestamp())}:R>" if srv_stat.last_game_date else "Never"
-        player_hours = int(srv_stat.total_player_minutes / 60) if srv_stat.total_player_minutes else 0
+        last_game_text = f"<t:{int(srv_stat['last_game'].timestamp())}:R>" if srv_stat['last_game'] else "Never"
+        
+        # Calculate player-hours for this server
+        games = GameSession.objects.filter(
+            server_id=srv_stat['server_id'],
+            is_valid_game=True,
+            duration_seconds__isnull=False
+        )
+        player_hours = sum(g.players_at_start * g.duration_seconds / 3600 for g in games)
         
         # Truncate long server names
-        server_name = srv_stat.server_name[:40] + "..." if len(srv_stat.server_name) > 40 else srv_stat.server_name
+        server_name = srv_stat['server_name'][:40] + "..." if len(srv_stat['server_name']) > 40 else srv_stat['server_name']
         
         embed.add_field(
             name=f"{i}. {server_name}",
             value=(
-                f"**Games:** {srv_stat.total_valid_games}\n"
-                f"**Avg Players:** {srv_stat.avg_players_per_game:.1f}\n"
-                f"**Player-Hours:** {player_hours:,}\n"
+                f"**Games:** {srv_stat['total_games']}\n"
+                f"**Avg Players:** {srv_stat['avg_players']:.1f}\n"
+                f"**Player-Hours:** {int(player_hours):,}\n"
                 f"**Last Game:** {last_game_text}"
             ),
             inline=True
         )
     
-    embed.set_footer(text="Only valid games (5+ minutes) are counted")
+    embed.set_footer(text="Only valid games (5+ minutes) are counted • Calculated in real-time")
     await ctx.send(embed=embed)
-
-@bot.command(name='updatestats', aliases=['refreshstats'])
-@commands.has_permissions(administrator=True)
-async def force_update_statistics(ctx):
-    """Force update statistics aggregation (Admin only)"""
-    if not server_monitor:
-        await ctx.send("❌ Server monitoring not initialized yet.")
-        return
-    
-    update_msg = await ctx.send("🔄 Updating statistics...")
-    
-    try:
-        # Force statistics aggregation
-        server_monitor.statistics_service.force_aggregation()
-        
-        embed = discord.Embed(
-            title="✅ Statistics Updated",
-            description="All statistics have been recalculated from game data.",
-            color=Config.EMBED_COLOR,
-            timestamp=datetime.now()
-        )
-        await update_msg.edit(content="", embed=embed)
-    except Exception as e:
-        logger.error(f"Error updating statistics: {e}")
-        await update_msg.edit(content="❌ Failed to update statistics. Check logs for details.")
 
 @bot.command(name='nextgame', aliases=['notify', 'notifyme'])
 async def next_game_notify(ctx):

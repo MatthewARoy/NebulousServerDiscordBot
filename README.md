@@ -50,12 +50,14 @@ The instructions below are for the standalone Python version. Both versions are 
 - `!serverstats` - View server usage statistics
 
 📈 **Statistics Tracking** (NEW!)
-- Persistent database storage of game sessions and player activity
+- **Game persistence with unique IDs** - Games saved immediately when they start
+- **Survives bot restarts** - Ongoing games recovered from database
 - Tracks games played (lobby → in-game 5+ mins → debrief)
 - Player count history with 5-minute snapshots
 - Map frequency analysis (most played maps)
 - Server usage metrics (most active servers)
 - Detailed statistics via Discord commands
+- Complete audit trail of all games with unique identifiers
 
 📊 **Rich Information Display**
 - Server player counts and capacity

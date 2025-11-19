@@ -35,9 +35,13 @@ class NotificationLog(models.Model):
 
 class GameSession(models.Model):
     """
-    Track individual game sessions.
-    A game is defined as: lobby -> in_game (5+ mins) -> debrief
+    Track individual game sessions with unique IDs.
+    Each game is saved immediately when it starts and updated when it ends.
+    A valid game is defined as: in_game for 5+ minutes -> debrief
     """
+    # Unique identifier (Django auto-generates this as primary key)
+    # Access via game.id or game.pk
+    
     # Server information
     server_id = models.CharField(max_length=255, db_index=True)
     server_name = models.CharField(max_length=255)
@@ -62,8 +66,10 @@ class GameSession(models.Model):
     competitive = models.BooleanField(default=False)
     autobalance = models.BooleanField(default=False)
     rank_restricted = models.BooleanField(default=False)
+    has_password = models.BooleanField(default=False)  # Password protected server
     
     # Status tracking
+    is_ongoing = models.BooleanField(default=True, db_index=True)  # False when game ends
     is_valid_game = models.BooleanField(default=False)  # True if game lasted 5+ minutes
     duration_seconds = models.IntegerField(null=True, blank=True)  # Calculated duration
     
@@ -77,10 +83,12 @@ class GameSession(models.Model):
             models.Index(fields=['server_id', '-game_start']),
             models.Index(fields=['map_name', '-game_start']),
             models.Index(fields=['is_valid_game', '-game_start']),
+            models.Index(fields=['is_ongoing', '-game_start']),  # For recovery queries
         ]
     
     def __str__(self):
-        return f"{self.server_name} - {self.map_name} at {self.game_start}"
+        status = "ongoing" if self.is_ongoing else "completed"
+        return f"Game #{self.id}: {self.server_name} - {self.map_name} ({status})"
     
     def calculate_duration(self):
         """Calculate and store game duration if game has ended"""
@@ -92,10 +100,19 @@ class GameSession(models.Model):
             return self.duration_seconds
         return None
     
+    def end_game(self, end_time, players_at_end):
+        """Mark game as ended and calculate final statistics"""
+        self.game_end = end_time
+        self.players_at_end = players_at_end
+        self.is_ongoing = False
+        self.calculate_duration()
+        self.save()
+    
     def save(self, *args, **kwargs):
         """Override save to automatically calculate duration"""
-        if self.game_end:
+        if self.game_end and self.is_ongoing:
             self.calculate_duration()
+            self.is_ongoing = False
         super().save(*args, **kwargs)
 
 
@@ -103,6 +120,9 @@ class PlayerSnapshot(models.Model):
     """
     Track player count snapshots over time.
     Records total active players across all servers at regular intervals.
+    
+    NOTE: This is different from game tracking - it captures overall community
+    activity independent of individual games. Kept for historical player count data.
     """
     timestamp = models.DateTimeField(auto_now_add=True, db_index=True)
     total_players = models.IntegerField(default=0)
@@ -118,64 +138,4 @@ class PlayerSnapshot(models.Model):
     
     def __str__(self):
         return f"{self.timestamp}: {self.total_players} players, {self.total_servers} servers"
-
-
-class ServerStatistics(models.Model):
-    """
-    Aggregated statistics for servers.
-    Periodically computed to avoid expensive queries.
-    """
-    server_id = models.CharField(max_length=255, unique=True, db_index=True)
-    server_name = models.CharField(max_length=255)
-    
-    # Game count statistics
-    total_games = models.IntegerField(default=0)
-    total_valid_games = models.IntegerField(default=0)  # Games that lasted 5+ minutes
-    
-    # Time statistics
-    last_game_date = models.DateTimeField(null=True, blank=True)
-    first_game_date = models.DateTimeField(null=True, blank=True)
-    
-    # Player statistics
-    avg_players_per_game = models.FloatField(default=0.0)
-    total_player_minutes = models.IntegerField(default=0)  # Sum of all player*minutes
-    
-    # Last update
-    last_updated = models.DateTimeField(auto_now=True)
-    
-    class Meta:
-        ordering = ['-total_valid_games']
-        verbose_name_plural = 'Server statistics'
-    
-    def __str__(self):
-        return f"{self.server_name}: {self.total_valid_games} valid games"
-
-
-class MapStatistics(models.Model):
-    """
-    Aggregated statistics for maps.
-    Tracks which maps are played most frequently.
-    """
-    map_name = models.CharField(max_length=100, unique=True, db_index=True)
-    
-    # Game count statistics
-    total_games = models.IntegerField(default=0)
-    total_valid_games = models.IntegerField(default=0)
-    
-    # Time statistics
-    last_played = models.DateTimeField(null=True, blank=True)
-    avg_game_duration = models.FloatField(default=0.0)  # In seconds
-    
-    # Player statistics
-    avg_players_per_game = models.FloatField(default=0.0)
-    
-    # Last update
-    last_updated = models.DateTimeField(auto_now=True)
-    
-    class Meta:
-        ordering = ['-total_valid_games']
-        verbose_name_plural = 'Map statistics'
-    
-    def __str__(self):
-        return f"{self.map_name}: {self.total_valid_games} valid games"
 
