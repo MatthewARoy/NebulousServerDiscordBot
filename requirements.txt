@@ -10,6 +10,9 @@ asyncio-throttle>=1.0.2
 # Configuration
 python-dotenv>=1.0.0
 
+# Timezone support
+pytz>=2023.3
+
 # HTTP and API
 requests>=2.31.0
 certifi>=2023.7.22
