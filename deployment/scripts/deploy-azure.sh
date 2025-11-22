@@ -97,12 +97,63 @@ else
   echo "✅ Image built and pushed locally"
 fi
 
+# Create or reuse Log Analytics workspace
+LOG_WORKSPACE_NAME="nebulous-bot-logs"
+echo "📊 Setting up Log Analytics workspace..."
+
+LOG_WORKSPACE_EXISTS=$(az monitor log-analytics workspace show \
+  --resource-group $RESOURCE_GROUP \
+  --workspace-name $LOG_WORKSPACE_NAME \
+  --query name \
+  --output tsv 2>/dev/null || echo "")
+
+if [ -z "$LOG_WORKSPACE_EXISTS" ]; then
+  echo "   Creating Log Analytics workspace: $LOG_WORKSPACE_NAME"
+  az monitor log-analytics workspace create \
+    --resource-group $RESOURCE_GROUP \
+    --workspace-name $LOG_WORKSPACE_NAME \
+    --location $LOCATION \
+    --output none
+  echo "   ✅ Log Analytics workspace created"
+else
+  echo "   ✅ Using existing Log Analytics workspace: $LOG_WORKSPACE_NAME"
+fi
+
+# Get workspace ID and key
+LOG_WORKSPACE_ID=$(az monitor log-analytics workspace show \
+  --resource-group $RESOURCE_GROUP \
+  --workspace-name $LOG_WORKSPACE_NAME \
+  --query customerId \
+  --output tsv)
+
+LOG_WORKSPACE_KEY=$(az monitor log-analytics workspace get-shared-keys \
+  --resource-group $RESOURCE_GROUP \
+  --workspace-name $LOG_WORKSPACE_NAME \
+  --query primarySharedKey \
+  --output tsv)
+
 # Create Container App Environment if it doesn't exist
-echo "🌍 Creating Container App Environment..."
-az containerapp env create \
+echo "🌍 Setting up Container App Environment..."
+
+ENV_EXISTS=$(az containerapp env show \
   --name $CONTAINER_APP_ENV \
   --resource-group $RESOURCE_GROUP \
-  --location $LOCATION || true
+  --query name \
+  --output tsv 2>/dev/null || echo "")
+
+if [ -z "$ENV_EXISTS" ]; then
+  echo "   Creating Container App Environment: $CONTAINER_APP_ENV"
+  az containerapp env create \
+    --name $CONTAINER_APP_ENV \
+    --resource-group $RESOURCE_GROUP \
+    --location $LOCATION \
+    --logs-workspace-id $LOG_WORKSPACE_ID \
+    --logs-workspace-key $LOG_WORKSPACE_KEY \
+    --output none
+  echo "   ✅ Container App Environment created"
+else
+  echo "   ✅ Using existing Container App Environment: $CONTAINER_APP_ENV"
+fi
 
 # TODO: Setup persistent storage for database
 # For now, database will be ephemeral (resets on deployment)
@@ -116,27 +167,51 @@ ACR_PASSWORD=$(az acr credential show --name $ACR_NAME --query passwords[0].valu
 
 echo "🚢 Deploying Container App..."
 
+# Check if container app already exists
+APP_EXISTS=$(az containerapp show \
+  --name $CONTAINER_APP_NAME \
+  --resource-group $RESOURCE_GROUP \
+  --query name \
+  --output tsv 2>/dev/null || echo "")
+
+if [ -n "$APP_EXISTS" ]; then
+  echo "   ℹ️  Container app already exists, will update with new image..."
+  UPDATE_MODE=true
+else
+  echo "   Creating new container app..."
+  UPDATE_MODE=false
+fi
+
 # Check if .env file exists for secrets
 if [ ! -f .env ]; then
     echo "⚠️  Warning: .env file not found. You'll need to set secrets manually."
-    echo "Creating container app without secrets..."
     
-    az containerapp create \
-      --name $CONTAINER_APP_NAME \
-      --resource-group $RESOURCE_GROUP \
-      --environment $CONTAINER_APP_ENV \
-      --image $ACR_SERVER/$IMAGE_NAME:$IMAGE_TAG \
-      --registry-server $ACR_SERVER \
-      --registry-username $ACR_USERNAME \
-      --registry-password $ACR_PASSWORD \
-      --target-port 8000 \
-      --ingress internal \
-      --cpu 0.5 \
-      --memory 1.0Gi \
-      --min-replicas 1 \
-      --max-replicas 1 \
-      --env-vars \
-        PYTHONUNBUFFERED="1"
+    if [ "$UPDATE_MODE" = true ]; then
+      echo "Updating container app with new image..."
+      az containerapp update \
+        --name $CONTAINER_APP_NAME \
+        --resource-group $RESOURCE_GROUP \
+        --image $ACR_SERVER/$IMAGE_NAME:$IMAGE_TAG \
+        --output none
+    else
+      echo "Creating container app without secrets..."
+      az containerapp create \
+        --name $CONTAINER_APP_NAME \
+        --resource-group $RESOURCE_GROUP \
+        --environment $CONTAINER_APP_ENV \
+        --image $ACR_SERVER/$IMAGE_NAME:$IMAGE_TAG \
+        --registry-server $ACR_SERVER \
+        --registry-username $ACR_USERNAME \
+        --registry-password $ACR_PASSWORD \
+        --target-port 8000 \
+        --ingress internal \
+        --cpu 0.5 \
+        --memory 1.0Gi \
+        --min-replicas 1 \
+        --max-replicas 1 \
+        --env-vars \
+          PYTHONUNBUFFERED="1"
+    fi
 else
     echo "📝 Loading environment variables from .env file..."
     
@@ -195,36 +270,53 @@ else
         echo "🔑 Generated Django secret key"
     fi
     
-    echo "🚢 Creating container app with secrets..."
-    
-    az containerapp create \
-      --name $CONTAINER_APP_NAME \
-      --resource-group $RESOURCE_GROUP \
-      --environment $CONTAINER_APP_ENV \
-      --image $ACR_SERVER/$IMAGE_NAME:$IMAGE_TAG \
-      --registry-server $ACR_SERVER \
-      --registry-username $ACR_USERNAME \
-      --registry-password $ACR_PASSWORD \
-      --target-port 8000 \
-      --ingress internal \
-      --cpu 0.5 \
-      --memory 1.0Gi \
-      --min-replicas 1 \
-      --max-replicas 1 \
-      --secrets \
-        discord-token="$DISCORD_TOKEN" \
-        steam-api-key="$STEAM_API_KEY" \
-        django-secret-key="$DJANGO_SECRET_KEY" \
-      --env-vars \
-        DISCORD_TOKEN=secretref:discord-token \
-        STEAM_API_KEY=secretref:steam-api-key \
-        DJANGO_SECRET_KEY=secretref:django-secret-key \
-        APPLICATION_ID="$APPLICATION_ID" \
-        SERVER_CONFIGS="$SERVER_CONFIGS" \
-        PLAYER_THRESHOLD="${PLAYER_THRESHOLD:-40}" \
-        NOTIFICATION_INTERVAL="${NOTIFICATION_INTERVAL:-3600}" \
-        DEBUG="False" \
-        PYTHONUNBUFFERED="1"
+    if [ "$UPDATE_MODE" = true ]; then
+      echo "🔄 Updating existing container app..."
+      az containerapp update \
+        --name $CONTAINER_APP_NAME \
+        --resource-group $RESOURCE_GROUP \
+        --image $ACR_SERVER/$IMAGE_NAME:$IMAGE_TAG \
+        --set-env-vars \
+          APPLICATION_ID="$APPLICATION_ID" \
+          SERVER_CONFIGS="$SERVER_CONFIGS" \
+          PLAYER_THRESHOLD="${PLAYER_THRESHOLD:-40}" \
+          NOTIFICATION_INTERVAL="${NOTIFICATION_INTERVAL:-3600}" \
+          DEBUG="False" \
+          PYTHONUNBUFFERED="1" \
+        --output none
+      echo "   ✅ Container app updated with new image"
+    else
+      echo "🚢 Creating container app with secrets..."
+      az containerapp create \
+        --name $CONTAINER_APP_NAME \
+        --resource-group $RESOURCE_GROUP \
+        --environment $CONTAINER_APP_ENV \
+        --image $ACR_SERVER/$IMAGE_NAME:$IMAGE_TAG \
+        --registry-server $ACR_SERVER \
+        --registry-username $ACR_USERNAME \
+        --registry-password $ACR_PASSWORD \
+        --target-port 8000 \
+        --ingress internal \
+        --cpu 0.5 \
+        --memory 1.0Gi \
+        --min-replicas 1 \
+        --max-replicas 1 \
+        --secrets \
+          discord-token="$DISCORD_TOKEN" \
+          steam-api-key="$STEAM_API_KEY" \
+          django-secret-key="$DJANGO_SECRET_KEY" \
+        --env-vars \
+          DISCORD_TOKEN=secretref:discord-token \
+          STEAM_API_KEY=secretref:steam-api-key \
+          DJANGO_SECRET_KEY=secretref:django-secret-key \
+          APPLICATION_ID="$APPLICATION_ID" \
+          SERVER_CONFIGS="$SERVER_CONFIGS" \
+          PLAYER_THRESHOLD="${PLAYER_THRESHOLD:-40}" \
+          NOTIFICATION_INTERVAL="${NOTIFICATION_INTERVAL:-3600}" \
+          DEBUG="False" \
+          PYTHONUNBUFFERED="1"
+      echo "   ✅ Container app created"
+    fi
 fi
 
 echo ""
