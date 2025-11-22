@@ -614,13 +614,14 @@ class ServerMonitor:
             # Check for games in debrief (game just ended)
             debrief_games = [s for s in self.cached_servers if s.get('status') == 'debrief']
             
-            # Check for lobbies that are at least half full
+            # Check for lobbies that are at least half full but NOT full
             half_full_lobbies = []
             for server in self.cached_servers:
                 if server.get('status') == 'lobby':
                     players = server.get('players', 0)
                     capacity = server.get('map_capacity', 8)
-                    if players >= capacity / 2 and players > 0:
+                    # Only notify for lobbies that are filling up but still have space
+                    if players >= capacity / 2 and players > 0 and players < capacity:
                         half_full_lobbies.append(server)
             
             # If we have games ready, notify all waiters
