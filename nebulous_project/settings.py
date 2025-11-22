@@ -76,8 +76,30 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': DB_NAME,
+        'OPTIONS': {
+            # Increase timeout for network storage (Azure Files can be slow)
+            # Default is 5 seconds, we use 30 seconds for network latency
+            'timeout': 30,
+        },
     }
 }
+
+# Configure SQLite for network storage (Azure Files)
+# This runs after database connection to set PRAGMA values
+if DB_PATH and '/mnt/data' in str(DB_PATH):
+    import sqlite3
+    from django.db.backends.signals import connection_created
+    
+    def configure_sqlite_for_network(sender, connection, **kwargs):
+        if connection.vendor == 'sqlite':
+            cursor = connection.cursor()
+            # Use DELETE journal mode (safer for network storage than WAL)
+            cursor.execute("PRAGMA journal_mode=DELETE;")
+            # Set busy timeout to 30 seconds (30000 milliseconds)
+            cursor.execute("PRAGMA busy_timeout=30000;")
+            cursor.close()
+    
+    connection_created.connect(configure_sqlite_for_network)
 
 # For Azure PostgreSQL (uncomment and configure as needed)
 # DATABASES = {
