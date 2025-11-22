@@ -64,10 +64,18 @@ WSGI_APPLICATION = 'nebulous_project.wsgi.application'
 
 # Database
 # For bot application, we use SQLite (can be changed to PostgreSQL for Azure)
+# Use DB_PATH environment variable if provided (for Azure persistent storage)
+# Otherwise fall back to local db.sqlite3
+DB_PATH = os.getenv('DB_PATH')
+if DB_PATH:
+    DB_NAME = DB_PATH
+else:
+    DB_NAME = BASE_DIR / 'db.sqlite3'
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': DB_NAME,
     }
 }
 

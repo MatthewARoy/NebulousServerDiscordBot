@@ -611,54 +611,43 @@ class ServerMonitor:
             return
         
         try:
-            # Check for games in debrief (game just ended)
-            debrief_games = [s for s in self.cached_servers if s.get('status') == 'debrief']
-            
-            # Check for lobbies that are at least half full but NOT full
-            half_full_lobbies = []
+            # Only check for lobbies that have available space (not full)
+            # Don't notify for debrief games as they may fill up before transitioning to lobby
+            available_lobbies = []
             for server in self.cached_servers:
                 if server.get('status') == 'lobby':
                     players = server.get('players', 0)
                     capacity = server.get('map_capacity', 8)
-                    # Only notify for lobbies that are filling up but still have space
+                    # Only notify for lobbies that are at least half full AND still have space
                     if players >= capacity / 2 and players > 0 and players < capacity:
-                        half_full_lobbies.append(server)
+                        available_lobbies.append(server)
             
-            # If we have games ready, notify all waiters
-            if debrief_games or half_full_lobbies:
-                await self._notify_next_game_waiters(debrief_games, half_full_lobbies)
+            # Notify waiters about available lobbies
+            if available_lobbies:
+                await self._notify_next_game_waiters(available_lobbies)
         
         except Exception as e:
             logger.error(f"Error checking next game notifications: {e}", exc_info=True)
     
-    async def _notify_next_game_waiters(self, debrief_games: List[Dict], half_full_lobbies: List[Dict]):
-        """Notify all waiting users about available games"""
-        if not self.next_game_waiters:
+    async def _notify_next_game_waiters(self, available_lobbies: List[Dict]):
+        """Notify all waiting users about available lobbies"""
+        if not self.next_game_waiters or not available_lobbies:
             return
         
-        # Build notification message
-        notification_parts = []
+        # Build notification message about available lobbies
+        lobby_list = []
+        for lobby in available_lobbies[:5]:  # Show up to 5 lobbies
+            name = lobby.get('name', 'Unknown')[:40]
+            players = lobby.get('players', 0)
+            capacity = lobby.get('map_capacity', 8)
+            available_slots = capacity - players
+            lobby_list.append(f"• {name} - **{available_slots} slot(s) available** ({players}/{capacity})")
         
-        if debrief_games:
-            game_names = [g.get('name', 'Unknown')[:30] for g in debrief_games[:3]]
-            notification_parts.append(f"🎮 **{len(debrief_games)} game(s) just finished** (in debrief):\n" + 
-                                    "\n".join([f"• {name}" for name in game_names]))
-        
-        if half_full_lobbies:
-            lobby_list = []
-            for lobby in half_full_lobbies[:3]:
-                name = lobby.get('name', 'Unknown')[:30]
-                players = lobby.get('players', 0)
-                capacity = lobby.get('map_capacity', 8)
-                lobby_list.append(f"• {name} - {players}/{capacity} players")
-            notification_parts.append(f"🚀 **{len(half_full_lobbies)} lobby(ies) filling up**:\n" + 
-                                    "\n".join(lobby_list))
-        
-        if not notification_parts:
-            return
-        
-        notification_text = "\n\n".join(notification_parts)
-        notification_text += "\n\nUse `!listservers` or `!openlobbies` to see all servers!"
+        notification_text = (
+            f"🎮 **Game starting soon!** {len(available_lobbies)} lobby(ies) with available slots:\n\n" +
+            "\n".join(lobby_list) +
+            "\n\nUse `!listservers` or `!openlobbies` to join!"
+        )
         
         # Notify all waiters
         waiters_to_remove = []
