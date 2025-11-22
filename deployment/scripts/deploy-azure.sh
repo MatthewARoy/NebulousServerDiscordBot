@@ -104,48 +104,10 @@ az containerapp env create \
   --resource-group $RESOURCE_GROUP \
   --location $LOCATION || true
 
-# Create Azure Storage Account for database persistence
-STORAGE_ACCOUNT_NAME="${ACR_NAME}storage"
-STORAGE_SHARE_NAME="botdata"
-
-echo "💾 Setting up persistent storage for database..."
-echo "   Creating storage account: $STORAGE_ACCOUNT_NAME"
-
-# Create storage account if it doesn't exist
-az storage account create \
-  --name $STORAGE_ACCOUNT_NAME \
-  --resource-group $RESOURCE_GROUP \
-  --location $LOCATION \
-  --sku Standard_LRS \
-  --kind StorageV2 || true
-
-# Get storage account key
-STORAGE_KEY=$(az storage account keys list \
-  --resource-group $RESOURCE_GROUP \
-  --account-name $STORAGE_ACCOUNT_NAME \
-  --query '[0].value' \
-  --output tsv)
-
-# Create file share if it doesn't exist
-echo "   Creating file share: $STORAGE_SHARE_NAME"
-az storage share create \
-  --name $STORAGE_SHARE_NAME \
-  --account-name $STORAGE_ACCOUNT_NAME \
-  --account-key $STORAGE_KEY \
-  --quota 1 || true
-
-# Create storage configuration in Container App Environment
-echo "   Configuring storage mount..."
-az containerapp env storage set \
-  --name $CONTAINER_APP_ENV \
-  --resource-group $RESOURCE_GROUP \
-  --storage-name botdata-storage \
-  --azure-file-account-name $STORAGE_ACCOUNT_NAME \
-  --azure-file-account-key $STORAGE_KEY \
-  --azure-file-share-name $STORAGE_SHARE_NAME \
-  --access-mode ReadWrite || true
-
-echo "✅ Persistent storage configured"
+# TODO: Setup persistent storage for database
+# For now, database will be ephemeral (resets on deployment)
+# Future: Implement Azure Files mount or Azure PostgreSQL
+echo "📝 Note: Database persistence not yet configured - data will reset on deployment"
 
 # Get ACR credentials
 ACR_SERVER=$(az acr show --name $ACR_NAME --query loginServer --output tsv)
@@ -174,10 +136,7 @@ if [ ! -f .env ]; then
       --min-replicas 1 \
       --max-replicas 1 \
       --env-vars \
-        PYTHONUNBUFFERED="1" \
-        DB_PATH="/mnt/data/db.sqlite3" \
-      --bind-to-storage \
-        botdata-storage=/mnt/data
+        PYTHONUNBUFFERED="1"
 else
     echo "📝 Loading environment variables from .env file..."
     
@@ -265,10 +224,7 @@ else
         PLAYER_THRESHOLD="${PLAYER_THRESHOLD:-40}" \
         NOTIFICATION_INTERVAL="${NOTIFICATION_INTERVAL:-3600}" \
         DEBUG="False" \
-        PYTHONUNBUFFERED="1" \
-        DB_PATH="/mnt/data/db.sqlite3" \
-      --bind-to-storage \
-        botdata-storage=/mnt/data
+        PYTHONUNBUFFERED="1"
 fi
 
 echo ""
