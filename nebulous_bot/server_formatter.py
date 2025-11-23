@@ -363,8 +363,8 @@ class ServerFormatter:
             inline=False
         )
         
-        # Add footer with status legend (timestamp is shown automatically by Discord)
-        footer_text = f"🟢 = Open Lobby • 🔴 = Game In Progress • 🟡 = Debrief • Updates every 30s"
+        # Add footer with status legend and contact info (timestamp is shown automatically by Discord)
+        footer_text = f"🟢 = Open Lobby • 🔴 = Game In Progress • 🟡 = Debrief • Updates every 30s • Contact @Davaned for any issues"
         embed.set_footer(text=footer_text)
         
         return embed

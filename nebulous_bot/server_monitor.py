@@ -645,8 +645,7 @@ class ServerMonitor:
         
         notification_text = (
             f"🎮 **Game starting soon!** {len(available_lobbies)} lobby(ies) with available slots:\n\n" +
-            "\n".join(lobby_list) +
-            "\n\nUse `!listservers` or `!openlobbies` to join!"
+            "\n".join(lobby_list)
         )
         
         # Notify all waiters
