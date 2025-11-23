@@ -359,6 +359,9 @@ class Command(BaseCommand):
             
             @sync_to_async
             def get_statistics():
+                import pytz
+                pst = pytz.timezone('America/Los_Angeles')
+                
                 # Calculate timeframe
                 now = django_timezone.now()
                 if timeframe == "today":
@@ -381,13 +384,16 @@ class Command(BaseCommand):
                 
                 total_games = games.count()
                 
-                # Always get today's games count for the default view
+                # Always get today's games count for the default view (using PST timezone)
                 games_today = 0
                 if timeframe == "all":
-                    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+                    # Get current time in PST, set to midnight PST, then convert to UTC for database query
+                    now_pst = now.astimezone(pst)
+                    today_start_pst = now_pst.replace(hour=0, minute=0, second=0, microsecond=0)
+                    today_start_utc = today_start_pst.astimezone(timezone.utc)
                     games_today = GameSession.objects.filter(
                         is_valid_game=True,
-                        game_start__gte=today_start
+                        game_start__gte=today_start_utc
                     ).count()
                 
                 if total_games == 0:
