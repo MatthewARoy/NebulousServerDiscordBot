@@ -482,11 +482,12 @@ async def show_server_statistics(ctx, limit: int = 10):
     
     # Calculate server statistics directly from GameSession
     # Convert to list to ensure fresh data is fetched
+    # Order by most recent game first to show currently active servers
     server_stats = list(GameSession.objects.filter(is_valid_game=True).values('server_id', 'server_name').annotate(
         total_games=Count('id'),
         avg_players=Avg('players_at_start'),
         last_game=Max('game_start')
-    ).order_by('-total_games')[:limit])
+    ).order_by('-last_game', '-total_games')[:limit])
     
     if not server_stats:
         embed = discord.Embed(
