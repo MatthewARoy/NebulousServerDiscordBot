@@ -602,13 +602,14 @@ class Command(BaseCommand):
                 ).order_by('-total_games')[:limit])
                 
                 # Calculate player-hours for each server
+                # Convert queryset to list to ensure fresh data is fetched
                 for stat in stats:
-                    games = GameSession.objects.filter(
+                    games = list(GameSession.objects.filter(
                         server_id=stat['server_id'],
                         is_valid_game=True,
                         duration_seconds__isnull=False
-                    )
-                    stat['player_hours'] = sum(g.players_at_start * g.duration_seconds / 3600 for g in games)
+                    ).values('players_at_start', 'duration_seconds'))
+                    stat['player_hours'] = sum(g['players_at_start'] * g['duration_seconds'] / 3600 for g in games)
                 
                 return stats
             

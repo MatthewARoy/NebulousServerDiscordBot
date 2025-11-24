@@ -481,11 +481,12 @@ async def show_server_statistics(ctx, limit: int = 10):
     from django.db.models import Count, Avg, Max, F
     
     # Calculate server statistics directly from GameSession
-    server_stats = GameSession.objects.filter(is_valid_game=True).values('server_id', 'server_name').annotate(
+    # Convert to list to ensure fresh data is fetched
+    server_stats = list(GameSession.objects.filter(is_valid_game=True).values('server_id', 'server_name').annotate(
         total_games=Count('id'),
         avg_players=Avg('players_at_start'),
         last_game=Max('game_start')
-    ).order_by('-total_games')[:limit]
+    ).order_by('-total_games')[:limit])
     
     if not server_stats:
         embed = discord.Embed(
@@ -507,12 +508,13 @@ async def show_server_statistics(ctx, limit: int = 10):
         last_game_text = f"<t:{int(srv_stat['last_game'].timestamp())}:R>" if srv_stat['last_game'] else "Never"
         
         # Calculate player-hours for this server
-        games = GameSession.objects.filter(
+        # Convert queryset to list to ensure fresh data is fetched
+        games = list(GameSession.objects.filter(
             server_id=srv_stat['server_id'],
             is_valid_game=True,
             duration_seconds__isnull=False
-        )
-        player_hours = sum(g.players_at_start * g.duration_seconds / 3600 for g in games)
+        ).values('players_at_start', 'duration_seconds'))
+        player_hours = sum(g['players_at_start'] * g['duration_seconds'] / 3600 for g in games)
         
         # Truncate long server names
         server_name = srv_stat['server_name'][:40] + "..." if len(srv_stat['server_name']) > 40 else srv_stat['server_name']
