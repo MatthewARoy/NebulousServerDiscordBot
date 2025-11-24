@@ -595,16 +595,23 @@ class Command(BaseCommand):
             
             @sync_to_async
             def get_server_stats():
-                # Order by most recent game first to show currently active servers
+                # Get server stats ordered by most played servers first
                 stats = list(GameSession.objects.filter(is_valid_game=True).values('server_id', 'server_name').annotate(
                     total_games=Count('id'),
-                    avg_players=Avg('players_at_start'),
-                    last_game=Max('game_start')
-                ).order_by('-last_game', '-total_games')[:limit])
+                    avg_players=Avg('players_at_start')
+                ).order_by('-total_games')[:limit])
                 
-                # Calculate player-hours for each server
-                # Convert queryset to list to ensure fresh data is fetched
+                # For each server, get the most recent game separately to ensure fresh data
+                # Also calculate player-hours
                 for stat in stats:
+                    # Get the most recent game for this server (fresh query)
+                    last_game_obj = GameSession.objects.filter(
+                        server_id=stat['server_id'],
+                        is_valid_game=True
+                    ).order_by('-game_start').first()
+                    stat['last_game'] = last_game_obj.game_start if last_game_obj else None
+                    
+                    # Calculate player-hours for this server
                     games = list(GameSession.objects.filter(
                         server_id=stat['server_id'],
                         is_valid_game=True,

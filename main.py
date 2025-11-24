@@ -481,13 +481,11 @@ async def show_server_statistics(ctx, limit: int = 10):
     from django.db.models import Count, Avg, Max, F
     
     # Calculate server statistics directly from GameSession
-    # Convert to list to ensure fresh data is fetched
-    # Order by most recent game first to show currently active servers
+    # Get server stats ordered by most played servers first
     server_stats = list(GameSession.objects.filter(is_valid_game=True).values('server_id', 'server_name').annotate(
         total_games=Count('id'),
-        avg_players=Avg('players_at_start'),
-        last_game=Max('game_start')
-    ).order_by('-last_game', '-total_games')[:limit])
+        avg_players=Avg('players_at_start')
+    ).order_by('-total_games')[:limit])
     
     if not server_stats:
         embed = discord.Embed(
@@ -497,6 +495,15 @@ async def show_server_statistics(ctx, limit: int = 10):
         )
         await ctx.send(embed=embed)
         return
+    
+    # For each server, get the most recent game separately to ensure fresh data
+    for srv_stat in server_stats:
+        # Get the most recent game for this server (fresh query)
+        last_game_obj = GameSession.objects.filter(
+            server_id=srv_stat['server_id'],
+            is_valid_game=True
+        ).order_by('-game_start').first()
+        srv_stat['last_game'] = last_game_obj.game_start if last_game_obj else None
     
     embed = discord.Embed(
         title=f"🖥️ Server Usage Statistics (Top {limit})",
