@@ -20,6 +20,11 @@ This bot now supports **Django framework** and **containerized Azure deployment*
 - **☁️ [README_DJANGO.md](README_DJANGO.md)** - Django, Docker, and Azure deployment
 - **📊 [DEPLOYMENT_SUMMARY.md](DEPLOYMENT_SUMMARY.md)** - What changed in the conversion
 
+### ☁️ Deployment Options
+
+- **🔵 [AZURE_DEPLOYMENT_QUICK_START.md](AZURE_DEPLOYMENT_QUICK_START.md)** - Deploy to Azure (current)
+- **🟢 [ORACLE_MIGRATION_QUICK_START.md](ORACLE_MIGRATION_QUICK_START.md)** - Migrate to Oracle Cloud (free tier)
+
 **👉 New to the project? Start with [INDEX.md](INDEX.md) or [QUICKSTART.md](QUICKSTART.md)**
 
 The instructions below are for the standalone Python version. Both versions are fully functional and backward compatible.

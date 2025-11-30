@@ -10,7 +10,8 @@ echo "🚀 Starting Nebulous Discord Bot (Django)"
 if [ -n "$DB_PATH" ] && [ -d "/mnt/data" ]; then
   echo "📁 Setting up persistent storage mount..."
   mkdir -p /mnt/data
-  chmod 755 /mnt/data
+  # Try to set permissions, but don't fail if we can't (mounted volumes may have fixed permissions)
+  chmod 755 /mnt/data 2>/dev/null || true
   # Wait a moment for mount to stabilize (Azure Files can be slow)
   sleep 1
 fi

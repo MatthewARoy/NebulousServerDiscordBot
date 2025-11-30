@@ -57,6 +57,40 @@ class Config:
     EMBED_COLOR = 0x00ff00  # Green
     EMBED_COLOR_NO_SERVERS = 0xff0000  # Red
     
+    # Version Information
+    VERSION = "2.1.0"
+    CHANGELOG = [
+        {
+            "version": "2.1.0",
+            "date": "2025-01-XX",
+            "changes": [
+                "Added !graph command to visualize player/server data over time",
+                "Improved !nextgame to immediately notify if games are available",
+                "Grouped notifications by channel to reduce spam",
+                "Updated !nextgame triggers: lobby with 3+ players (joinable) or games entering debrief"
+            ]
+        },
+        {
+            "version": "2.0.0",
+            "date": "2024-12-XX",
+            "changes": [
+                "Added !nextgame notification system",
+                "Added game statistics tracking (!stats, !mapstats, !serverstats)",
+                "Added live message updates for server lists",
+                "Improved multi-server support"
+            ]
+        },
+        {
+            "version": "1.0.0",
+            "date": "2024-11-XX",
+            "changes": [
+                "Initial release with server monitoring",
+                "Basic commands: !listservers, !openlobbies, !status",
+                "Real-time server status updates"
+            ]
+        }
+    ]
+    
     @classmethod
     def validate(cls):
         """Validate that all required configuration is present"""

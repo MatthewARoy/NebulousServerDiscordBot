@@ -20,6 +20,9 @@ certifi>=2023.7.22
 # Steam/Game Server Integration
 python-valve>=0.2.1
 
+# Graph generation
+matplotlib>=3.7.0
+
 # Database (optional - for PostgreSQL on Azure)
 # psycopg2-binary>=2.9.9
 

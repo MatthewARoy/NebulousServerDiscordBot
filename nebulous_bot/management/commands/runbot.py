@@ -8,7 +8,10 @@ import asyncio
 import ssl
 import certifi
 import aiohttp
+import io
+import os
 from datetime import datetime, timezone
+from typing import Optional
 from django.core.management.base import BaseCommand
 
 from nebulous_bot.config import Config
@@ -53,15 +56,40 @@ class Command(BaseCommand):
         formatter = None
         ssl_context = None
         connector = None
+        deployment_time: Optional[datetime] = None
+        
+        def get_deployment_time() -> Optional[datetime]:
+            """Get deployment time from environment variable or tracked bot start time"""
+            nonlocal deployment_time
+            
+            # First, check for environment variable (set during deployment)
+            deployment_time_str = os.getenv('DEPLOYMENT_TIME')
+            if deployment_time_str:
+                try:
+                    # Try parsing ISO format timestamp
+                    return datetime.fromisoformat(deployment_time_str.replace('Z', '+00:00'))
+                except (ValueError, AttributeError):
+                    try:
+                        # Try parsing Unix timestamp
+                        return datetime.fromtimestamp(float(deployment_time_str), tz=timezone.utc)
+                    except (ValueError, TypeError):
+                        logger.warning(f"Could not parse DEPLOYMENT_TIME: {deployment_time_str}")
+            
+            # Fall back to tracked bot start time
+            return deployment_time
         
         @bot.event
         async def on_ready():
             """Called when the bot is ready"""
-            nonlocal server_monitor, formatter
+            nonlocal server_monitor, formatter, deployment_time
             
             logger.info(f'{bot.user} has connected to Discord!')
             logger.info(f'Bot is in {len(bot.guilds)} guilds')
             self.stdout.write(self.style.SUCCESS(f'✅ Bot connected as {bot.user}'))
+            
+            # Track deployment time on first connection (if not already set)
+            if deployment_time is None:
+                deployment_time = datetime.now(timezone.utc)
             
             # Validate configuration
             try:
@@ -316,6 +344,15 @@ class Command(BaseCommand):
                     inline=True
                 )
             
+            # Add deployment time
+            deployment_dt = get_deployment_time()
+            if deployment_dt:
+                embed.add_field(
+                    name="🚀 Last Deployment",
+                    value=f"<t:{int(deployment_dt.timestamp())}:R>",
+                    inline=True
+                )
+            
             embed.add_field(
                 name="🎮 Game",
                 value=f"**{Config.GAME_NAME}**\nApp ID: {Config.NEBULOUS_APP_ID}",
@@ -330,14 +367,54 @@ class Command(BaseCommand):
                     "`!stats` - View game statistics\n"
                     "`!mapstats` - View map statistics\n"
                     "`!serverstats` - View server statistics\n"
+                    "`!graph` - Display graphs of data over the last week\n"
                     "`!nextgame` - Get notified when a game is ready\n"
                     "`!refresh` - Force update\n"
+                    "`!version` - Show version and changelog\n"
                     "`!status` - This message"
                 ),
                 inline=False
             )
             
-            embed.set_footer(text="Bot running smoothly! (Django + Azure)")
+            embed.set_footer(text="Bot running smoothly! (Django + Azure) • Created by Davaned")
+            await ctx.send(embed=embed)
+
+        @bot.command(name='version', aliases=['v', 'changelog'])
+        async def show_version(ctx):
+            """Show bot version and changelog"""
+            embed = discord.Embed(
+                title=f"🤖 Nebulous Server Bot v{Config.VERSION}",
+                description="Current version and recent changes",
+                color=Config.EMBED_COLOR,
+                timestamp=datetime.now(timezone.utc)
+            )
+            
+            # Show current version
+            embed.add_field(
+                name="📌 Current Version",
+                value=f"**v{Config.VERSION}**",
+                inline=False
+            )
+            
+            # Show recent changelog (last 3 versions)
+            changelog_text = ""
+            for entry in Config.CHANGELOG[:3]:
+                version = entry.get('version', 'Unknown')
+                date = entry.get('date', 'Unknown')
+                changes = entry.get('changes', [])
+                
+                changelog_text += f"**v{version}** ({date})\n"
+                for change in changes:
+                    changelog_text += f"• {change}\n"
+                changelog_text += "\n"
+            
+            embed.add_field(
+                name="📋 Recent Changes",
+                value=changelog_text.strip() or "No changelog available",
+                inline=False
+            )
+            
+            embed.set_footer(text="Use !status to see bot information and commands")
             await ctx.send(embed=embed)
 
         @bot.command(name='stats', aliases=['statistics'])
@@ -524,7 +601,7 @@ class Command(BaseCommand):
                     inline=False
                 )
             
-            embed.set_footer(text="Use !mapstats for detailed map statistics • !serverstats for server statistics")
+            embed.set_footer(text="Use !mapstats for detailed map statistics • !serverstats for server statistics • Reach out to Davaned for more info")
             await ctx.send(embed=embed)
 
         @bot.command(name='mapstats', aliases=['maps'])
@@ -595,29 +672,20 @@ class Command(BaseCommand):
             
             @sync_to_async
             def get_server_stats():
-                # Get server stats ordered by most played servers first
                 stats = list(GameSession.objects.filter(is_valid_game=True).values('server_id', 'server_name').annotate(
                     total_games=Count('id'),
-                    avg_players=Avg('players_at_start')
+                    avg_players=Avg('players_at_start'),
+                    last_game=Max('game_start')
                 ).order_by('-total_games')[:limit])
                 
-                # For each server, get the most recent game separately to ensure fresh data
-                # Also calculate player-hours
+                # Calculate player-hours for each server
                 for stat in stats:
-                    # Get the most recent game for this server (fresh query)
-                    last_game_obj = GameSession.objects.filter(
-                        server_id=stat['server_id'],
-                        is_valid_game=True
-                    ).order_by('-game_start').first()
-                    stat['last_game'] = last_game_obj.game_start if last_game_obj else None
-                    
-                    # Calculate player-hours for this server
-                    games = list(GameSession.objects.filter(
+                    games = GameSession.objects.filter(
                         server_id=stat['server_id'],
                         is_valid_game=True,
                         duration_seconds__isnull=False
-                    ).values('players_at_start', 'duration_seconds'))
-                    stat['player_hours'] = sum(g['players_at_start'] * g['duration_seconds'] / 3600 for g in games)
+                    )
+                    stat['player_hours'] = sum(g.players_at_start * g.duration_seconds / 3600 for g in games)
                 
                 return stats
             
@@ -705,10 +773,30 @@ class Command(BaseCommand):
                 await ctx.send(embed=embed)
                 return
             
+            # Force update to get fresh server data before checking
+            await server_monitor.force_update()
+            
             # Add user to waitlist
             server_monitor.add_next_game_waiter(user_id, channel_id, username)
             
-            # Create confirmation embed
+            # Immediately check if there are any matching servers
+            matching_servers = server_monitor.find_matching_servers_for_notification()
+            
+            if matching_servers:
+                # Immediately notify the user
+                notified = await server_monitor.notify_single_user_immediately(user_id, matching_servers)
+                if notified:
+                    # Send a confirmation that we found and notified them
+                    embed = discord.Embed(
+                        title="🎮 Game Found!",
+                        description="I found a game that meets the criteria and pinged you!",
+                        color=Config.EMBED_COLOR,
+                        timestamp=datetime.now(timezone.utc)
+                    )
+                    await ctx.send(embed=embed)
+                    return
+            
+            # No matching servers found, show confirmation message
             embed = discord.Embed(
                 title="🔔 Notification Set!",
                 description="I'll ping you here when a game is ready!",
@@ -727,21 +815,21 @@ class Command(BaseCommand):
             
             # Show current server status
             debrief_count = len([s for s in server_monitor.cached_servers if s.get('status') == 'debrief'])
-            half_full = []
+            joinable_lobbies = []
             for server in server_monitor.cached_servers:
                 if server.get('status') == 'lobby':
                     players = server.get('players', 0)
                     capacity = server.get('map_capacity', 8)
-                    if players >= capacity / 2 and players > 0:
-                        half_full.append(server)
+                    if players >= 3 and players < capacity:
+                        joinable_lobbies.append(server)
             
             status_text = ""
             if debrief_count > 0:
                 status_text += f"• {debrief_count} game(s) in debrief right now\n"
-            if half_full:
-                status_text += f"• {len(half_full)} lobby(ies) half full right now\n"
+            if joinable_lobbies:
+                status_text += f"• {len(joinable_lobbies)} joinable lobby(ies) with 3+ players right now\n"
             if not status_text:
-                status_text = "• No games in debrief or lobbies filling up currently\n"
+                status_text = "• No games in debrief or joinable lobbies with 3+ players currently\n"
             
             embed.add_field(
                 name="📊 Current Status",
@@ -778,6 +866,112 @@ class Command(BaseCommand):
                 )
                 await ctx.send(embed=embed)
 
+        @bot.command(name='graph')
+        async def show_graph(ctx, *, graph_args: str = "players online"):
+            """
+            Display a graph of data over the last week.
+            
+            Usage: !graph [value]
+            Examples:
+                !graph players online
+                !graph servers
+                !graph lobbies
+                !graph games in progress
+            """
+            if not server_monitor:
+                await ctx.send("❌ Server monitoring not initialized yet.")
+                return
+            
+            from nebulous_bot.models import PlayerSnapshot
+            from nebulous_bot.graph_generator import GraphGenerator
+            from django.utils import timezone as django_timezone
+            from datetime import timedelta
+            from asgiref.sync import sync_to_async
+            import discord
+            
+            # Parse the graph type from arguments
+            field_name, display_name = GraphGenerator.parse_graph_type(graph_args)
+            
+            @sync_to_async
+            def get_graph_data():
+                # Get data from the last 7 days
+                now = django_timezone.now()
+                week_ago = now - timedelta(days=7)
+                
+                # Query PlayerSnapshot for the last week
+                snapshots = PlayerSnapshot.objects.filter(
+                    timestamp__gte=week_ago
+                ).order_by('timestamp')
+                
+                # Extract data points for the requested field
+                data_points = []
+                for snapshot in snapshots:
+                    value = getattr(snapshot, field_name, 0)
+                    data_points.append((snapshot.timestamp, float(value)))
+                
+                return data_points, field_name, display_name
+            
+            # Show loading message
+            loading_msg = await ctx.send("📊 Generating graph...")
+            
+            try:
+                # Get data and generate graph
+                data_points, field_name, display_name = await get_graph_data()
+                
+                # Generate graph image (this is CPU-intensive, run in thread pool)
+                def generate_graph():
+                    return GraphGenerator.generate_graph_image(data_points, field_name, display_name)
+                
+                # Run graph generation in executor to avoid blocking
+                import concurrent.futures
+                loop = asyncio.get_event_loop()
+                with concurrent.futures.ThreadPoolExecutor() as executor:
+                    graph_bytes = await loop.run_in_executor(executor, generate_graph)
+                
+                # Create file object from bytes
+                graph_file = discord.File(
+                    io.BytesIO(graph_bytes),
+                    filename=f'{display_name.lower().replace(" ", "_")}_graph.png'
+                )
+                
+                # Create embed with graph
+                embed = discord.Embed(
+                    title=f"📊 {display_name} - Last 7 Days",
+                    description=f"Showing {len(data_points)} data points from the past week",
+                    color=Config.EMBED_COLOR,
+                    timestamp=datetime.now(timezone.utc)
+                )
+                
+                if data_points:
+                    # Add statistics
+                    values = [point[1] for point in data_points]
+                    avg_value = sum(values) / len(values) if values else 0
+                    max_value = max(values) if values else 0
+                    min_value = min(values) if values else 0
+                    
+                    embed.add_field(
+                        name="📈 Statistics",
+                        value=(
+                            f"**Average:** {avg_value:.1f}\n"
+                            f"**Maximum:** {max_value:.0f}\n"
+                            f"**Minimum:** {min_value:.0f}"
+                        ),
+                        inline=True
+                    )
+                
+                embed.set_image(url=f"attachment://{graph_file.filename}")
+                embed.set_footer(text="Data from PlayerSnapshot records (5-minute intervals)")
+                
+                # Delete loading message and send graph
+                await loading_msg.delete()
+                await ctx.send(embed=embed, file=graph_file)
+                
+            except Exception as e:
+                logger.error(f"Error generating graph: {e}", exc_info=True)
+                await loading_msg.edit(
+                    content=f"❌ Failed to generate graph: {str(e)}"
+                )
+        
         @bot.event
         async def on_command_error(ctx, error):
             """Handle command errors"""

@@ -48,6 +48,10 @@ class ServerMonitor:
         # Track users waiting for next game notifications
         # Format: {user_id: {'channel_id': int, 'timestamp': datetime, 'username': str}}
         self.next_game_waiters = {}
+        
+        # Track servers that just entered debriefing in the current cycle
+        # Format: {server_id: server_dict}
+        self.recent_debrief_transitions = {}
     
     def set_formatter(self, formatter):
         """Set the formatter instance to use for embed creation"""
@@ -232,6 +236,10 @@ class ServerMonitor:
                 }
                 state_names = {'in_game': 'Game started', 'debrief': 'Entered debrief'}
                 logger.info(f"{state_names.get(current_status, 'State changed')} on '{server.get('name', 'Unknown')}' at {current_time.strftime('%H:%M:%S PST')}")
+                
+                # Track debrief transitions for nextgame notifications
+                if current_status == 'debrief':
+                    self.recent_debrief_transitions[server_id] = server
             
             # Update previous status for next check
             elif server_id in self.game_start_times:
@@ -608,72 +616,113 @@ class ServerMonitor:
     async def _check_next_game_notifications(self):
         """Check if any waiters should be notified about game availability"""
         if not self.next_game_waiters:
+            # Clear recent debrief transitions if no waiters
+            self.recent_debrief_transitions.clear()
             return
         
         try:
-            # Only check for lobbies that have available space (not full)
-            # Don't notify for debrief games as they may fill up before transitioning to lobby
-            available_lobbies = []
+            # Check for servers that should trigger notifications:
+            # 1. Lobby servers with 3+ players but less than max capacity (joinable)
+            # 2. Servers that just entered debriefing
+            trigger_servers = []
+            
+            # Check for joinable lobby servers with 3+ players
             for server in self.cached_servers:
                 if server.get('status') == 'lobby':
                     players = server.get('players', 0)
                     capacity = server.get('map_capacity', 8)
-                    # Only notify for lobbies that are at least half full AND still have space
-                    if players >= capacity / 2 and players > 0 and players < capacity:
-                        available_lobbies.append(server)
+                    # Only notify for lobbies with 3+ players that still have space
+                    if players >= 3 and players < capacity:
+                        trigger_servers.append(server)
             
-            # Notify waiters about available lobbies
-            if available_lobbies:
-                await self._notify_next_game_waiters(available_lobbies)
+            # Check for servers that just entered debriefing
+            for server_id, server in self.recent_debrief_transitions.items():
+                if server not in trigger_servers:
+                    trigger_servers.append(server)
+            
+            # Notify waiters if any triggers found
+            if trigger_servers:
+                await self._notify_next_game_waiters(trigger_servers)
+                # Clear debrief transitions after notification
+                self.recent_debrief_transitions.clear()
         
         except Exception as e:
             logger.error(f"Error checking next game notifications: {e}", exc_info=True)
     
-    async def _notify_next_game_waiters(self, available_lobbies: List[Dict]):
-        """Notify all waiting users about available lobbies"""
-        if not self.next_game_waiters or not available_lobbies:
+    async def _notify_next_game_waiters(self, trigger_servers: List[Dict]):
+        """Notify all waiting users about available games, grouping by channel"""
+        if not self.next_game_waiters or not trigger_servers:
             return
         
-        # Build notification message about available lobbies
-        lobby_list = []
-        for lobby in available_lobbies[:5]:  # Show up to 5 lobbies
-            name = lobby.get('name', 'Unknown')[:40]
-            players = lobby.get('players', 0)
-            capacity = lobby.get('map_capacity', 8)
-            available_slots = capacity - players
-            lobby_list.append(f"• {name} - **{available_slots} slot(s) available** ({players}/{capacity})")
+        # Separate servers by type for better messaging
+        debrief_servers = [s for s in trigger_servers if s.get('status') == 'debrief']
+        active_servers = [s for s in trigger_servers if s.get('status') != 'debrief']
         
-        notification_text = (
-            f"🎮 **Game starting soon!** {len(available_lobbies)} lobby(ies) with available slots:\n\n" +
-            "\n".join(lobby_list)
-        )
+        # Build notification message
+        message_parts = []
         
-        # Notify all waiters
+        if debrief_servers:
+            debrief_list = []
+            for server in debrief_servers[:5]:  # Show up to 5
+                name = server.get('name', 'Unknown')[:40]
+                debrief_list.append(f"• {name}")
+            message_parts.append(f"🎮 **{len(debrief_servers)} game(s) just finished (in debrief):**\n" + "\n".join(debrief_list))
+        
+        if active_servers:
+            active_list = []
+            for server in active_servers[:5]:  # Show up to 5
+                name = server.get('name', 'Unknown')[:40]
+                players = server.get('players', 0)
+                capacity = server.get('map_capacity', 8)
+                available_slots = capacity - players
+                active_list.append(f"• {name} - {players}/{capacity} players ({available_slots} slot(s) available)")
+            message_parts.append(f"🚀 **{len(active_servers)} lobby(ies) filling up (3+ players, joinable):**\n" + "\n".join(active_list))
+        
+        notification_text = "\n\n".join(message_parts)
+        
+        # Group waiters by channel
+        waiters_by_channel = {}
+        for user_id, waiter_info in self.next_game_waiters.items():
+            channel_id = waiter_info['channel_id']
+            if channel_id not in waiters_by_channel:
+                waiters_by_channel[channel_id] = []
+            waiters_by_channel[channel_id].append((user_id, waiter_info))
+        
+        # Notify all waiters, grouped by channel
         waiters_to_remove = []
-        for user_id, waiter_info in list(self.next_game_waiters.items()):
+        for channel_id, waiters in waiters_by_channel.items():
             try:
-                channel = self.bot.get_channel(waiter_info['channel_id'])
+                channel = self.bot.get_channel(channel_id)
                 if channel:
-                    await channel.send(f"<@{user_id}> {notification_text}")
-                    logger.info(f"Notified {waiter_info['username']} (ID: {user_id}) about next game")
-                    waiters_to_remove.append(user_id)
-                else:
-                    # Channel not found, try DM
-                    try:
-                        user = await self.bot.fetch_user(user_id)
-                        await user.send(f"Game alert! 🎮\n\n{notification_text}")
-                        logger.info(f"Notified {waiter_info['username']} (ID: {user_id}) via DM about next game")
+                    # Build ping string for all users in this channel
+                    user_pings = " ".join([f"<@{user_id}>" for user_id, _ in waiters])
+                    await channel.send(f"{user_pings}\n\n{notification_text}")
+                    
+                    # Log and mark for removal
+                    for user_id, waiter_info in waiters:
+                        logger.info(f"Notified {waiter_info['username']} (ID: {user_id}) about next game")
                         waiters_to_remove.append(user_id)
-                    except Exception as dm_error:
-                        logger.error(f"Failed to notify user {user_id} via DM: {dm_error}")
-                        waiters_to_remove.append(user_id)  # Remove them anyway after failed attempt
+                else:
+                    # Channel not found, try DM for each user
+                    for user_id, waiter_info in waiters:
+                        try:
+                            user = await self.bot.fetch_user(user_id)
+                            await user.send(f"Game alert! 🎮\n\n{notification_text}")
+                            logger.info(f"Notified {waiter_info['username']} (ID: {user_id}) via DM about next game")
+                            waiters_to_remove.append(user_id)
+                        except Exception as dm_error:
+                            logger.error(f"Failed to notify user {user_id} via DM: {dm_error}")
+                            waiters_to_remove.append(user_id)  # Remove them anyway after failed attempt
             except Exception as e:
-                logger.error(f"Error notifying user {user_id}: {e}")
-                waiters_to_remove.append(user_id)  # Remove on error
+                logger.error(f"Error notifying users in channel {channel_id}: {e}")
+                # Mark all waiters in this channel for removal on error
+                for user_id, _ in waiters:
+                    waiters_to_remove.append(user_id)
         
         # Remove notified users
         for user_id in waiters_to_remove:
-            del self.next_game_waiters[user_id]
+            if user_id in self.next_game_waiters:
+                del self.next_game_waiters[user_id]
         
         if waiters_to_remove:
             logger.info(f"Removed {len(waiters_to_remove)} users from next game waitlist after notification")
@@ -698,4 +747,101 @@ class ServerMonitor:
     
     def get_next_game_waiters_count(self) -> int:
         """Get the number of users waiting for next game notifications"""
-        return len(self.next_game_waiters) 
+        return len(self.next_game_waiters)
+    
+    def find_matching_servers_for_notification(self) -> List[Dict]:
+        """
+        Find servers that match the notification criteria:
+        - Lobby servers with 3+ players but less than max capacity
+        - Servers in debrief status
+        Returns list of matching servers.
+        """
+        trigger_servers = []
+        
+        # Check for joinable lobby servers with 3+ players
+        for server in self.cached_servers:
+            if server.get('status') == 'lobby':
+                players = server.get('players', 0)
+                capacity = server.get('map_capacity', 8)
+                # Only notify for lobbies with 3+ players that still have space
+                if players >= 3 and players < capacity:
+                    trigger_servers.append(server)
+        
+        # Check for servers in debrief
+        for server in self.cached_servers:
+            if server.get('status') == 'debrief':
+                if server not in trigger_servers:
+                    trigger_servers.append(server)
+        
+        # Also check recent debrief transitions
+        for server_id, server in self.recent_debrief_transitions.items():
+            if server not in trigger_servers:
+                trigger_servers.append(server)
+        
+        return trigger_servers
+    
+    async def notify_single_user_immediately(self, user_id: int, trigger_servers: List[Dict]) -> bool:
+        """
+        Notify a single user immediately about available games.
+        Returns True if notification was sent, False otherwise.
+        """
+        if user_id not in self.next_game_waiters or not trigger_servers:
+            return False
+        
+        waiter_info = self.next_game_waiters[user_id]
+        channel_id = waiter_info['channel_id']
+        
+        # Separate servers by type for better messaging
+        debrief_servers = [s for s in trigger_servers if s.get('status') == 'debrief']
+        active_servers = [s for s in trigger_servers if s.get('status') != 'debrief']
+        
+        # Build notification message
+        message_parts = []
+        
+        if debrief_servers:
+            debrief_list = []
+            for server in debrief_servers[:5]:  # Show up to 5
+                name = server.get('name', 'Unknown')[:40]
+                debrief_list.append(f"• {name}")
+            message_parts.append(f"🎮 **{len(debrief_servers)} game(s) just finished (in debrief):**\n" + "\n".join(debrief_list))
+        
+        if active_servers:
+            active_list = []
+            for server in active_servers[:5]:  # Show up to 5
+                name = server.get('name', 'Unknown')[:40]
+                players = server.get('players', 0)
+                capacity = server.get('map_capacity', 8)
+                available_slots = capacity - players
+                active_list.append(f"• {name} - {players}/{capacity} players ({available_slots} slot(s) available)")
+            message_parts.append(f"🚀 **{len(active_servers)} lobby(ies) filling up (3+ players, joinable):**\n" + "\n".join(active_list))
+        
+        notification_text = "\n\n".join(message_parts)
+        notification_text += "\n\nUse `!listservers` or `!openlobbies` to see all servers!"
+        
+        try:
+            channel = self.bot.get_channel(channel_id)
+            if channel:
+                await channel.send(f"<@{user_id}>\n\n{notification_text}")
+                logger.info(f"Immediately notified {waiter_info['username']} (ID: {user_id}) about available games")
+                # Remove user from waitlist after immediate notification
+                del self.next_game_waiters[user_id]
+                # Clear debrief transitions if this was the only waiter
+                if not self.next_game_waiters:
+                    self.recent_debrief_transitions.clear()
+                return True
+            else:
+                # Channel not found, try DM
+                try:
+                    user = await self.bot.fetch_user(user_id)
+                    await user.send(f"Game alert! 🎮\n\n{notification_text}")
+                    logger.info(f"Immediately notified {waiter_info['username']} (ID: {user_id}) via DM about available games")
+                    del self.next_game_waiters[user_id]
+                    if not self.next_game_waiters:
+                        self.recent_debrief_transitions.clear()
+                    return True
+                except Exception as dm_error:
+                    logger.error(f"Failed to notify user {user_id} via DM: {dm_error}")
+                    return False
+        except Exception as e:
+            logger.error(f"Error notifying user {user_id}: {e}")
+            return False 
