@@ -12,6 +12,7 @@ class SteamAPI:
     def __init__(self):
         self.api_key = Config.STEAM_API_KEY
         self.session = None
+        self.stable_version = None  # Set dynamically from ServerMonitor
         
     async def __aenter__(self):
         # Create SSL context for secure connections
@@ -24,10 +25,15 @@ class SteamAPI:
         if self.session:
             await self.session.close()
     
-    async def get_game_servers(self, limit: int = 100) -> List[Dict]:
+    async def get_game_servers(self, limit: int = 100, include_all: bool = False) -> List[Dict]:
         """
         Get game servers for Nebulous: Fleet Command using Steam Web API.
         Uses the GetServerList endpoint and enriches with server rules data.
+        
+        Args:
+            limit: Maximum number of servers to return
+            include_all: If True, include all servers (empty, private, with bots). 
+                        If False, filter out empty, private, and bot servers.
         """
         if not self.session:
             ssl_context = ssl.create_default_context(cafile=certifi.where())
@@ -44,7 +50,7 @@ class SteamAPI:
             async with self.session.get(url, params=params) as response:
                 if response.status == 200:
                     data = await response.json()
-                    servers = await self._parse_server_data_with_rules(data)
+                    servers = await self._parse_server_data_with_rules(data, include_all=include_all)
                     return servers
                 else:
                     logger.error(f"Steam API request failed with status {response.status}")
@@ -181,7 +187,7 @@ class SteamAPI:
         
         return direct_rules if direct_rules else {}
     
-    async def _parse_server_data_with_rules(self, raw_data: Dict) -> List[Dict]:
+    async def _parse_server_data_with_rules(self, raw_data: Dict, include_all: bool = False) -> List[Dict]:
         """Parse raw Steam API response and enrich with server rules data"""
         servers = []
         
@@ -197,23 +203,28 @@ class SteamAPI:
                 for server_data in raw_data['response']['servers']:
                     server_name = server_data.get('name', 'Unknown Server')
                     
-                    # Skip blacklisted servers
+                    # Skip blacklisted servers (always skip these)
                     if server_name in blacklisted_servers:
                         continue
                     
-                    # Skip servers with bots
-                    bots = server_data.get('bots', 0)
-                    if bots > 0:
-                        continue
-                    
-                    # Skip empty servers (no players)
+                    # Apply filtering only if include_all is False
+                    if not include_all:
+                        # Skip servers with bots
+                        bots = server_data.get('bots', 0)
+                        if bots > 0:
+                            continue
+                        
+                        # Skip empty servers (no players)
+                        players = server_data.get('players', 0)
+                        if players == 0:
+                            continue
+                        
+                        # Skip servers with passwords (private)
+                        if self._is_private_server(server_name):
+                            continue
+                    # When include_all=True, include all servers (with bots, empty, private)
+                    # Still get player count for display
                     players = server_data.get('players', 0)
-                    if players == 0:
-                        continue
-                    
-                    # Skip servers with passwords (private)
-                    if self._is_private_server(server_name):
-                        continue
                     
                     # Store basic server data
                     basic_servers.append((server_data, server_name, players))
@@ -330,12 +341,24 @@ class SteamAPI:
             # Rank restrictions
             server['rank_restricted'] = rules.get('rankrestricted', '0') == '1'
             
+            # Version from rules (prefer rules over Steam API)
+            # Check case-insensitively since rules might come from different sources
+            version_key = None
+            for key in rules.keys():
+                if key.lower() == 'version':
+                    version_key = key
+                    break
+            if version_key:
+                server['version'] = rules[version_key]
+            
             # Update game_mode based on competitive flag and submode
             if server['competitive']:
                 server['game_mode'] = f"Competitive {server['submode']}"
             else:
                 server['game_mode'] = f"Casual {server['submode']}"
         
+        # Detect if server is on test branch (ahead of stable version)
+        server['is_test_branch'] = self._is_test_branch_server(server.get('version', ''))
         
         # Set status emoji based on server status
         if server['status'] == 'lobby':
@@ -405,6 +428,73 @@ class SteamAPI:
             return 'AS'
         else:
             return 'Unknown'
+    
+    def _compare_versions(self, version1: str, version2: str) -> int:
+        """
+        Compare two semantic versions (x.y.z format).
+        Returns: -1 if version1 < version2, 0 if equal, 1 if version1 > version2
+        """
+        def parse_version(v: str) -> list:
+            """Parse version string into list of integers"""
+            parts = []
+            for part in v.split('.'):
+                try:
+                    parts.append(int(part))
+                except ValueError:
+                    # If part is not numeric, try to extract number
+                    import re
+                    match = re.search(r'\d+', part)
+                    if match:
+                        parts.append(int(match.group()))
+                    else:
+                        parts.append(0)
+            return parts
+        
+        try:
+            v1_parts = parse_version(version1)
+            v2_parts = parse_version(version2)
+            
+            # Pad shorter version with zeros
+            max_len = max(len(v1_parts), len(v2_parts))
+            v1_parts.extend([0] * (max_len - len(v1_parts)))
+            v2_parts.extend([0] * (max_len - len(v2_parts)))
+            
+            # Compare parts
+            for i in range(max_len):
+                if v1_parts[i] < v2_parts[i]:
+                    return -1
+                elif v1_parts[i] > v2_parts[i]:
+                    return 1
+            return 0
+        except Exception:
+            # If comparison fails, return 0 (equal) to be conservative
+            return 0
+    
+    def set_stable_version(self, stable_version: str):
+        """Set the stable version (called from ServerMonitor when determined)"""
+        self.stable_version = stable_version
+    
+    def _is_test_branch_server(self, version: str) -> bool:
+        """
+        Determine if a server is on the test branch (ahead of stable version).
+        Test branch servers have version numbers that are ahead of the stable release.
+        
+        The stable version is determined dynamically from the majority of servers
+        when a new daily status message is created.
+        """
+        if not version or not version.strip():
+            return False
+        
+        version = version.strip()
+        
+        # If stable version hasn't been determined yet, can't detect test branch
+        if not self.stable_version:
+            return False
+        
+        # Compare server version with stable version
+        # If server version is higher, it's on test branch
+        comparison = self._compare_versions(version, self.stable_version)
+        return comparison > 0
     
     def _determine_game_mode(self, server_name: str, map_name: str) -> str:
         """Determine game mode from server name and map"""

@@ -7,12 +7,14 @@ import certifi
 import aiohttp
 import io
 import os
+from pathlib import Path
 from datetime import datetime, timezone
 from typing import List, Optional
 
 from nebulous_bot.config import Config
 from nebulous_bot.server_monitor import ServerMonitor
 from nebulous_bot.server_formatter import ServerFormatter
+from nebulous_bot.command_logging import setup_command_metrics
 
 # Set up logging
 logging.basicConfig(
@@ -45,6 +47,8 @@ bot = commands.Bot(
     intents=intents
 )
 
+# Register command metrics logging hooks
+command_metrics_logger = setup_command_metrics(bot)
 # Initialize server monitor and formatter
 server_monitor = None
 formatter = None
@@ -128,8 +132,8 @@ async def list_servers(ctx, *, filter_args: str = ""):
     List all active servers with optional filtering
     
     Usage: !listservers [filter]
-    Filters: open, lobby, ingame, us, eu, competitive, casual
-    Examples: !listservers open, !listservers lobby us
+    Filters: open, lobby, ingame, us, eu, competitive, casual, all
+    Examples: !listservers open, !listservers lobby us, !listservers all
     """
     if not server_monitor or not formatter:
         await ctx.send("❌ Server monitoring not initialized yet. Please wait a moment.")
@@ -137,8 +141,11 @@ async def list_servers(ctx, *, filter_args: str = ""):
     
     # Parse filter arguments
     filters = {}
+    show_all = False
     if filter_args:
         args = filter_args.lower().split()
+        if 'all' in args:
+            show_all = True
         if 'open' in args:
             filters['open_lobby'] = True
         if 'lobby' in args:
@@ -154,22 +161,61 @@ async def list_servers(ctx, *, filter_args: str = ""):
         if 'casual' in args:
             filters['game_mode'] = 'casual'
     
-    # Get filtered servers
+    # Get servers - use all servers if "all" is specified, otherwise use filtered cache
+    if show_all:
+        base_servers = server_monitor.cached_all_servers
+    else:
+        base_servers = server_monitor.cached_servers
+    
+    # Apply additional filters if specified
     if filters:
-        servers = server_monitor.get_servers_by_criteria(**filters)
+        # Apply filters to the base server list
+        filtered_servers = []
+        for server in base_servers:
+            match = True
+            
+            if filters.get('open_lobby'):
+                if server.get('status') != 'lobby' or server.get('players', 0) >= server.get('map_capacity', 8):
+                    match = False
+            
+            if filters.get('status') and server.get('status') != filters['status']:
+                match = False
+            
+            if filters.get('region') and server.get('region', '').lower() != filters['region'].lower():
+                match = False
+            
+            if filters.get('game_mode'):
+                game_mode = server.get('game_mode', '').lower()
+                if filters['game_mode'].lower() == 'competitive' and 'competitive' not in game_mode:
+                    match = False
+                elif filters['game_mode'].lower() == 'casual' and 'casual' not in game_mode:
+                    match = False
+            
+            if match:
+                filtered_servers.append(server)
+        
+        servers = filtered_servers
         title_suffix = f" (Filtered: {filter_args})"
     else:
-        servers = server_monitor.cached_servers
-        title_suffix = ""
+        servers = base_servers
+        if show_all:
+            title_suffix = " (All Servers)"
+        else:
+            title_suffix = ""
     
-    title = f"🚀 {Config.GAME_NAME} - Active Servers{title_suffix}"
+    base_title = f"🚀 {Config.GAME_NAME} - Active Servers{title_suffix}"
+    # Add Discord timestamp format to title
+    update_time = server_monitor.last_update or datetime.now(timezone.utc)
+    timestamp_int = int(update_time.timestamp())
+    title = f"{base_title} @ <t:{timestamp_int}:R>"
     description = f"Found {len(servers)} servers" if servers else "No servers match your criteria."
     embed = formatter.create_server_list_embed(servers, title, description, max_servers=15, 
                                               last_update=server_monitor.last_update, 
                                               game_start_times=server_monitor.game_start_times)
     
     # Add filter help
-    embed.set_footer(text="Filters: open, lobby, ingame, us, eu, competitive, casual • Use !openlobbies for joinable servers")
+    footer_text = "Filters: open, lobby, ingame, us, eu, competitive, casual, all • Use !openlobbies for joinable servers"
+    embed.set_footer(text=footer_text)
     message = await ctx.send(embed=embed)
     
     # Track this message for automatic updates
@@ -278,6 +324,24 @@ async def bot_status(ctx):
     
     embed.set_footer(text="Bot running smoothly! • Created by Davaned")
     await ctx.send(embed=embed)
+
+@bot.command(name='downloaddb', aliases=['backupdb', 'getdb'])
+async def download_db(ctx):
+    """Send the current SQLite database file as an attachment"""
+    db_path = Path(os.getenv("DB_PATH") or "db.sqlite3")
+
+    if not db_path.exists():
+        await ctx.send(f"❌ Database not found at `{db_path}`")
+        return
+
+    try:
+        await ctx.send(
+            content=f"📦 Database backup ({db_path.name}, {db_path.stat().st_size} bytes)",
+            file=discord.File(str(db_path), filename=db_path.name)
+        )
+    except Exception as e:
+        logger.error(f"Failed to send database file: {e}")
+        await ctx.send("❌ Failed to send database file. Check bot logs for details.")
 
 @bot.command(name='version', aliases=['v', 'changelog'])
 async def show_version(ctx):
@@ -607,10 +671,14 @@ async def show_server_statistics(ctx, limit: int = 10):
     embed.set_footer(text="Only valid games (5+ minutes) are counted • Calculated in real-time")
     await ctx.send(embed=embed)
 
-@bot.command(name='nextgame', aliases=['notify', 'notifyme'])
-async def next_game_notify(ctx):
+@bot.command(name='nextgame', aliases=['notify', 'notifyme', 'ng'])
+async def next_game_notify(ctx, *, args: str = ""):
     """
     Get notified when the next game is ready to join.
+    
+    Usage: !nextgame [ptb]
+    - !nextgame - Notify for all servers
+    - !nextgame ptb - Notify only for PTB (test branch) servers
     
     You'll be pinged once when either:
     - A game enters debrief (game just ended, new one might start)
@@ -624,6 +692,10 @@ async def next_game_notify(ctx):
     channel_id = ctx.channel.id
     username = str(ctx.author)
     
+    # Parse arguments
+    args_lower = args.lower().strip()
+    ptb_only = args_lower == 'ptb'
+    
     # Check if user is already waiting
     if user_id in server_monitor.next_game_waiters:
         embed = discord.Embed(
@@ -632,11 +704,12 @@ async def next_game_notify(ctx):
             color=Config.EMBED_COLOR
         )
         
-        # Show current wait time
+        # Show current wait time and PTB status
         wait_info = server_monitor.next_game_waiters[user_id]
         wait_start = wait_info['timestamp']
         wait_duration = datetime.now(timezone.utc) - wait_start
         minutes_waiting = int(wait_duration.total_seconds() / 60)
+        current_ptb_only = wait_info.get('ptb_only', False)
         
         embed.add_field(
             name="⏱️ Waiting Time",
@@ -644,9 +717,16 @@ async def next_game_notify(ctx):
             inline=False
         )
         
+        if current_ptb_only:
+            embed.add_field(
+                name="🧪 Mode",
+                value="PTB servers only",
+                inline=False
+            )
+        
         embed.add_field(
             name="Cancel",
-            value="Use `!nextgame cancel` to cancel your notification",
+            value="Use `!cancelnextgame` to cancel your notification",
             inline=False
         )
         
@@ -656,30 +736,26 @@ async def next_game_notify(ctx):
     # Force update to get fresh server data before checking
     await server_monitor.force_update()
     
-    # Add user to waitlist
-    server_monitor.add_next_game_waiter(user_id, channel_id, username)
+    # Add user to waitlist with PTB preference
+    server_monitor.add_next_game_waiter(user_id, channel_id, username, ptb_only=ptb_only)
     
     # Immediately check if there are any matching servers
-    matching_servers = server_monitor.find_matching_servers_for_notification()
+    matching_servers = server_monitor.find_matching_servers_for_notification(ptb_only=ptb_only)
     
     if matching_servers:
         # Immediately notify the user
         notified = await server_monitor.notify_single_user_immediately(user_id, matching_servers)
         if notified:
-            # Send a confirmation that we found and notified them
-            embed = discord.Embed(
-                title="🎮 Game Found!",
-                description="I found a game that meets the criteria and pinged you!",
-                color=Config.EMBED_COLOR,
-                timestamp=datetime.now()
-            )
-            await ctx.send(embed=embed)
+            # User was notified, no need for extra confirmation message
             return
     
     # No matching servers found, show confirmation message
+    title = "🧪 PTB Notification Set!" if ptb_only else "🔔 Notification Set!"
+    description = "I'll ping you here when a PTB (test branch) game is ready!" if ptb_only else "I'll ping you here when a game is ready!"
+    
     embed = discord.Embed(
-        title="🔔 Notification Set!",
-        description="I'll ping you here when a game is ready!",
+        title=title,
+        description=description,
         color=Config.EMBED_COLOR,
         timestamp=datetime.now()
     )
@@ -693,10 +769,21 @@ async def next_game_notify(ctx):
         inline=False
     )
     
-    # Show current server status
-    debrief_count = len([s for s in server_monitor.cached_servers if s.get('status') == 'debrief'])
+    if ptb_only:
+        embed.add_field(
+            name="🧪 PTB Mode",
+            value="You'll only be notified about servers on the test branch (PTB)",
+            inline=False
+        )
+    
+    # Show current server status (filtered by PTB if needed)
+    servers_to_check = server_monitor.cached_servers
+    if ptb_only:
+        servers_to_check = [s for s in servers_to_check if s.get('is_test_branch', False)]
+    
+    debrief_count = len([s for s in servers_to_check if s.get('status') == 'debrief'])
     joinable_lobbies = []
-    for server in server_monitor.cached_servers:
+    for server in servers_to_check:
         if server.get('status') == 'lobby':
             players = server.get('players', 0)
             capacity = server.get('map_capacity', 8)
@@ -709,7 +796,8 @@ async def next_game_notify(ctx):
     if joinable_lobbies:
         status_text += f"• {len(joinable_lobbies)} joinable lobby(ies) with 3+ players right now\n"
     if not status_text:
-        status_text = "• No games in debrief or joinable lobbies with 3+ players currently\n"
+        ptb_text = " (PTB servers)" if ptb_only else ""
+        status_text = f"• No games in debrief or joinable lobbies with 3+ players currently{ptb_text}\n"
     
     embed.add_field(
         name="📊 Current Status",
@@ -718,7 +806,7 @@ async def next_game_notify(ctx):
     )
     
     waiters_count = server_monitor.get_next_game_waiters_count()
-    embed.set_footer(text=f"{waiters_count} user(s) waiting for next game • Use !nextgame cancel to cancel")
+    embed.set_footer(text=f"{waiters_count} user(s) waiting for next game • Use !cancelnextgame to cancel")
     
     await ctx.send(embed=embed)
 
@@ -850,6 +938,176 @@ async def show_graph(ctx, *, graph_args: str = "players online"):
         await loading_msg.edit(
             content=f"❌ Failed to generate graph: {str(e)}"
         )
+
+@bot.command(name='commandlogs', aliases=['cmdlogs', 'logs'])
+async def show_command_logs(ctx, limit: int = 20, command_filter: str = None):
+    """
+    View command usage logs (admin/debugging only)
+    
+    Usage: !commandlogs [limit] [command_name]
+    Examples: !commandlogs 10, !commandlogs 50 stats
+    """
+    from nebulous_bot.models import CommandLog
+    from django.db.models import Count, Q
+    from django.utils import timezone
+    from asgiref.sync import sync_to_async
+    
+    # Limit to prevent abuse
+    limit = min(limit, 100)
+    
+    @sync_to_async
+    def get_command_logs():
+        logs = CommandLog.objects.all().order_by('-timestamp')
+        
+        # Filter by command if specified
+        if command_filter:
+            logs = logs.filter(command_name__icontains=command_filter)
+        
+        # Get recent logs
+        recent_logs = list(logs[:limit])
+        
+        # Get summary stats
+        total_count = CommandLog.objects.count()
+        success_count = CommandLog.objects.filter(success=True).count()
+        error_count = CommandLog.objects.filter(success=False).count()
+        
+        # Get top commands
+        top_commands = list(
+            CommandLog.objects.values('command_name')
+            .annotate(count=Count('id'))
+            .order_by('-count')[:5]
+        )
+        
+        # Get context breakdown (guild vs DM)
+        guild_commands = CommandLog.objects.filter(context_type='guild').count()
+        dm_commands = CommandLog.objects.filter(context_type='dm').count()
+        thread_commands = CommandLog.objects.filter(context_type='thread').count()
+        
+        # Get unique users by context
+        guild_users = CommandLog.objects.filter(context_type='guild').values('user_id').distinct().count()
+        dm_users = CommandLog.objects.filter(context_type='dm').values('user_id').distinct().count()
+        thread_users = CommandLog.objects.filter(context_type='thread').values('user_id').distinct().count()
+        
+        # Total unique users who have used DMs
+        total_dm_users = CommandLog.objects.filter(context_type='dm').values('user_id').distinct().count()
+        
+        # Total unique users overall
+        total_unique_users = CommandLog.objects.values('user_id').distinct().count()
+        
+        return recent_logs, total_count, success_count, error_count, top_commands, \
+               guild_commands, dm_commands, thread_commands, \
+               guild_users, dm_users, thread_users, total_dm_users, total_unique_users
+    
+    try:
+        logs, total, success, errors, top_commands, \
+        guild_commands, dm_commands, thread_commands, \
+        guild_users, dm_users, thread_users, total_dm_users, total_unique_users = await get_command_logs()
+        
+        if not logs:
+            embed = discord.Embed(
+                title="📋 Command Logs",
+                description="No command logs found yet.",
+                color=Config.EMBED_COLOR_NO_SERVERS
+            )
+            await ctx.send(embed=embed)
+            return
+        
+        embed = discord.Embed(
+            title=f"📋 Command Logs (Last {len(logs)})",
+            color=Config.EMBED_COLOR,
+            timestamp=datetime.now()
+        )
+        
+        # Summary statistics
+        embed.add_field(
+            name="📊 Summary",
+            value=(
+                f"**Total Commands:** {total:,}\n"
+                f"**Successful:** {success:,} ({success*100//total if total > 0 else 0}%)\n"
+                f"**Errors:** {errors:,} ({errors*100//total if total > 0 else 0}%)"
+            ),
+            inline=True
+        )
+        
+        # Context breakdown (Guild vs DM)
+        context_text = (
+            f"**Servers:** {guild_commands:,} ({guild_commands*100//total if total > 0 else 0}%)\n"
+            f"**DMs:** {dm_commands:,} ({dm_commands*100//total if total > 0 else 0}%)\n"
+        )
+        if thread_commands > 0:
+            context_text += f"**Threads:** {thread_commands:,} ({thread_commands*100//total if total > 0 else 0}%)"
+        
+        embed.add_field(
+            name="📍 Usage by Location",
+            value=context_text,
+            inline=True
+        )
+        
+        # User breakdown
+        user_text = (
+            f"**Server Users:** {guild_users:,}\n"
+            f"**DM Users:** {dm_users:,}\n"
+            f"**Total Unique:** {total_unique_users:,}"
+        )
+        if thread_users > 0:
+            user_text = user_text.replace("**Total Unique:**", f"**Thread Users:** {thread_users:,}\n**Total Unique:**")
+        
+        embed.add_field(
+            name="👥 Unique Users",
+            value=user_text,
+            inline=True
+        )
+        
+        # Top commands
+        if top_commands:
+            top_text = "\n".join([
+                f"**{i+1}.** `{cmd['command_name']}`: {cmd['count']}"
+                for i, cmd in enumerate(top_commands)
+            ])
+            embed.add_field(
+                name="🔥 Top Commands",
+                value=top_text,
+                inline=False
+            )
+        
+        # Recent logs (show first 10 in detail)
+        log_text = ""
+        for i, log in enumerate(logs[:10], 1):
+            status = "✅" if log.success else f"❌ {log.error_type}"
+            location = log.context_type
+            if log.guild_name:
+                location = f"{log.guild_name[:20]}"
+            elif log.guild_id:
+                location = f"Guild {log.guild_id}"
+            
+            time_str = log.timestamp.strftime("%m/%d %H:%M")
+            latency = f"{log.latency_ms}ms" if log.latency_ms else "N/A"
+            
+            log_text += f"**{i}.** `{log.command_name}` by {log.user_name[:15]}\n"
+            log_text += f"   {status} • {location} • {time_str} • {latency}\n"
+        
+        if len(logs) > 10:
+            log_text += f"\n*... and {len(logs) - 10} more*"
+        
+        embed.add_field(
+            name="📝 Recent Commands",
+            value=log_text,
+            inline=False
+        )
+        
+        if command_filter:
+            embed.set_footer(text=f"Filtered by: {command_filter}")
+        
+        await ctx.send(embed=embed)
+        
+    except Exception as e:
+        logger.error(f"Error fetching command logs: {e}", exc_info=True)
+        embed = discord.Embed(
+            title="❌ Error",
+            description=f"Failed to fetch command logs: {str(e)}",
+            color=Config.EMBED_COLOR_NO_SERVERS
+        )
+        await ctx.send(embed=embed)
 
 @bot.event
 async def on_command_error(ctx, error):

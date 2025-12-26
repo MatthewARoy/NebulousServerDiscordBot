@@ -55,6 +55,7 @@ class ServerConstants:
     COMPETITIVE_EMOJI = "🏆"
     AUTOBALANCE_EMOJI = "⚖️"
     RANK_RESTRICTED_EMOJI = "🏅"
+    TEST_BRANCH_EMOJI = "🧪"
 
 
 class ServerFormatter:
@@ -176,6 +177,8 @@ class ServerFormatter:
             icons.append(ServerConstants.PASSWORD_EMOJI)
         if server.get('secure'):
             icons.append(ServerConstants.SECURE_EMOJI)
+        if server.get('is_test_branch', False):
+            icons.append(ServerConstants.TEST_BRANCH_EMOJI)
             
         # Add regional flag
         region = server.get('region', 'Unknown')
@@ -215,12 +218,21 @@ class ServerFormatter:
                 if transition_info:
                     status_line += f" • {transition_info}"
         
-        return (
+        # Build the field value
+        field_value = (
             f"{status_line}\n"
             f"**Map:** {map_name}\n"
             f"**Mode:** {game_mode}\n"
-            f"**Region:** {region} {' '.join(status_icons)}"
         )
+        
+        # Add version info if server is on test branch
+        if server.get('is_test_branch', False):
+            version = server.get('version', 'Unknown')
+            field_value += f"**Version:** {version} (Test Branch)\n"
+        
+        field_value += f"**Region:** {region} {' '.join(status_icons)}"
+        
+        return field_value
     
     def create_server_embed_field(self, server: Dict, game_start_times: Dict = None) -> tuple:
         """Create a complete embed field (name, value, inline) for a server"""

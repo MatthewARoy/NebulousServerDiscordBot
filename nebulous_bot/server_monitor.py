@@ -52,6 +52,13 @@ class ServerMonitor:
         # Track servers that just entered debriefing in the current cycle
         # Format: {server_id: server_dict}
         self.recent_debrief_transitions = {}
+        
+        # Stable version determined from majority of servers
+        # Updated when a new daily status message is created
+        self.stable_version = None
+        
+        # Store unfiltered servers for !listservers all command
+        self.cached_all_servers = []
     
     def set_formatter(self, formatter):
         """Set the formatter instance to use for embed creation"""
@@ -190,16 +197,25 @@ class ServerMonitor:
         try:
             logger.debug("Fetching servers from Steam API...")
             async with self.steam_api as api:
+                # Get filtered servers (default behavior)
                 servers = await api.get_game_servers()
                 
-                logger.debug(f"Received {len(servers)} servers from Steam API")
+                # Also get all servers for !listservers all command
+                all_servers = await api.get_game_servers(include_all=True)
+                
+                logger.debug(f"Received {len(servers)} filtered servers, {len(all_servers)} total servers from Steam API")
                 
                 # Track state transitions and game start times
                 await self._track_game_start_times(servers)
                 
                 # Servers now come with real status from server rules
                 self.cached_servers = servers
+                self.cached_all_servers = all_servers
                 self.last_update = datetime.now(timezone.utc)
+                
+                # If stable version hasn't been determined yet, determine it immediately
+                if self.stable_version is None:
+                    self._determine_stable_version()
                 
                 # Log stats
                 total_servers = len(servers)
@@ -314,6 +330,12 @@ class ServerMonitor:
             )
             
             if should_create_new:
+                # Determine stable version from majority of servers when creating new daily status message
+                # Only recalculate if stable version is already set (once per day refresh)
+                # If stable_version is None, it will be determined in _update_server_list
+                if self.stable_version is not None:
+                    self._determine_stable_version()
+                
                 # Create new status message
                 status_message = await channel.send(embed=embed)
                 self.status_messages[guild_id] = {
@@ -328,6 +350,12 @@ class ServerMonitor:
                     logger.info(f"✅ Updated existing status message for guild {guild_id}")
                 except discord.NotFound:
                     # Message was deleted, create a new one
+                    # Determine stable version when creating new status message
+                    # Only recalculate if stable version is already set (once per day refresh)
+                    # If stable_version is None, it will be determined in _update_server_list
+                    if self.stable_version is not None:
+                        self._determine_stable_version()
+                    
                     status_message = await channel.send(embed=embed)
                     self.status_messages[guild_id] = {
                         'message': status_message,
@@ -437,13 +465,11 @@ class ServerMonitor:
                         title_parts = original_title.split(" @ ")
                         base_title = title_parts[0] if title_parts else original_title
                         
-                        # Add timestamp
-                        from datetime import timezone, timedelta
-                        PST = timezone(timedelta(hours=-8))
+                        # Add Discord timestamp format instead of PST
                         update_time = self.last_update or datetime.now(timezone.utc)
-                        # Convert to PST
-                        update_time = update_time.astimezone(PST)
-                        time_str = update_time.strftime("%I:%M:%S %p PST")
+                        timestamp_int = int(update_time.timestamp())
+                        # Use Discord's relative timestamp format (R = relative like "2 minutes ago")
+                        time_str = f"<t:{timestamp_int}:R>"
                         title_with_time = f"{base_title} @ {time_str}"
                         
                         description = f"Found {len(servers)} servers" if servers else "No servers available."
@@ -558,6 +584,47 @@ class ServerMonitor:
         except Exception as e:
             logger.error(f"Error sending notification for guild {guild_id}: {e}")
     
+    def _determine_stable_version(self):
+        """
+        Determine the stable version from the majority of servers.
+        Called when a new daily status message is created.
+        Updates both ServerMonitor and SteamAPI with the determined stable version.
+        """
+        if not self.cached_servers:
+            logger.debug("No servers available to determine stable version")
+            return
+        
+        # Count versions from all servers
+        version_counts = {}
+        for server in self.cached_servers:
+            version = server.get('version', '').strip()
+            if version:  # Only count non-empty versions
+                version_counts[version] = version_counts.get(version, 0) + 1
+        
+        if not version_counts:
+            logger.debug("No version information available from servers")
+            return
+        
+        # Find the version with the highest count (majority)
+        stable_version = max(version_counts.items(), key=lambda x: x[1])[0]
+        
+        # Only update if we have a clear majority (at least 2 servers with this version)
+        if version_counts[stable_version] >= 2:
+            # Only update if stable version changed
+            if self.stable_version != stable_version:
+                self.stable_version = stable_version
+                # Update SteamAPI with the stable version so it can detect test branch servers
+                self.steam_api.set_stable_version(stable_version)
+                logger.info(f"Determined stable version: {stable_version} (from {version_counts[stable_version]} servers)")
+                
+                # Re-evaluate test branch status for all cached servers with the new stable version
+                for server in self.cached_servers:
+                    version = server.get('version', '').strip()
+                    if version:
+                        server['is_test_branch'] = self.steam_api._is_test_branch_server(version)
+        else:
+            logger.debug(f"Not enough servers to determine stable version (most common: {stable_version} with {version_counts[stable_version]} server(s))")
+    
     def _create_server_status_embed(self, formatter) -> discord.Embed:
         """Create Discord embed with current server status"""
         # TODO Check Duplication: Replaced with centralized formatter - verify formatting matches expectations
@@ -621,24 +688,8 @@ class ServerMonitor:
             return
         
         try:
-            # Check for servers that should trigger notifications:
-            # 1. Lobby servers with 3+ players but less than max capacity (joinable)
-            # 2. Servers that just entered debriefing
-            trigger_servers = []
-            
-            # Check for joinable lobby servers with 3+ players
-            for server in self.cached_servers:
-                if server.get('status') == 'lobby':
-                    players = server.get('players', 0)
-                    capacity = server.get('map_capacity', 8)
-                    # Only notify for lobbies with 3+ players that still have space
-                    if players >= 3 and players < capacity:
-                        trigger_servers.append(server)
-            
-            # Check for servers that just entered debriefing
-            for server_id, server in self.recent_debrief_transitions.items():
-                if server not in trigger_servers:
-                    trigger_servers.append(server)
+            # Find matching servers (all servers, filtering happens in notification method)
+            trigger_servers = self.find_matching_servers_for_notification(ptb_only=False)
             
             # Notify waiters if any triggers found
             if trigger_servers:
@@ -650,47 +701,61 @@ class ServerMonitor:
             logger.error(f"Error checking next game notifications: {e}", exc_info=True)
     
     async def _notify_next_game_waiters(self, trigger_servers: List[Dict]):
-        """Notify all waiting users about available games, grouping by channel"""
+        """Notify all waiting users about available games, grouping by channel and PTB preference"""
         if not self.next_game_waiters or not trigger_servers:
             return
         
-        # Separate servers by type for better messaging
-        debrief_servers = [s for s in trigger_servers if s.get('status') == 'debrief']
-        active_servers = [s for s in trigger_servers if s.get('status') != 'debrief']
-        
-        # Build notification message
-        message_parts = []
-        
-        if debrief_servers:
-            debrief_list = []
-            for server in debrief_servers[:5]:  # Show up to 5
-                name = server.get('name', 'Unknown')[:40]
-                debrief_list.append(f"• {name}")
-            message_parts.append(f"🎮 **{len(debrief_servers)} game(s) just finished (in debrief):**\n" + "\n".join(debrief_list))
-        
-        if active_servers:
-            active_list = []
-            for server in active_servers[:5]:  # Show up to 5
-                name = server.get('name', 'Unknown')[:40]
-                players = server.get('players', 0)
-                capacity = server.get('map_capacity', 8)
-                available_slots = capacity - players
-                active_list.append(f"• {name} - {players}/{capacity} players ({available_slots} slot(s) available)")
-            message_parts.append(f"🚀 **{len(active_servers)} lobby(ies) filling up (3+ players, joinable):**\n" + "\n".join(active_list))
-        
-        notification_text = "\n\n".join(message_parts)
-        
-        # Group waiters by channel
-        waiters_by_channel = {}
+        # Group waiters by channel and PTB preference
+        waiters_by_channel_and_ptb = {}
         for user_id, waiter_info in self.next_game_waiters.items():
             channel_id = waiter_info['channel_id']
-            if channel_id not in waiters_by_channel:
-                waiters_by_channel[channel_id] = []
-            waiters_by_channel[channel_id].append((user_id, waiter_info))
+            ptb_only = waiter_info.get('ptb_only', False)
+            key = (channel_id, ptb_only)
+            if key not in waiters_by_channel_and_ptb:
+                waiters_by_channel_and_ptb[key] = []
+            waiters_by_channel_and_ptb[key].append((user_id, waiter_info))
         
-        # Notify all waiters, grouped by channel
+        # Notify all waiters, grouped by channel and PTB preference
         waiters_to_remove = []
-        for channel_id, waiters in waiters_by_channel.items():
+        for (channel_id, ptb_only), waiters in waiters_by_channel_and_ptb.items():
+            # Filter servers by PTB preference for this group
+            filtered_servers = trigger_servers
+            if ptb_only:
+                filtered_servers = [s for s in trigger_servers if s.get('is_test_branch', False)]
+                if not filtered_servers:
+                    continue  # No PTB servers match, skip this group
+            
+            # Separate servers by type for better messaging
+            debrief_servers = [s for s in filtered_servers if s.get('status') == 'debrief']
+            active_servers = [s for s in filtered_servers if s.get('status') != 'debrief']
+            
+            # Build notification message
+            message_parts = []
+            
+            ptb_prefix = "🧪 PTB: " if ptb_only else ""
+            
+            if debrief_servers:
+                debrief_list = []
+                for server in debrief_servers[:5]:  # Show up to 5
+                    name = server.get('name', 'Unknown')[:40]
+                    debrief_list.append(f"• {name}")
+                message_parts.append(f"{ptb_prefix}🎮 **{len(debrief_servers)} game(s) just finished (in debrief):**\n" + "\n".join(debrief_list))
+            
+            if active_servers:
+                active_list = []
+                for server in active_servers[:5]:  # Show up to 5
+                    name = server.get('name', 'Unknown')[:40]
+                    players = server.get('players', 0)
+                    capacity = server.get('map_capacity', 8)
+                    available_slots = capacity - players
+                    active_list.append(f"• {name} - {players}/{capacity} players ({available_slots} slot(s) available)")
+                message_parts.append(f"{ptb_prefix}🚀 **{len(active_servers)} lobby(ies) filling up (3+ players, joinable):**\n" + "\n".join(active_list))
+            
+            if not message_parts:
+                continue  # No matching servers for this group
+            
+            notification_text = "\n\n".join(message_parts)
+            
             try:
                 channel = self.bot.get_channel(channel_id)
                 if channel:
@@ -700,7 +765,8 @@ class ServerMonitor:
                     
                     # Log and mark for removal
                     for user_id, waiter_info in waiters:
-                        logger.info(f"Notified {waiter_info['username']} (ID: {user_id}) about next game")
+                        ptb_text = " (PTB only)" if ptb_only else ""
+                        logger.info(f"Notified {waiter_info['username']} (ID: {user_id}) about next game{ptb_text}")
                         waiters_to_remove.append(user_id)
                 else:
                     # Channel not found, try DM for each user
@@ -708,7 +774,8 @@ class ServerMonitor:
                         try:
                             user = await self.bot.fetch_user(user_id)
                             await user.send(f"Game alert! 🎮\n\n{notification_text}")
-                            logger.info(f"Notified {waiter_info['username']} (ID: {user_id}) via DM about next game")
+                            ptb_text = " (PTB only)" if ptb_only else ""
+                            logger.info(f"Notified {waiter_info['username']} (ID: {user_id}) via DM about next game{ptb_text}")
                             waiters_to_remove.append(user_id)
                         except Exception as dm_error:
                             logger.error(f"Failed to notify user {user_id} via DM: {dm_error}")
@@ -727,14 +794,16 @@ class ServerMonitor:
         if waiters_to_remove:
             logger.info(f"Removed {len(waiters_to_remove)} users from next game waitlist after notification")
     
-    def add_next_game_waiter(self, user_id: int, channel_id: int, username: str):
+    def add_next_game_waiter(self, user_id: int, channel_id: int, username: str, ptb_only: bool = False):
         """Add a user to the next game waitlist"""
         self.next_game_waiters[user_id] = {
             'channel_id': channel_id,
             'timestamp': datetime.now(timezone.utc),
-            'username': username
+            'username': username,
+            'ptb_only': ptb_only
         }
-        logger.info(f"Added {username} (ID: {user_id}) to next game waitlist")
+        ptb_text = " (PTB only)" if ptb_only else ""
+        logger.info(f"Added {username} (ID: {user_id}) to next game waitlist{ptb_text}")
     
     def remove_next_game_waiter(self, user_id: int) -> bool:
         """Remove a user from the next game waitlist. Returns True if user was in list."""
@@ -749,11 +818,12 @@ class ServerMonitor:
         """Get the number of users waiting for next game notifications"""
         return len(self.next_game_waiters)
     
-    def find_matching_servers_for_notification(self) -> List[Dict]:
+    def find_matching_servers_for_notification(self, ptb_only: bool = False) -> List[Dict]:
         """
         Find servers that match the notification criteria:
         - Lobby servers with 3+ players but less than max capacity
         - Servers in debrief status
+        - If ptb_only=True, only return PTB (test branch) servers
         Returns list of matching servers.
         """
         trigger_servers = []
@@ -765,18 +835,24 @@ class ServerMonitor:
                 capacity = server.get('map_capacity', 8)
                 # Only notify for lobbies with 3+ players that still have space
                 if players >= 3 and players < capacity:
-                    trigger_servers.append(server)
+                    # Filter by PTB if requested
+                    if not ptb_only or server.get('is_test_branch', False):
+                        trigger_servers.append(server)
         
         # Check for servers in debrief
         for server in self.cached_servers:
             if server.get('status') == 'debrief':
-                if server not in trigger_servers:
-                    trigger_servers.append(server)
+                # Filter by PTB if requested
+                if not ptb_only or server.get('is_test_branch', False):
+                    if server not in trigger_servers:
+                        trigger_servers.append(server)
         
         # Also check recent debrief transitions
         for server_id, server in self.recent_debrief_transitions.items():
-            if server not in trigger_servers:
-                trigger_servers.append(server)
+            # Filter by PTB if requested
+            if not ptb_only or server.get('is_test_branch', False):
+                if server not in trigger_servers:
+                    trigger_servers.append(server)
         
         return trigger_servers
     
@@ -790,6 +866,13 @@ class ServerMonitor:
         
         waiter_info = self.next_game_waiters[user_id]
         channel_id = waiter_info['channel_id']
+        ptb_only = waiter_info.get('ptb_only', False)
+        
+        # Filter servers by PTB preference if needed
+        if ptb_only:
+            trigger_servers = [s for s in trigger_servers if s.get('is_test_branch', False)]
+            if not trigger_servers:
+                return False  # No PTB servers match
         
         # Separate servers by type for better messaging
         debrief_servers = [s for s in trigger_servers if s.get('status') == 'debrief']
