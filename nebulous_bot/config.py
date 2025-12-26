@@ -58,11 +58,22 @@ class Config:
     EMBED_COLOR_NO_SERVERS = 0xff0000  # Red
     
     # Version Information
-    VERSION = "2.1.0"
+    VERSION = "2.2.0"
     CHANGELOG = [
         {
+            "version": "2.2.0",
+            "date": "2025-12-26",
+            "changes": [
+                "Added dynamic stable version detection from majority of servers",
+                "Added PTB (test branch) server identification with 🧪 indicator",
+                "Added !nextgame ptb command for PTB-only notifications",
+                "Added !listservers all command to show all servers (empty/private/bots)",
+                "PTB servers now display version info and test branch status"
+            ]
+        },
+        {
             "version": "2.1.0",
-            "date": "2025-01-XX",
+            "date": "2025-11-29",
             "changes": [
                 "Added !graph command to visualize player/server data over time",
                 "Improved !nextgame to immediately notify if games are available",
@@ -72,7 +83,7 @@ class Config:
         },
         {
             "version": "2.0.0",
-            "date": "2024-12-XX",
+            "date": "2025-11-27",
             "changes": [
                 "Added !nextgame notification system",
                 "Added game statistics tracking (!stats, !mapstats, !serverstats)",
@@ -82,7 +93,7 @@ class Config:
         },
         {
             "version": "1.0.0",
-            "date": "2024-11-XX",
+            "date": "2025-11-18",
             "changes": [
                 "Initial release with server monitoring",
                 "Basic commands: !listservers, !openlobbies, !status",
