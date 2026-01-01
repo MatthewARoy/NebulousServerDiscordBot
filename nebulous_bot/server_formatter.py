@@ -323,12 +323,16 @@ class ServerFormatter:
     
     def create_status_embed(self, servers: List[Dict], last_update: datetime = None, game_start_times: Dict = None) -> discord.Embed:
         """Create embed for persistent status monitoring"""
+        # Calculate timestamp for title
+        update_time = last_update or datetime.now(timezone.utc)
+        timestamp_int = int(update_time.timestamp())
+        
         if not servers:
             embed = discord.Embed(
-                title=f"🚀 {Config.GAME_NAME} - Server Status",
+                title=f"🚀 {Config.GAME_NAME} - Server Status @ <t:{timestamp_int}:R>",
                 description="No active servers found",
                 color=Config.EMBED_COLOR_NO_SERVERS,
-                timestamp=last_update or datetime.now(timezone.utc)
+                timestamp=update_time
             )
             embed.set_footer(text=f"🟢 = Open Lobby • 🔴 = Game In Progress • 🟡 = Debrief • Updates every 30s")
             return embed
@@ -341,10 +345,10 @@ class ServerFormatter:
         open_lobbies = len([s for s in sorted_servers if s.get('status') == 'lobby'])
         
         embed = discord.Embed(
-            title=f"🚀 {Config.GAME_NAME} - Live Server Status",
+            title=f"🚀 {Config.GAME_NAME} - Live Server Status @ <t:{timestamp_int}:R>",
             description=f"**{total_players}** active players • **{len(sorted_servers)}** servers • **{open_lobbies}** open lobbies",
             color=Config.EMBED_COLOR,
-            timestamp=last_update or datetime.now(timezone.utc)
+            timestamp=update_time
         )
         
         # Add server fields
