@@ -23,10 +23,10 @@ class ServerMonitor:
         # Format: {guild_id: {'message': Message, 'created_at': datetime}}
         self.status_messages = {}
         
-        # Track the last 10 bot messages per channel for live updates
+        # Track the last 3 bot messages per channel for live updates
         # Format: {channel_id: [{'message': Message, 'created_at': datetime}, ...]}
         self.tracked_messages = {}
-        self.max_tracked_messages = 10
+        self.max_tracked_messages = 3
         
         # Track player threshold notifications per guild
         # Format: {guild_id: {'last_notification_time': datetime, 'last_player_count': int}}
@@ -64,7 +64,7 @@ class ServerMonitor:
         """Set the formatter instance to use for embed creation"""
         self.formatter = formatter
     
-    def track_message(self, message):
+    async def track_message(self, message):
         """Track a bot message for automatic updates"""
         channel_id = message.channel.id
         
@@ -76,6 +76,30 @@ class ServerMonitor:
             'message': message,
             'created_at': datetime.now(timezone.utc)
         })
+        
+        # If we exceed the limit, mark the oldest message as stopped
+        if len(self.tracked_messages[channel_id]) > self.max_tracked_messages:
+            # Get the message that will be removed
+            removed_msg_info = self.tracked_messages[channel_id][self.max_tracked_messages]
+            removed_message = removed_msg_info['message']
+            
+            # Update it one final time with skull emoji
+            try:
+                if removed_message.embeds:
+                    original_embed = removed_message.embeds[0]
+                    if original_embed.title:
+                        # Replace "@" with "💀" in the title
+                        new_title = original_embed.title.replace(" @ ", " 💀 ")
+                        
+                        # Create a copy of the embed with updated title
+                        new_embed = discord.Embed.from_dict(original_embed.to_dict())
+                        new_embed.title = new_title
+                        
+                        # Update the message one final time
+                        await removed_message.edit(embed=new_embed)
+                        logger.info(f"Marked message {removed_message.id} as stopped (replaced @ with 💀)")
+            except Exception as e:
+                logger.debug(f"Could not update removed message {removed_message.id}: {e}")
         
         # Keep only the last N messages
         self.tracked_messages[channel_id] = self.tracked_messages[channel_id][:self.max_tracked_messages]

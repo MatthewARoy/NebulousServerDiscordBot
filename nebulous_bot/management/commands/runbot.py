@@ -222,7 +222,7 @@ class Command(BaseCommand):
             footer_text = "Filters: open, lobby, ingame, us, eu, competitive, casual, all • Use !openlobbies for joinable servers"
             embed.set_footer(text=footer_text)
             message = await ctx.send(embed=embed)
-            server_monitor.track_message(message)
+            await server_monitor.track_message(message)
 
         @bot.command(name='openlobbies', aliases=['open', 'available'])
         async def open_lobbies(ctx):
@@ -237,7 +237,7 @@ class Command(BaseCommand):
             open_servers = server_monitor.get_open_lobbies()
             embed = formatter.create_lobby_list_embed(open_servers, server_monitor.last_update)
             message = await ctx.send(embed=embed)
-            server_monitor.track_message(message)
+            await server_monitor.track_message(message)
 
         @bot.command(name='refresh', aliases=['update'])
         async def refresh_servers(ctx):

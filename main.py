@@ -219,7 +219,7 @@ async def list_servers(ctx, *, filter_args: str = ""):
     message = await ctx.send(embed=embed)
     
     # Track this message for automatic updates
-    server_monitor.track_message(message)
+    await server_monitor.track_message(message)
 
 @bot.command(name='openlobbies', aliases=['open', 'available'])
 async def open_lobbies(ctx):
@@ -234,7 +234,7 @@ async def open_lobbies(ctx):
     message = await ctx.send(embed=embed)
     
     # Track this message for automatic updates
-    server_monitor.track_message(message)
+    await server_monitor.track_message(message)
 
 @bot.command(name='refresh', aliases=['update'])
 async def refresh_servers(ctx):
