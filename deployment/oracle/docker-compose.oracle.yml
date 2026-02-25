@@ -1,0 +1,45 @@
+version: '3.8'
+
+# Docker Compose configuration for Oracle Cloud Infrastructure
+# Copy this to your VM as docker-compose.yml
+
+services:
+  bot:
+    # Option 1: Use Docker Hub image (recommended)
+    image: <your-dockerhub-username>/nebulous-bot:latest
+    
+    # Option 2: Build locally on VM
+    # build:
+    #   context: .
+    #   dockerfile: deployment/docker/Dockerfile
+    
+    container_name: nebulous-discord-bot
+    env_file:
+      - .env
+    environment:
+      - DJANGO_SETTINGS_MODULE=nebulous_project.settings
+      - PYTHONUNBUFFERED=1
+    volumes:
+      # Mount persistent storage for database (if block storage is mounted)
+      - /mnt/bot-data:/mnt/data
+      # Mount logs directory
+      - ./logs:/app/logs
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/').read()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    # Resource limits (adjust based on your VM size)
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1.5G
+        reservations:
+          cpus: '0.25'
+          memory: 512M
+

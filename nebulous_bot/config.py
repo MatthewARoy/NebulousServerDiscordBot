@@ -58,8 +58,17 @@ class Config:
     EMBED_COLOR_NO_SERVERS = 0xff0000  # Red
     
     # Version Information
-    VERSION = "2.2.0"
+    VERSION = "2.3.0"
     CHANGELOG = [
+        {
+            "version": "2.3.0",
+            "date": "2026-01-01",
+            "changes": [
+                "Default `!listservers` now includes PTB/test-branch servers without needing a flag",
+                "`!listservers` updates now respect PTB/all filters when the bot refreshes tracked messages",
+                "Added fallback logic so the `!listservers all` cache is still populated even if Steam's all-server fetch fails"
+            ]
+        },
         {
             "version": "2.2.0",
             "date": "2025-12-26",

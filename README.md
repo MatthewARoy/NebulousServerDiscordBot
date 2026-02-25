@@ -141,41 +141,6 @@ The instructions below are for the standalone Python version. Both versions are 
    python main.py
    ```
 
-## Migration Guide (Existing Users)
-
-If you're upgrading from a previous version that used `DISCORD_GUILD_ID` and `STATUS_CHANNEL_ID`, you need to migrate to the new `SERVER_CONFIGS` format:
-
-### Migration Steps
-
-1. **Backup your existing `.env` file**
-
-2. **Convert your configuration** from:
-   ```env
-   DISCORD_GUILD_ID=1400973312963645551
-   STATUS_CHANNEL_ID=1400976297408069682
-   ```
-   
-   To:
-   ```env
-   SERVER_CONFIGS=[{"guild_id": 1400973312963645551, "status_channel_id": 1400976297408069682}]
-   ```
-
-3. **For multiple servers**, add more entries to the JSON array:
-   ```env
-   SERVER_CONFIGS=[{"guild_id": 1400973312963645551, "status_channel_id": 1400976297408069682}, {"guild_id": 2222222222, "status_channel_id": 3333333333}]
-   ```
-
-4. **(Optional) Add notification settings** to enable player threshold alerts:
-   ```env
-   SERVER_CONFIGS=[{"guild_id": 1400973312963645551, "status_channel_id": 1400976297408069682, "notification_channel_id": 1400976297408069682, "notification_role_id": 1234567890123456789}]
-   ```
-
-**Important Notes:**
-- The entire `SERVER_CONFIGS` value must be on a single line
-- Each Discord server needs its own status channel ID where the bot will post updates
-- The old `DISCORD_GUILD_ID`/`STATUS_CHANNEL_ID` format is no longer supported
-- `notification_channel_id` and `notification_role_id` are optional fields for player threshold notifications
-
 ## Configuration Options
 
 The bot can be configured through environment variables or by modifying `config.py`:

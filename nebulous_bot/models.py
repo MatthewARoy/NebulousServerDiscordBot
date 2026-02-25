@@ -33,6 +33,52 @@ class NotificationLog(models.Model):
         return f"Notification at {self.timestamp}: {self.player_count} players (threshold: {self.threshold})"
 
 
+class CommandLog(models.Model):
+    """
+    Track every bot command invocation for usage metrics.
+    
+    Captures who ran the command, where it was run, whether it succeeded,
+    and how long execution took. Arguments are stored in a truncated form
+    to avoid persisting excessively long messages.
+    """
+    timestamp = models.DateTimeField(auto_now_add=True, db_index=True)
+    command_name = models.CharField(max_length=100, db_index=True)  # Base command name
+    full_command = models.CharField(max_length=150, blank=True)  # Includes subcommand/alias if any
+    
+    user_id = models.BigIntegerField(db_index=True)
+    user_name = models.CharField(max_length=255)
+    
+    guild_id = models.BigIntegerField(null=True, blank=True, db_index=True)
+    guild_name = models.CharField(max_length=255, blank=True)
+    
+    channel_id = models.BigIntegerField(null=True, blank=True, db_index=True)
+    channel_name = models.CharField(max_length=255, blank=True)
+    context_type = models.CharField(
+        max_length=20,
+        default='guild',
+        help_text="Where the command was invoked: guild, dm, or thread",
+    )
+    message_id = models.BigIntegerField(null=True, blank=True)
+    
+    arguments = models.TextField(blank=True)
+    success = models.BooleanField(default=True, db_index=True)
+    error_type = models.CharField(max_length=255, blank=True)
+    latency_ms = models.IntegerField(null=True, blank=True)
+    bot_version = models.CharField(max_length=50, blank=True)
+    
+    class Meta:
+        ordering = ['-timestamp']
+        indexes = [
+            models.Index(fields=['timestamp', 'command_name']),
+            models.Index(fields=['guild_id', 'command_name']),
+            models.Index(fields=['user_id', 'command_name']),
+        ]
+    
+    def __str__(self):
+        location = "DM" if self.guild_id is None else f"Guild {self.guild_id}"
+        return f"{self.command_name} by {self.user_name} ({location}) at {self.timestamp}"
+
+
 class GameSession(models.Model):
     """
     Track individual game sessions with unique IDs.

@@ -10,6 +10,8 @@ import certifi
 import aiohttp
 import io
 import os
+import tempfile
+import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from typing import Optional
 from django.core.management.base import BaseCommand
@@ -19,6 +21,10 @@ from nebulous_bot.server_monitor import ServerMonitor
 from nebulous_bot.server_formatter import ServerFormatter
 from nebulous_bot.models import BotStatus
 from nebulous_bot.command_logging import setup_command_metrics
+from formation_optimizer import (
+    optimize_fleet_file, 
+    create_formation_animation
+)
 
 logger = logging.getLogger('nebulous_bot')
 
@@ -134,7 +140,13 @@ class Command(BaseCommand):
 
         @bot.command(name='listservers', aliases=['ls', 'servers'])
         async def list_servers(ctx, *, filter_args: str = ""):
-            """List all active servers with optional filtering"""
+            """
+            List all active servers with optional filtering
+            
+            Usage: !listservers [filter]
+            Filters: ptb, open, lobby, ingame, us, eu, competitive, casual, all
+            Examples: !listservers ptb, !listservers open, !listservers lobby us, !listservers all
+            """
             if not server_monitor or not formatter:
                 await ctx.send("❌ Server monitoring not initialized yet. Please wait a moment.")
                 return
@@ -145,8 +157,12 @@ class Command(BaseCommand):
             # Parse filter arguments
             filters = {}
             show_all = False
+            ptb_only = False
             if filter_args:
                 args = filter_args.lower().split()
+                if 'ptb' in args:
+                    ptb_only = True
+                    args = [arg for arg in args if arg != 'ptb']
                 if 'all' in args:
                     show_all = True
                 if 'open' in args:
@@ -163,45 +179,14 @@ class Command(BaseCommand):
                     filters['game_mode'] = 'competitive'
                 if 'casual' in args:
                     filters['game_mode'] = 'casual'
-            
-            # Get servers - use all servers if "all" is specified, otherwise use filtered cache
-            if show_all:
-                base_servers = server_monitor.cached_all_servers
-            else:
-                base_servers = server_monitor.cached_servers
-            
-            # Apply additional filters if specified
+
+            servers = server_monitor.get_servers_for_listservers(ptb_only, show_all, filters)
             if filters:
-                # Apply filters to the base server list
-                filtered_servers = []
-                for server in base_servers:
-                    match = True
-                    
-                    if filters.get('open_lobby'):
-                        if server.get('status') != 'lobby' or server.get('players', 0) >= server.get('map_capacity', 8):
-                            match = False
-                    
-                    if filters.get('status') and server.get('status') != filters['status']:
-                        match = False
-                    
-                    if filters.get('region') and server.get('region', '').lower() != filters['region'].lower():
-                        match = False
-                    
-                    if filters.get('game_mode'):
-                        game_mode = server.get('game_mode', '').lower()
-                        if filters['game_mode'].lower() == 'competitive' and 'competitive' not in game_mode:
-                            match = False
-                        elif filters['game_mode'].lower() == 'casual' and 'casual' not in game_mode:
-                            match = False
-                    
-                    if match:
-                        filtered_servers.append(server)
-                
-                servers = filtered_servers
                 title_suffix = f" (Filtered: {filter_args})"
             else:
-                servers = base_servers
-                if show_all:
+                if ptb_only and not show_all:
+                    title_suffix = " (PTB Servers)"
+                elif show_all:
                     title_suffix = " (All Servers)"
                 else:
                     title_suffix = ""
@@ -219,10 +204,16 @@ class Command(BaseCommand):
             )
             
             # Add filter help
-            footer_text = "Filters: open, lobby, ingame, us, eu, competitive, casual, all • Use !openlobbies for joinable servers"
+            footer_text = "Filters: ptb, open, lobby, ingame, us, eu, competitive, casual, all • Use !openlobbies for joinable servers"
             embed.set_footer(text=footer_text)
             message = await ctx.send(embed=embed)
-            await server_monitor.track_message(message)
+            metadata = {
+                'command': 'listservers',
+                'filters': dict(filters),
+                'ptb_only': ptb_only,
+                'show_all': show_all
+            }
+            await server_monitor.track_message(message, metadata=metadata)
 
         @bot.command(name='openlobbies', aliases=['open', 'available'])
         async def open_lobbies(ctx):
@@ -414,6 +405,7 @@ class Command(BaseCommand):
                     "`!serverstats` - View server statistics\n"
                     "`!graph` - Display graphs of data over the last week\n"
                     "`!nextgame` - Get notified when a game is ready\n"
+                    "`!formation` - Optimize fleet formation file\n"
                     "`!refresh` - Force update\n"
                     "`!version` - Show version and changelog\n"
                     "`!status` - This message"
@@ -777,9 +769,10 @@ class Command(BaseCommand):
             """
             Get notified when the next game is ready to join.
             
-            Usage: !nextgame [ptb]
+            Usage: !nextgame [ptb] [--skip]
             - !nextgame - Notify for all servers
             - !nextgame ptb - Notify only for PTB (test branch) servers
+            - !nextgame --skip - Don't notify for lobbies already active right now
             
             You'll be pinged once when either:
             - A game enters debrief (game just ended, new one might start)
@@ -795,7 +788,9 @@ class Command(BaseCommand):
             
             # Parse arguments
             args_lower = args.lower().strip()
-            ptb_only = args_lower == 'ptb'
+            tokens = [token for token in args_lower.split() if token]
+            ptb_only = any(token == 'ptb' for token in tokens)
+            skip_current_lobbies = any(token in ('--skip', '-s', 'skip') for token in tokens)
             
             # Check if user is already waiting
             if user_id in server_monitor.next_game_waiters:
@@ -811,6 +806,8 @@ class Command(BaseCommand):
                 wait_duration = datetime.now(timezone.utc) - wait_start
                 minutes_waiting = int(wait_duration.total_seconds() / 60)
                 current_ptb_only = wait_info.get('ptb_only', False)
+                current_skip = bool(wait_info.get('skip_lobbies'))
+                skip_names = server_monitor.resolve_server_names(wait_info.get('skip_lobbies', []), ptb_only=current_ptb_only) if current_skip else []
                 
                 embed.add_field(
                     name="⏱️ Waiting Time",
@@ -822,6 +819,20 @@ class Command(BaseCommand):
                     embed.add_field(
                         name="🧪 Mode",
                         value="PTB servers only",
+                        inline=False
+                    )
+                
+                if current_skip:
+                    skipped_list = ", ".join(skip_names[:5]) if skip_names else "current active lobbies"
+                    if skip_names and len(skip_names) > 5:
+                        skipped_list += f" (+{len(skip_names) - 5} more)"
+
+                    embed.add_field(
+                        name="⏭️ Skipping Current Lobbies",
+                        value=(
+                            "You won't be pinged for lobbies that were already active when you opted in.\n"
+                            f"Skipping: {skipped_list}"
+                        ),
                         inline=False
                     )
                 
@@ -838,7 +849,15 @@ class Command(BaseCommand):
             await server_monitor.force_update()
             
             # Add user to waitlist with PTB preference
-            server_monitor.add_next_game_waiter(user_id, channel_id, username, ptb_only=ptb_only)
+            skip_lobbies = server_monitor.get_joinable_lobby_ids(ptb_only=ptb_only) if skip_current_lobbies else []
+            skip_lobby_names = server_monitor.resolve_server_names(skip_lobbies, ptb_only=ptb_only) if skip_lobbies else []
+            server_monitor.add_next_game_waiter(
+                user_id,
+                channel_id,
+                username,
+                ptb_only=ptb_only,
+                skip_lobbies=skip_lobbies
+            )
             
             # Immediately check if there are any matching servers
             matching_servers = server_monitor.find_matching_servers_for_notification(ptb_only=ptb_only)
@@ -861,6 +880,21 @@ class Command(BaseCommand):
                 timestamp=datetime.now(timezone.utc)
             )
             
+            if skip_current_lobbies:
+                skipped_list = ", ".join(skip_lobby_names[:5]) if skip_lobby_names else "current active lobbies"
+                if skip_lobby_names and len(skip_lobby_names) > 5:
+                    skipped_list += f" (+{len(skip_lobby_names) - 5} more)"
+
+                embed.add_field(
+                    name="⏭️ Skip Current Lobbies",
+                    value=(
+                        "I won't ping you for lobbies already active right now. "
+                        "I'll notify you when a new lobby opens or a game enters debrief.\n"
+                        f"Skipping: {skipped_list}"
+                    ),
+                    inline=False
+                )
+
             embed.add_field(
                 name="I'll notify you when:",
                 value=(
@@ -1209,6 +1243,317 @@ class Command(BaseCommand):
                     color=Config.EMBED_COLOR_NO_SERVERS
                 )
                 await ctx.send(embed=embed)
+        
+        @bot.command(name='formation', aliases=['form', 'optimize'])
+        async def optimize_formation(ctx, *, args: str = None):
+            """
+            Optimize a fleet formation file by compacting ships while maintaining minimum distance.
+            
+            Usage: !formation [min_radius_meters] [-skip] [-planar] [-symmetrical] [-arcs]
+            - Attach a .fleet XML file to your message
+            - Optional: specify minimum radius in meters (default: 350 meters)
+            - Optional: use -skip to skip image generation (faster)
+            - Optional: use -planar for flat formation facing forward
+            - Optional: use -symmetrical for more symmetrical formation
+            - Optional: use -arcs to keep forward firing arcs clear for armed ships
+            - Returns the optimized fleet file
+            
+            Example: !formation 350  (for 350 meters)
+            Example: !formation 500 -planar  (planar formation)
+            Example: !formation 350 -symmetrical -skip  (symmetrical, skip images)
+            Example: !formation 350 -arcs  (keep firing arcs clear)
+            """
+            # Parse arguments
+            skip_images = False
+            planar = False
+            symmetrical = False
+            clear_arcs = False
+            min_radius_meters = 350.0
+            
+            if args:
+                args_lower = args.lower()
+                
+                # Check for flags
+                if '-skip' in args_lower:
+                    skip_images = True
+                    args_lower = args_lower.replace('-skip', '')
+                if '-planar' in args_lower:
+                    planar = True
+                    args_lower = args_lower.replace('-planar', '')
+                if '-symmetrical' in args_lower or '-symmetric' in args_lower:
+                    symmetrical = True
+                    args_lower = args_lower.replace('-symmetrical', '').replace('-symmetric', '')
+                if '-arcs' in args_lower or '-cleararcs' in args_lower:
+                    clear_arcs = True
+                    args_lower = args_lower.replace('-arcs', '').replace('-cleararcs', '')
+                
+                # Clean up and parse min_radius_meters
+                args_clean = args_lower.strip()
+                if args_clean:
+                    try:
+                        min_radius_meters = float(args_clean)
+                    except ValueError:
+                        # If parsing fails, use default
+                        pass
+            # Check for attachments
+            if not ctx.message.attachments:
+                embed = discord.Embed(
+                    title="❌ No File Attached",
+                    description="Please attach a fleet (.fleet) XML file to your message.",
+                    color=Config.EMBED_COLOR_NO_SERVERS
+                )
+                embed.add_field(
+                    name="Usage",
+                    value="`!formation [min_radius] [-skip] [-planar] [-symmetrical] [-arcs]`\nAttach a .fleet file to optimize it.\n- `-skip`: Skip image generation\n- `-planar`: Flat formation facing forward\n- `-symmetrical`: More symmetrical formation\n- `-arcs`: Keep forward firing arcs clear for armed ships",
+                    inline=False
+                )
+                await ctx.send(embed=embed)
+                return
+            
+            # Get the first attachment
+            attachment = ctx.message.attachments[0]
+            
+            # Validate file extension
+            if not attachment.filename.lower().endswith('.fleet'):
+                embed = discord.Embed(
+                    title="❌ Invalid File Type",
+                    description=f"Expected a .fleet file, got: {attachment.filename}",
+                    color=Config.EMBED_COLOR_NO_SERVERS
+                )
+                await ctx.send(embed=embed)
+                return
+            
+            # Validate min_radius_meters (user input is in meters)
+            if min_radius_meters <= 0:
+                embed = discord.Embed(
+                    title="❌ Invalid Minimum Radius",
+                    description="Minimum radius must be greater than 0 meters.",
+                    color=Config.EMBED_COLOR_NO_SERVERS
+                )
+                await ctx.send(embed=embed)
+                return
+            
+            # Show processing message
+            processing_msg = await ctx.send("🔄 Processing fleet file...")
+            
+            try:
+                # Download the file
+                file_content = await attachment.read()
+                
+                # Create temporary file for input
+                with tempfile.NamedTemporaryFile(mode='wb', suffix='.fleet', delete=False) as temp_input:
+                    temp_input.write(file_content)
+                    temp_input_path = temp_input.name
+                
+                try:
+                    # Validate XML structure before processing
+                    try:
+                        tree = ET.parse(temp_input_path)
+                        root = tree.getroot()
+                        
+                        # Check for required elements
+                        if root.find("Name") is None:
+                            raise ValueError("Fleet file missing <Name> element")
+                        
+                        # Check for at least one Ship element
+                        ships = list(root.iter("Ship"))
+                        if not ships:
+                            raise ValueError("Fleet file contains no <Ship> elements")
+                        
+                        # Check for InitialFormation elements
+                        formations_found = False
+                        for ship in ships:
+                            if ship.find("InitialFormation") is not None:
+                                formations_found = True
+                                break
+                        
+                        if not formations_found:
+                            raise ValueError("Fleet file contains no <InitialFormation> elements")
+                        
+                    except ET.ParseError as e:
+                        raise ValueError(f"Invalid XML format: {str(e)}")
+                    
+                    # Optimize the fleet file
+                    # Only capture animation if we're generating images
+                    # min_radius_meters is already in meters (user-facing)
+                    optimization_result = optimize_fleet_file(
+                        temp_input_path, 
+                        min_distance_meters=min_radius_meters, 
+                        capture_animation=not skip_images,
+                        planar=planar,
+                        symmetrical=symmetrical,
+                        clear_arcs=clear_arcs
+                    )
+                    
+                    # Unpack results (with or without animation states)
+                    if len(optimization_result) == 5:
+                        optimized_path, before_positions, after_positions, ship_names, intermediate_states = optimization_result
+                    else:
+                        optimized_path, before_positions, after_positions, ship_names = optimization_result
+                        intermediate_states = None
+                    
+                    # Generate GIF animation only if not skipping images
+                    gif_bytes = None
+                    gif_path = None
+                    
+                    if not skip_images:
+                        # Generate GIF animation (run in executor to avoid blocking)
+                        def generate_gif():
+                            # Generate GIF animation if we have intermediate states
+                            gif_path = None
+                            gif_bytes = None
+                            if intermediate_states:
+                                try:
+                                    # Create temporary file for GIF
+                                    gif_temp = tempfile.NamedTemporaryFile(suffix='.gif', delete=False)
+                                    gif_path = gif_temp.name
+                                    gif_temp.close()
+                                    
+                                    # Generate GIF from intermediate states (all positions already in meters)
+                                    create_formation_animation(
+                                        before_positions,
+                                        intermediate_states,
+                                        ship_names,
+                                        min_radius_meters,
+                                        output_path=gif_path,
+                                        fps=10,
+                                        duration_ms=100
+                                    )
+                                    
+                                    # Read GIF bytes
+                                    with open(gif_path, 'rb') as f:
+                                        gif_bytes = f.read()
+                                except Exception as gif_error:
+                                    logger.warning(f"Failed to generate GIF animation: {gif_error}")
+                                    # Continue without GIF if generation fails
+                            else:
+                                logger.warning("No intermediate states available for GIF generation")
+                            
+                            return gif_bytes, gif_path
+                        
+                        import concurrent.futures
+                        loop = asyncio.get_event_loop()
+                        with concurrent.futures.ThreadPoolExecutor() as executor:
+                            gif_bytes, gif_path = await loop.run_in_executor(executor, generate_gif)
+                    
+                    # Read the optimized file
+                    with open(optimized_path, 'rb') as f:
+                        optimized_content = f.read()
+                    
+                    # Create Discord file objects
+                    optimized_filename = attachment.filename.replace('.fleet', f'_Optimized_{int(min_radius_meters)}m.fleet')
+                    discord_file = discord.File(
+                        io.BytesIO(optimized_content),
+                        filename=optimized_filename
+                    )
+                    
+                    # Prepare files list
+                    files_to_send = [discord_file]
+                    
+                    # Add GIF if generated successfully and not skipping images
+                    discord_gif_file = None
+                    if not skip_images:
+                        if gif_bytes:
+                            gif_filename = attachment.filename.replace('.fleet', f'_animation_{int(min_radius_meters)}m.gif')
+                            discord_gif_file = discord.File(
+                                io.BytesIO(gif_bytes),
+                                filename=gif_filename
+                            )
+                            files_to_send.append(discord_gif_file)
+                        else:
+                            # If GIF generation failed, send error message
+                            embed_error = discord.Embed(
+                                title="⚠️ Optimization Complete",
+                                description="Fleet optimized but animation generation failed.",
+                                color=Config.EMBED_COLOR_NO_SERVERS
+                            )
+                            await processing_msg.edit(content="", embed=embed_error)
+                            return
+                    
+                    # Create success embed
+                    variant_info = []
+                    if planar:
+                        variant_info.append("Planar")
+                    if symmetrical:
+                        variant_info.append("Symmetrical")
+                    variant_text = f" ({', '.join(variant_info)})" if variant_info else ""
+                    
+                    embed = discord.Embed(
+                        title="✅ Formation Optimized",
+                        description=f"Fleet formation optimized with minimum radius of **{min_radius_meters:.0f} meters**{variant_text}.",
+                        color=Config.EMBED_COLOR,
+                        timestamp=datetime.now(timezone.utc)
+                    )
+                    embed.add_field(
+                        name="Original File",
+                        value=attachment.filename,
+                        inline=True
+                    )
+                    embed.add_field(
+                        name="Minimum Radius",
+                        value=f"{min_radius_meters:.0f} meters",
+                        inline=True
+                    )
+                    embed.add_field(
+                        name="Ships Processed",
+                        value=str(len(ships)),
+                        inline=True
+                    )
+                    if variant_info:
+                        embed.add_field(
+                            name="Formation Variant",
+                            value=", ".join(variant_info),
+                            inline=False
+                        )
+                    
+                    # Set GIF as image in embed (only if not skipping)
+                    if not skip_images and gif_bytes:
+                        gif_filename = attachment.filename.replace('.fleet', f'_animation_{int(min_radius_meters)}m.gif')
+                        embed.set_image(url=f"attachment://{gif_filename}")
+                    
+                    # Update footer based on whether images were generated
+                    if skip_images:
+                        embed.set_footer(text="The optimized fleet file is attached below")
+                    else:
+                        embed.set_footer(text="The optimized fleet file and animation GIF are attached below")
+                    
+                    # Delete processing message and send result
+                    await processing_msg.delete()
+                    await ctx.send(embed=embed, files=files_to_send)
+                    
+                    # Clean up temporary GIF file
+                    if gif_path and os.path.exists(gif_path):
+                        try:
+                            os.unlink(gif_path)
+                        except Exception as cleanup_error:
+                            logger.warning(f"Failed to cleanup GIF temp file: {cleanup_error}")
+                    
+                finally:
+                    # Clean up temporary files
+                    try:
+                        os.unlink(temp_input_path)
+                        if os.path.exists(optimized_path):
+                            os.unlink(optimized_path)
+                    except Exception as cleanup_error:
+                        logger.warning(f"Failed to cleanup temp files: {cleanup_error}")
+                
+            except ValueError as e:
+                # Validation errors
+                embed = discord.Embed(
+                    title="❌ Invalid Fleet File",
+                    description=str(e),
+                    color=Config.EMBED_COLOR_NO_SERVERS
+                )
+                await processing_msg.edit(content="", embed=embed)
+            except Exception as e:
+                # Other errors
+                logger.error(f"Error optimizing formation: {e}", exc_info=True)
+                embed = discord.Embed(
+                    title="❌ Processing Error",
+                    description=f"Failed to optimize fleet file: {str(e)}",
+                    color=Config.EMBED_COLOR_NO_SERVERS
+                )
+                await processing_msg.edit(content="", embed=embed)
         
         @bot.event
         async def on_command_error(ctx, error):

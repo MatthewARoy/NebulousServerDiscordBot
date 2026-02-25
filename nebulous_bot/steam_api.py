@@ -22,8 +22,9 @@ class SteamAPI:
         return self
         
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        if self.session:
+        if self.session and not self.session.closed:
             await self.session.close()
+        self.session = None
     
     async def get_game_servers(self, limit: int = 100, include_all: bool = False) -> List[Dict]:
         """
@@ -86,10 +87,10 @@ class SteamAPI:
             
         return None
     
-    async def get_server_rules(self, server_address: str) -> Optional[Dict]:
+    def _query_server_rules_sync(self, server_address: str) -> Optional[Dict]:
         """
-        Query server rules using python-valve library (same as debug_steam_servers.py).
-        This properly queries the A2S_RULES protocol to get Nebulous server state.
+        Blocking server rules query using python-valve.
+        Run this in a thread to avoid blocking the event loop.
         """
         try:
             # Fix collections compatibility issue for python-valve
@@ -106,7 +107,7 @@ class SteamAPI:
             
             if ':' not in server_address:
                 return None
-                
+            
             host, port = server_address.split(':', 1)
             port = int(port)
             
@@ -132,13 +133,30 @@ class SteamAPI:
                 
                 # Return raw rules as fallback
                 return raw_rules
-                
+            
         except ImportError:
             logger.warning("python-valve library not available for server rules queries. Install with: pip install python-valve")
             return None
         except Exception as e:
+            # Use debug level to avoid noisy logs in normal operation
             logger.debug(f"Error querying server rules for {server_address}: {e}")
             return None
+
+    async def get_server_rules(self, server_address: str) -> Optional[Dict]:
+        """
+        Query server rules off the main event loop to prevent Discord message delays.
+        """
+        try:
+            # Run the blocking A2S query in a thread with a timeout guard
+            return await asyncio.wait_for(
+                asyncio.to_thread(self._query_server_rules_sync, server_address),
+                timeout=3.5
+            )
+        except asyncio.TimeoutError:
+            logger.debug(f"Server rules query timed out for {server_address}")
+        except Exception as e:
+            logger.debug(f"Error querying server rules for {server_address}: {e}")
+        return None
     
     def _parse_nebulous_rules_json(self, rules_data) -> dict:
         """Parse the Nebulous rules from ServerRules response (from debug script)"""
@@ -237,14 +255,8 @@ class SteamAPI:
                     async with semaphore:
                         try:
                             server_address = server_data.get('addr', '')
-                            rules = await asyncio.wait_for(
-                                self.get_server_rules(server_address), 
-                                timeout=3.0  # 3 second timeout per server
-                            )
+                            rules = await self.get_server_rules(server_address)
                             return self._create_enhanced_server_data(server_data, server_name, players, rules)
-                        except asyncio.TimeoutError:
-                            logger.debug(f"Server rules query timed out for {server_address}")
-                            return self._create_enhanced_server_data(server_data, server_name, players, None)
                         except Exception as e:
                             logger.debug(f"Server rules query failed for {server_address}: {e}")
                             return self._create_enhanced_server_data(server_data, server_name, players, None)

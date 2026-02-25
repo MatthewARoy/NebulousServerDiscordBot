@@ -21,6 +21,7 @@ CONTAINER_APP_ENV="${CONTAINER_APP_ENV:-nebulous-bot-env}"
 ACR_NAME="${ACR_NAME:-nebulousbot}"
 IMAGE_NAME="nebulous-bot"
 IMAGE_TAG="${IMAGE_TAG:-latest}"
+DEPLOY_IMAGE_TAG="${IMAGE_TAG:-latest}"  # Will be set to timestamped tag during build
 
 echo "🚀 Deploying Nebulous Discord Bot to Azure"
 echo "=========================================="
@@ -69,13 +70,24 @@ az acr create \
 # Build and push Docker image
 echo "🔨 Building Docker image..."
 
+# Generate a unique tag based on timestamp to ensure Azure detects changes
+if [ "$IMAGE_TAG" == "latest" ]; then
+  TIMESTAMP_TAG="latest-$(date +%Y%m%d-%H%M%S)"
+  echo "   Using timestamped tag: $TIMESTAMP_TAG (will also tag as latest)"
+else
+  TIMESTAMP_TAG="$IMAGE_TAG"
+fi
+
 # Try ACR build first, fall back to local build if ACR Tasks not available
 if az acr build \
   --registry $ACR_NAME \
-  --image $IMAGE_NAME:$IMAGE_TAG \
+  --image $IMAGE_NAME:$TIMESTAMP_TAG \
+  --image $IMAGE_NAME:latest \
   --file deployment/docker/Dockerfile \
   . 2>/dev/null; then
   echo "✅ Image built using ACR"
+  # Use timestamped tag for deployment to force update
+  DEPLOY_IMAGE_TAG="$TIMESTAMP_TAG"
 else
   echo "⚠️  ACR Tasks not available, building locally instead..."
   
@@ -88,13 +100,16 @@ else
   
   # Build image locally for AMD64 (Azure requirement)
   echo "🔨 Building image locally for linux/amd64 (this may take a few minutes)..."
-  docker build --platform linux/amd64 -f deployment/docker/Dockerfile -t $ACR_SERVER/$IMAGE_NAME:$IMAGE_TAG .
+  docker build --platform linux/amd64 -f deployment/docker/Dockerfile -t $ACR_SERVER/$IMAGE_NAME:$TIMESTAMP_TAG -t $ACR_SERVER/$IMAGE_NAME:latest .
   
   # Push to ACR
   echo "📤 Pushing image to Azure Container Registry..."
-  docker push $ACR_SERVER/$IMAGE_NAME:$IMAGE_TAG
+  docker push $ACR_SERVER/$IMAGE_NAME:$TIMESTAMP_TAG
+  docker push $ACR_SERVER/$IMAGE_NAME:latest
   
   echo "✅ Image built and pushed locally"
+  # Use timestamped tag for deployment to force update
+  DEPLOY_IMAGE_TAG="$TIMESTAMP_TAG"
 fi
 
 # Create or reuse Log Analytics workspace
@@ -155,10 +170,55 @@ else
   echo "   ✅ Using existing Container App Environment: $CONTAINER_APP_ENV"
 fi
 
-# TODO: Setup persistent storage for database
-# For now, database will be ephemeral (resets on deployment)
-# Future: Implement Azure Files mount or Azure PostgreSQL
-echo "📝 Note: Database persistence not yet configured - data will reset on deployment"
+# Check if persistent storage is configured (skip if app doesn't exist yet or flag is set)
+if [ -z "${SKIP_PERSISTENCE_CHECK:-}" ]; then
+  echo "🔍 Checking database persistence configuration..."
+  PERSISTENCE_CHECK=$(az containerapp show \
+    --name $CONTAINER_APP_NAME \
+    --resource-group $RESOURCE_GROUP \
+    --query "properties.template.containers[0].volumeMounts" \
+    --output json 2>/dev/null || echo "[]")
+
+  if echo "$PERSISTENCE_CHECK" | grep -q "/mnt/data" 2>/dev/null; then
+    echo "   ✅ Database persistence is configured"
+    DB_PATH_ENV=$(az containerapp show \
+      --name $CONTAINER_APP_NAME \
+      --resource-group $RESOURCE_GROUP \
+      --query "properties.template.containers[0].env[?name=='DB_PATH'].value" \
+      --output tsv 2>/dev/null || echo "")
+    if [ -n "$DB_PATH_ENV" ]; then
+      echo "   ✅ Database path: $DB_PATH_ENV"
+    fi
+  else
+    echo ""
+    echo "⚠️  WARNING: Database persistence is NOT configured!"
+    echo "   Your database will be wiped on each deployment."
+    echo ""
+    echo "   To enable persistence (prevents data loss):"
+    echo "   1. Run: ./deployment/scripts/enable-persistence.sh"
+    echo "      OR: ./deployment/scripts/setup-persistent-storage.sh"
+    echo "   2. Then redeploy"
+    echo ""
+    echo "   Cost: ~\$0.06/month for 1GB storage"
+    echo ""
+    if [ -t 0 ]; then
+      # Interactive terminal - ask user
+      read -p "   Continue with deployment anyway? (y/N): " -n 1 -r
+      echo
+      if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo "   Deployment cancelled. Please set up persistence first."
+        exit 1
+      fi
+    else
+      # Non-interactive - just warn
+      echo "   ⚠️  Non-interactive mode: Proceeding with ephemeral database"
+      echo "   Set SKIP_PERSISTENCE_CHECK=1 to suppress this warning"
+    fi
+    echo "   ⚠️  WARNING: Database will be wiped on next deployment!"
+  fi
+else
+  echo "   ⏭️  Skipping persistence check (SKIP_PERSISTENCE_CHECK is set)"
+fi
 
 # Get ACR credentials
 ACR_SERVER=$(az acr show --name $ACR_NAME --query loginServer --output tsv)
@@ -188,18 +248,31 @@ if [ ! -f .env ]; then
     
     if [ "$UPDATE_MODE" = true ]; then
       echo "Updating container app with new image..."
-      az containerapp update \
+      if ! az containerapp update \
         --name $CONTAINER_APP_NAME \
         --resource-group $RESOURCE_GROUP \
-        --image $ACR_SERVER/$IMAGE_NAME:$IMAGE_TAG \
-        --output none
+        --image $ACR_SERVER/$IMAGE_NAME:$DEPLOY_IMAGE_TAG; then
+        echo "❌ Error: Failed to update container app"
+        exit 1
+      fi
+      
+      # Verify update
+      echo "   ⏳ Verifying update..."
+      sleep 5
+      LATEST_REVISION=$(az containerapp revision list \
+        --name $CONTAINER_APP_NAME \
+        --resource-group $RESOURCE_GROUP \
+        --query "[0].name" -o tsv 2>/dev/null)
+      if [ -n "$LATEST_REVISION" ]; then
+        echo "   ✅ New revision: $LATEST_REVISION"
+      fi
     else
       echo "Creating container app without secrets..."
-      az containerapp create \
+      if ! az containerapp create \
         --name $CONTAINER_APP_NAME \
         --resource-group $RESOURCE_GROUP \
         --environment $CONTAINER_APP_ENV \
-        --image $ACR_SERVER/$IMAGE_NAME:$IMAGE_TAG \
+        --image $ACR_SERVER/$IMAGE_NAME:$DEPLOY_IMAGE_TAG \
         --registry-server $ACR_SERVER \
         --registry-username $ACR_USERNAME \
         --registry-password $ACR_PASSWORD \
@@ -210,7 +283,10 @@ if [ ! -f .env ]; then
         --min-replicas 1 \
         --max-replicas 1 \
         --env-vars \
-          PYTHONUNBUFFERED="1"
+          PYTHONUNBUFFERED="1"; then
+        echo "❌ Error: Failed to create container app"
+        exit 1
+      fi
     fi
 else
     echo "📝 Loading environment variables from .env file..."
@@ -272,26 +348,105 @@ else
     
     if [ "$UPDATE_MODE" = true ]; then
       echo "🔄 Updating existing container app..."
-      az containerapp update \
+      
+      # Create temporary YAML file for update with health probes
+      # Use YAML literal block scalar to handle JSON values properly
+      TEMP_YAML=$(mktemp)
+      
+      # Write YAML with proper escaping for SERVER_CONFIGS JSON
+      {
+        echo "properties:"
+        echo "  template:"
+        echo "    containers:"
+        echo "      - name: nebulous-bot"
+        echo "        image: $ACR_SERVER/$IMAGE_NAME:$DEPLOY_IMAGE_TAG"
+        echo "        env:"
+        echo "          - name: DISCORD_TOKEN"
+        echo "            secretRef: discord-token"
+        echo "          - name: STEAM_API_KEY"
+        echo "            secretRef: steam-api-key"
+        echo "          - name: DJANGO_SECRET_KEY"
+        echo "            secretRef: django-secret-key"
+        echo "          - name: APPLICATION_ID"
+        echo "            value: \"$APPLICATION_ID\""
+        echo "          - name: SERVER_CONFIGS"
+        echo "            value: |"
+        echo "              $SERVER_CONFIGS"
+        echo "          - name: PLAYER_THRESHOLD"
+        echo "            value: \"${PLAYER_THRESHOLD:-40}\""
+        echo "          - name: NOTIFICATION_INTERVAL"
+        echo "            value: \"${NOTIFICATION_INTERVAL:-3600}\""
+        echo "          - name: DEBUG"
+        echo "            value: \"False\""
+        echo "          - name: PYTHONUNBUFFERED"
+        echo "            value: \"1\""
+        echo "          - name: DJANGO_SETTINGS_MODULE"
+        echo "            value: \"nebulous_project.settings\""
+        echo "        probes:"
+        echo "          - type: liveness"
+        echo "            httpGet:"
+        echo "              path: /health/"
+        echo "              port: 8000"
+        echo "            initialDelaySeconds: 30"
+        echo "            periodSeconds: 30"
+        echo "          - type: readiness"
+        echo "            httpGet:"
+        echo "              path: /health/"
+        echo "              port: 8000"
+        echo "            initialDelaySeconds: 10"
+        echo "            periodSeconds: 10"
+      } > "$TEMP_YAML"
+      
+      # Update container app with YAML (includes health probes)
+      if ! az containerapp update \
         --name $CONTAINER_APP_NAME \
         --resource-group $RESOURCE_GROUP \
-        --image $ACR_SERVER/$IMAGE_NAME:$IMAGE_TAG \
-        --set-env-vars \
-          APPLICATION_ID="$APPLICATION_ID" \
-          SERVER_CONFIGS="$SERVER_CONFIGS" \
-          PLAYER_THRESHOLD="${PLAYER_THRESHOLD:-40}" \
-          NOTIFICATION_INTERVAL="${NOTIFICATION_INTERVAL:-3600}" \
-          DEBUG="False" \
-          PYTHONUNBUFFERED="1" \
-        --output none
+        --yaml "$TEMP_YAML"; then
+        echo "❌ Error: Failed to update container app"
+        rm -f "$TEMP_YAML"
+        exit 1
+      fi
+      
+      # Clean up temp file
+      rm -f "$TEMP_YAML"
+      
+      # Verify the update created a new revision
+      echo "   ⏳ Waiting for new revision to be created..."
+      sleep 5
+      
+      # Get the latest revision
+      LATEST_REVISION=$(az containerapp revision list \
+        --name $CONTAINER_APP_NAME \
+        --resource-group $RESOURCE_GROUP \
+        --query "[0].name" -o tsv 2>/dev/null)
+      
+      if [ -n "$LATEST_REVISION" ]; then
+        echo "   ✅ New revision created: $LATEST_REVISION"
+        
+        # Check revision status
+        REVISION_STATUS=$(az containerapp revision show \
+          --name $CONTAINER_APP_NAME \
+          --resource-group $RESOURCE_GROUP \
+          --revision $LATEST_REVISION \
+          --query "properties.active" -o tsv 2>/dev/null)
+        
+        if [ "$REVISION_STATUS" == "True" ]; then
+          echo "   ✅ Revision is active"
+        else
+          echo "   ⚠️  Warning: Revision exists but may not be active yet"
+        fi
+      else
+        echo "   ⚠️  Warning: Could not verify new revision (deployment may still be in progress)"
+      fi
+      
       echo "   ✅ Container app updated with new image"
     else
       echo "🚢 Creating container app with secrets..."
-      az containerapp create \
+      if ! az containerapp create \
         --name $CONTAINER_APP_NAME \
         --resource-group $RESOURCE_GROUP \
         --environment $CONTAINER_APP_ENV \
-        --image $ACR_SERVER/$IMAGE_NAME:$IMAGE_TAG \
+        --image $ACR_SERVER/$IMAGE_NAME:$DEPLOY_IMAGE_TAG \
         --registry-server $ACR_SERVER \
         --registry-username $ACR_USERNAME \
         --registry-password $ACR_PASSWORD \
@@ -314,7 +469,10 @@ else
           PLAYER_THRESHOLD="${PLAYER_THRESHOLD:-40}" \
           NOTIFICATION_INTERVAL="${NOTIFICATION_INTERVAL:-3600}" \
           DEBUG="False" \
-          PYTHONUNBUFFERED="1"
+          PYTHONUNBUFFERED="1"; then
+        echo "❌ Error: Failed to create container app"
+        exit 1
+      fi
       echo "   ✅ Container app created"
     fi
 fi
@@ -326,7 +484,10 @@ echo "📊 View logs with:"
 echo "   az containerapp logs show --name $CONTAINER_APP_NAME --resource-group $RESOURCE_GROUP --follow"
 echo ""
 echo "🔄 Update the app with:"
-echo "   az containerapp update --name $CONTAINER_APP_NAME --resource-group $RESOURCE_GROUP --image $ACR_SERVER/$IMAGE_NAME:$IMAGE_TAG"
+echo "   az containerapp update --name $CONTAINER_APP_NAME --resource-group $RESOURCE_GROUP --image $ACR_SERVER/$IMAGE_NAME:$DEPLOY_IMAGE_TAG"
+echo ""
+echo "📋 Check revision status with:"
+echo "   az containerapp revision list --name $CONTAINER_APP_NAME --resource-group $RESOURCE_GROUP --output table"
 echo ""
 echo "🗑️  Delete resources with:"
 echo "   az group delete --name $RESOURCE_GROUP"

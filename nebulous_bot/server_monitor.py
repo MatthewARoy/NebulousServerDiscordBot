@@ -1,7 +1,8 @@
 import asyncio
 import logging
 from datetime import datetime, timedelta, timezone
-from typing import List, Dict, Optional
+from collections import defaultdict
+from typing import List, Dict, Optional, Any
 import discord
 from nebulous_bot.steam_api import SteamAPI
 from nebulous_bot.config import Config
@@ -34,6 +35,7 @@ class ServerMonitor:
         
         self.monitoring_task = None
         self.health_check_task = None  # Self-healing health check
+        self.tracked_update_task = None  # Background task for updating tracked messages
         
         # Formatter will be set by main.py to avoid duplicate instances
         self.formatter = None
@@ -64,7 +66,7 @@ class ServerMonitor:
         """Set the formatter instance to use for embed creation"""
         self.formatter = formatter
     
-    async def track_message(self, message):
+    async def track_message(self, message, metadata: Optional[Dict] = None):
         """Track a bot message for automatic updates"""
         channel_id = message.channel.id
         
@@ -72,10 +74,13 @@ class ServerMonitor:
             self.tracked_messages[channel_id] = []
         
         # Add message to the beginning of the list
-        self.tracked_messages[channel_id].insert(0, {
+        entry = {
             'message': message,
             'created_at': datetime.now(timezone.utc)
-        })
+        }
+        if metadata:
+            entry['metadata'] = dict(metadata)
+        self.tracked_messages[channel_id].insert(0, entry)
         
         # If we exceed the limit, mark the oldest message as stopped
         if len(self.tracked_messages[channel_id]) > self.max_tracked_messages:
@@ -134,6 +139,14 @@ class ServerMonitor:
             except asyncio.CancelledError:
                 pass
             logger.info("Health check stopped")
+
+        if self.tracked_update_task and not self.tracked_update_task.done():
+            self.tracked_update_task.cancel()
+            try:
+                await self.tracked_update_task
+            except asyncio.CancelledError:
+                pass
+            logger.info("Tracked message updates stopped")
     
     async def _monitoring_loop(self):
         """Main monitoring loop that runs every UPDATE_INTERVAL seconds"""
@@ -151,8 +164,10 @@ class ServerMonitor:
                 await self._update_status_message()
                 logger.info(f"📤 Status message update cycle completed")
                 
-                await self._update_tracked_messages()
-                logger.debug("Tracked messages updated")
+                if self.tracked_update_task is None or self.tracked_update_task.done():
+                    self.tracked_update_task = asyncio.create_task(self._update_tracked_messages())
+                else:
+                    logger.debug("Tracked message update already running")
                 
                 await self._check_and_send_notifications()
                 logger.debug("Notifications checked")
@@ -226,6 +241,11 @@ class ServerMonitor:
                 
                 # Also get all servers for !listservers all command
                 all_servers = await api.get_game_servers(include_all=True)
+
+                # Fallback: if all_servers failed, use filtered list so !listservers all is not empty
+                if not all_servers and servers:
+                    logger.warning("Steam API returned no all_servers; falling back to filtered servers")
+                    all_servers = list(servers)
                 
                 logger.debug(f"Received {len(servers)} filtered servers, {len(all_servers)} total servers from Steam API")
                 
@@ -236,6 +256,10 @@ class ServerMonitor:
                 self.cached_servers = servers
                 self.cached_all_servers = all_servers
                 self.last_update = datetime.now(timezone.utc)
+
+                # If we already know stable version, reapply PTB flags to both caches
+                if self.stable_version:
+                    self._recalculate_test_branch_flags()
                 
                 # If stable version hasn't been determined yet, determine it immediately
                 if self.stable_version is None:
@@ -444,93 +468,107 @@ class ServerMonitor:
             return None, None
     
     async def _update_tracked_messages(self):
-        """Update all tracked bot messages with current server data"""
+        """Update all tracked bot messages with current server data concurrently."""
         if not self.formatter:
             return
-        
+
+        update_tasks = []
+        channel_lookup = {}
+        removals = defaultdict(list)
         total_updated = 0
-        total_removed = 0
-        
-        # Iterate through all channels with tracked messages
+
         for channel_id, messages in list(self.tracked_messages.items()):
             channel = self.bot.get_channel(channel_id)
             if not channel:
-                # Channel no longer accessible, remove all tracked messages
                 del self.tracked_messages[channel_id]
                 logger.warning(f"Channel {channel_id} no longer accessible, removed tracked messages")
                 continue
-            
-            # Update each tracked message in this channel
-            messages_to_remove = []
+
+            channel_lookup[channel_id] = channel
             for idx, msg_info in enumerate(messages):
-                message = msg_info['message']
-                
-                try:
-                    # Check if message still has an embed
-                    if not message.embeds:
-                        messages_to_remove.append(idx)
-                        continue
-                    
-                    # Get the original embed title to determine message type
-                    original_embed = message.embeds[0]
-                    original_title = original_embed.title
-                    
-                    # Don't update if this is the persistent status message
-                    if "Live Server Status" in original_title:
-                        continue
-                    
-                    # Create updated embed based on message type
-                    if "Open Lobbies" in original_title:
-                        open_servers = self.get_open_lobbies()
-                        new_embed = self.formatter.create_lobby_list_embed(open_servers, self.last_update)
-                    elif "Active Servers" in original_title:
-                        # Extract filters if any (basic implementation)
-                        servers = self.cached_servers
-                        title_parts = original_title.split(" @ ")
-                        base_title = title_parts[0] if title_parts else original_title
-                        
-                        # Add Discord timestamp format instead of PST
-                        update_time = self.last_update or datetime.now(timezone.utc)
-                        timestamp_int = int(update_time.timestamp())
-                        # Use Discord's relative timestamp format (R = relative like "2 minutes ago")
-                        time_str = f"<t:{timestamp_int}:R>"
-                        title_with_time = f"{base_title} @ {time_str}"
-                        
-                        description = f"Found {len(servers)} servers" if servers else "No servers available."
-                        new_embed = self.formatter.create_server_list_embed(
-                            servers, title_with_time, description, max_servers=15,
-                            last_update=self.last_update, game_start_times=self.game_start_times
-                        )
-                        # Restore original footer if it exists
-                        if original_embed.footer and original_embed.footer.text:
-                            new_embed.set_footer(text=original_embed.footer.text)
-                    else:
-                        # Unknown message type, skip
-                        continue
-                    
-                    # Update the message
-                    await message.edit(embed=new_embed)
-                    total_updated += 1
-                    
-                except discord.NotFound:
-                    # Message was deleted
-                    messages_to_remove.append(idx)
+                update_tasks.append(self._refresh_tracked_message(channel, channel_id, idx, msg_info))
+
+        if not update_tasks:
+            return
+
+        results = await asyncio.gather(*update_tasks, return_exceptions=True)
+
+        for result in results:
+            if isinstance(result, Exception):
+                logger.error(f"Error updating tracked message: {result}")
+                continue
+
+            channel_id = result['channel_id']
+            if result.get('removed'):
+                removals[channel_id].append(result['idx'])
+                continue
+
+            if result.get('updated'):
+                total_updated += 1
+
+        total_removed = 0
+        for channel_id, idxs in removals.items():
+            messages = self.tracked_messages.get(channel_id)
+            if not messages:
+                continue
+            for idx in sorted(set(idxs), reverse=True):
+                if idx < len(messages):
+                    del messages[idx]
                     total_removed += 1
-                except discord.Forbidden:
-                    logger.warning(f"No permission to edit message {message.id} in channel {channel_id}")
-                except Exception as e:
-                    logger.error(f"Error updating tracked message {message.id}: {e}")
-            
-            # Remove deleted messages (reverse order to maintain indices)
-            for idx in reversed(messages_to_remove):
-                del messages[idx]
-            
-            # Remove channel if no messages left
             if not messages:
                 del self.tracked_messages[channel_id]
-        
+
         if total_updated > 0 or total_removed > 0:
             logger.info(f"Updated {total_updated} tracked messages, removed {total_removed} deleted messages")
+
+    async def _refresh_tracked_message(self, channel, channel_id: int, idx: int, msg_info: Dict[str, Any]) -> Dict[str, Any]:
+        """Refresh a single tracked message and return its update state."""
+        message = msg_info['message']
+        if not message.embeds:
+            return {'channel_id': channel_id, 'idx': idx, 'removed': True}
+
+        original_embed = message.embeds[0]
+        original_title = original_embed.title or ""
+
+        if "Live Server Status" in original_title:
+            return {'channel_id': channel_id, 'idx': idx, 'updated': False}
+
+        try:
+            if "Open Lobbies" in original_title:
+                open_servers = self.get_open_lobbies()
+                new_embed = self.formatter.create_lobby_list_embed(open_servers, self.last_update)
+            elif "Active Servers" in original_title:
+                metadata = msg_info.get('metadata', {})
+                servers = self._servers_for_listservers_metadata(metadata)
+                title_parts = original_title.split(" @ ")
+                base_title = title_parts[0] if title_parts else original_title
+
+                update_time = self.last_update or datetime.now(timezone.utc)
+                timestamp_int = int(update_time.timestamp())
+                time_str = f"<t:{timestamp_int}:R>"
+                title_with_time = f"{base_title} @ {time_str}"
+
+                description = f"Found {len(servers)} servers" if servers else "No servers available."
+                new_embed = self.formatter.create_server_list_embed(
+                    servers, title_with_time, description, max_servers=15,
+                    last_update=self.last_update, game_start_times=self.game_start_times
+                )
+                if original_embed.footer and original_embed.footer.text:
+                    new_embed.set_footer(text=original_embed.footer.text)
+            else:
+                return {'channel_id': channel_id, 'idx': idx, 'updated': False}
+
+            await message.edit(embed=new_embed)
+            return {'channel_id': channel_id, 'idx': idx, 'updated': True}
+
+        except discord.NotFound:
+            return {'channel_id': channel_id, 'idx': idx, 'removed': True}
+        except discord.Forbidden:
+            logger.warning(f"No permission to edit message {message.id} in channel {channel_id}")
+            return {'channel_id': channel_id, 'idx': idx, 'updated': False}
+        except Exception as e:
+            logger.error(f"Error updating tracked message {message.id}: {e}")
+            return {'channel_id': channel_id, 'idx': idx, 'updated': False}
     
     async def _check_and_send_notifications(self):
         """Check if player count exceeds threshold and send notifications if needed"""
@@ -608,19 +646,49 @@ class ServerMonitor:
         except Exception as e:
             logger.error(f"Error sending notification for guild {guild_id}: {e}")
     
+    def _recalculate_test_branch_flags(self):
+        """Recompute PTB flags for cached server lists using current stable version."""
+        if not self.stable_version:
+            logger.debug("Cannot recalculate PTB flags: stable_version not set")
+            return
+        
+        ptb_count_cached = 0
+        ptb_count_all = 0
+        
+        for server in self.cached_servers:
+            version = server.get('version', '').strip()
+            if version:
+                old_flag = server.get('is_test_branch', False)
+                server['is_test_branch'] = self.steam_api._is_test_branch_server(version)
+                if server.get('is_test_branch', False):
+                    ptb_count_cached += 1
+                    if not old_flag:
+                        logger.debug(f"Server {server.get('name', 'Unknown')} ({version}) marked as PTB (stable: {self.stable_version})")
+        
+        for server in self.cached_all_servers:
+            version = server.get('version', '').strip()
+            if version:
+                old_flag = server.get('is_test_branch', False)
+                server['is_test_branch'] = self.steam_api._is_test_branch_server(version)
+                if server.get('is_test_branch', False):
+                    ptb_count_all += 1
+        
+        logger.debug(f"Recalculated PTB flags: {ptb_count_cached} PTB in cached_servers, {ptb_count_all} PTB in cached_all_servers (stable_version: {self.stable_version})")
+    
     def _determine_stable_version(self):
         """
         Determine the stable version from the majority of servers.
         Called when a new daily status message is created.
         Updates both ServerMonitor and SteamAPI with the determined stable version.
         """
-        if not self.cached_servers:
+        source_servers = self.cached_all_servers or self.cached_servers
+        if not source_servers:
             logger.debug("No servers available to determine stable version")
             return
         
         # Count versions from all servers
         version_counts = {}
-        for server in self.cached_servers:
+        for server in source_servers:
             version = server.get('version', '').strip()
             if version:  # Only count non-empty versions
                 version_counts[version] = version_counts.get(version, 0) + 1
@@ -642,12 +710,17 @@ class ServerMonitor:
                 logger.info(f"Determined stable version: {stable_version} (from {version_counts[stable_version]} servers)")
                 
                 # Re-evaluate test branch status for all cached servers with the new stable version
-                for server in self.cached_servers:
-                    version = server.get('version', '').strip()
-                    if version:
-                        server['is_test_branch'] = self.steam_api._is_test_branch_server(version)
+                self._recalculate_test_branch_flags()
         else:
-            logger.debug(f"Not enough servers to determine stable version (most common: {stable_version} with {version_counts[stable_version]} server(s))")
+            # Even if we don't have enough servers, if we have at least one version, use it as fallback
+            # This ensures PTB detection works even with few servers
+            if not self.stable_version and version_counts[stable_version] >= 1:
+                self.stable_version = stable_version
+                self.steam_api.set_stable_version(stable_version)
+                logger.info(f"Determined stable version (fallback): {stable_version} (from {version_counts[stable_version]} server(s))")
+                self._recalculate_test_branch_flags()
+            else:
+                logger.debug(f"Not enough servers to determine stable version (most common: {stable_version} with {version_counts[stable_version]} server(s))")
     
     def _create_server_status_embed(self, formatter) -> discord.Embed:
         """Create Discord embed with current server status"""
@@ -662,6 +735,84 @@ class ServerMonitor:
                 server.get('players', 0) < server.get('map_capacity', 8))
         ]
     
+    def _server_identity(self, server: Dict) -> str:
+        """Return unique identity key for a server."""
+        return server.get('id') or server.get('address') or server.get('name', '')
+
+    def _get_listservers_base_servers(self, ptb_only: bool, show_all: bool) -> List[Dict]:
+        """Return the base server list for !listservers given the filters."""
+        if ptb_only:
+            # Ensure PTB flags are up to date before filtering
+            if self.stable_version:
+                self._recalculate_test_branch_flags()
+            ptb_servers = [s for s in self.cached_all_servers if s.get('is_test_branch', False)]
+            logger.debug(f"PTB filter: found {len(ptb_servers)} PTB servers out of {len(self.cached_all_servers)} total servers (stable_version: {self.stable_version})")
+            return ptb_servers
+        if show_all:
+            return self.cached_all_servers
+
+        base_servers = list(self.cached_servers)
+        # Ensure PTB flags are up to date before checking
+        if self.stable_version:
+            self._recalculate_test_branch_flags()
+        ptb_additions = [
+            s for s in self.cached_all_servers
+            if s.get('is_test_branch', False)
+               and self._server_identity(s) not in {self._server_identity(b) for b in base_servers}
+        ]
+        if ptb_additions:
+            base_servers.extend(ptb_additions)
+        return base_servers
+
+    def filter_servers(self, base_servers: List[Dict], filters: Dict[str, Any]) -> List[Dict]:
+        """Apply dynamic filters (open, region, status, game mode) to a server list."""
+        if not filters:
+            return base_servers
+
+        filtered_servers = []
+        for server in base_servers:
+            match = True
+
+            if filters.get('open_lobby'):
+                if server.get('status') != 'lobby' or server.get('players', 0) >= server.get('map_capacity', 8):
+                    match = False
+
+            if filters.get('status') and server.get('status') != filters['status']:
+                match = False
+
+            if filters.get('region') and server.get('region', '').lower() != filters['region'].lower():
+                match = False
+
+            if filters.get('game_mode'):
+                game_mode = server.get('game_mode', '').lower()
+                if filters['game_mode'].lower() == 'competitive' and 'competitive' not in game_mode:
+                    match = False
+                elif filters['game_mode'].lower() == 'casual' and 'casual' not in game_mode:
+                    match = False
+
+            if match:
+                filtered_servers.append(server)
+
+        return filtered_servers
+
+    def _servers_for_listservers_metadata(self, metadata: Dict[str, Any]) -> List[Dict]:
+        """Rebuild the server list needed for updating a tracked !listservers message."""
+        if not metadata or metadata.get('command') != 'listservers':
+            return self.cached_servers
+
+        ptb_only = metadata.get('ptb_only', False)
+        show_all = metadata.get('show_all', False)
+        filters = metadata.get('filters', {}) or {}
+
+        return self.get_servers_for_listservers(ptb_only, show_all, filters)
+
+    def get_servers_for_listservers(self, ptb_only: bool, show_all: bool, filters: Dict[str, Any]) -> List[Dict]:
+        """Public helper for commands to rebuild the filtered server list."""
+        base_servers = self._get_listservers_base_servers(ptb_only, show_all)
+        if filters:
+            return self.filter_servers(base_servers, filters)
+        return base_servers
+
     def get_servers_by_criteria(self, **criteria) -> List[Dict]:
         """Filter servers by various criteria"""
         filtered_servers = self.cached_servers.copy()
@@ -738,33 +889,51 @@ class ServerMonitor:
             if key not in waiters_by_channel_and_ptb:
                 waiters_by_channel_and_ptb[key] = []
             waiters_by_channel_and_ptb[key].append((user_id, waiter_info))
-        
+
         # Notify all waiters, grouped by channel and PTB preference
         waiters_to_remove = []
         for (channel_id, ptb_only), waiters in waiters_by_channel_and_ptb.items():
-            # Filter servers by PTB preference for this group
-            filtered_servers = trigger_servers
+            base_servers = trigger_servers
             if ptb_only:
-                filtered_servers = [s for s in trigger_servers if s.get('is_test_branch', False)]
-                if not filtered_servers:
+                base_servers = [s for s in trigger_servers if s.get('is_test_branch', False)]
+                if not base_servers:
                     continue  # No PTB servers match, skip this group
-            
+
+            # Apply per-waiter skip filtering and collect which users should be pinged
+            eligible_waiters = []
+            aggregated_servers = []
+            aggregated_ids = set()
+
+            for user_id, waiter_info in waiters:
+                user_servers = self._filter_servers_for_waiter(base_servers, waiter_info)
+                if not user_servers:
+                    continue  # Nothing to notify this user about (likely due to --skip)
+
+                eligible_waiters.append((user_id, waiter_info))
+                for server in user_servers:
+                    server_id = self._server_identity(server)
+                    if server_id not in aggregated_ids:
+                        aggregated_ids.add(server_id)
+                        aggregated_servers.append(server)
+
+            if not eligible_waiters or not aggregated_servers:
+                continue  # No one to notify after applying skip filters
+
             # Separate servers by type for better messaging
-            debrief_servers = [s for s in filtered_servers if s.get('status') == 'debrief']
-            active_servers = [s for s in filtered_servers if s.get('status') != 'debrief']
-            
+            debrief_servers = [s for s in aggregated_servers if s.get('status') == 'debrief']
+            active_servers = [s for s in aggregated_servers if s.get('status') != 'debrief']
+
             # Build notification message
             message_parts = []
-            
             ptb_prefix = "🧪 PTB: " if ptb_only else ""
-            
+
             if debrief_servers:
                 debrief_list = []
                 for server in debrief_servers[:5]:  # Show up to 5
                     name = server.get('name', 'Unknown')[:40]
                     debrief_list.append(f"• {name}")
                 message_parts.append(f"{ptb_prefix}🎮 **{len(debrief_servers)} game(s) just finished (in debrief):**\n" + "\n".join(debrief_list))
-            
+
             if active_servers:
                 active_list = []
                 for server in active_servers[:5]:  # Show up to 5
@@ -774,27 +943,27 @@ class ServerMonitor:
                     available_slots = capacity - players
                     active_list.append(f"• {name} - {players}/{capacity} players ({available_slots} slot(s) available)")
                 message_parts.append(f"{ptb_prefix}🚀 **{len(active_servers)} lobby(ies) filling up (3+ players, joinable):**\n" + "\n".join(active_list))
-            
+
             if not message_parts:
                 continue  # No matching servers for this group
-            
+
             notification_text = "\n\n".join(message_parts)
-            
+
             try:
                 channel = self.bot.get_channel(channel_id)
                 if channel:
-                    # Build ping string for all users in this channel
-                    user_pings = " ".join([f"<@{user_id}>" for user_id, _ in waiters])
+                    # Build ping string for eligible users in this channel
+                    user_pings = " ".join([f"<@{user_id}>" for user_id, _ in eligible_waiters])
                     await channel.send(f"{user_pings}\n\n{notification_text}")
-                    
+
                     # Log and mark for removal
-                    for user_id, waiter_info in waiters:
+                    for user_id, waiter_info in eligible_waiters:
                         ptb_text = " (PTB only)" if ptb_only else ""
                         logger.info(f"Notified {waiter_info['username']} (ID: {user_id}) about next game{ptb_text}")
                         waiters_to_remove.append(user_id)
                 else:
-                    # Channel not found, try DM for each user
-                    for user_id, waiter_info in waiters:
+                    # Channel not found, try DM for each eligible user
+                    for user_id, waiter_info in eligible_waiters:
                         try:
                             user = await self.bot.fetch_user(user_id)
                             await user.send(f"Game alert! 🎮\n\n{notification_text}")
@@ -806,8 +975,8 @@ class ServerMonitor:
                             waiters_to_remove.append(user_id)  # Remove them anyway after failed attempt
             except Exception as e:
                 logger.error(f"Error notifying users in channel {channel_id}: {e}")
-                # Mark all waiters in this channel for removal on error
-                for user_id, _ in waiters:
+                # Mark all eligible waiters in this channel for removal on error
+                for user_id, _ in eligible_waiters:
                     waiters_to_remove.append(user_id)
         
         # Remove notified users
@@ -818,16 +987,82 @@ class ServerMonitor:
         if waiters_to_remove:
             logger.info(f"Removed {len(waiters_to_remove)} users from next game waitlist after notification")
     
-    def add_next_game_waiter(self, user_id: int, channel_id: int, username: str, ptb_only: bool = False):
+    def get_joinable_lobby_ids(self, ptb_only: bool = False) -> List[str]:
+        """Return identities of current joinable lobbies (3+ players, not full)."""
+        lobby_ids = set()
+        for server in self.cached_servers:
+            if server.get('status') != 'lobby':
+                continue
+            players = server.get('players', 0)
+            capacity = server.get('map_capacity', 8)
+            if players < 3 or players >= capacity:
+                continue
+            if ptb_only and not server.get('is_test_branch', False):
+                continue
+            lobby_ids.add(self._server_identity(server))
+        return list(lobby_ids)
+
+    def _filter_servers_for_waiter(self, trigger_servers: List[Dict], waiter_info: Dict) -> List[Dict]:
+        """
+        Apply waiter-specific filters (skip current lobbies) to trigger servers.
+        When a skipped lobby leaves lobby state, it is removed from the skip list
+        so future new lobbies on that server can notify the user.
+        """
+        skip_ids = set(waiter_info.get('skip_lobbies', []))
+        filtered = []
+
+        for server in trigger_servers:
+            server_id = self._server_identity(server)
+            status = server.get('status')
+
+            if status == 'lobby' and server_id in skip_ids:
+                # Skip lobbies that were active when the user opted in with --skip
+                continue
+
+            filtered.append(server)
+
+            # If a previously skipped server left lobby, allow future notifications
+            if server_id in skip_ids and status != 'lobby':
+                skip_ids.discard(server_id)
+
+        # Persist any updates to the skip list
+        waiter_info['skip_lobbies'] = list(skip_ids)
+        return filtered
+
+    def resolve_server_names(self, server_ids: List[str], ptb_only: bool = False) -> List[str]:
+        """Best-effort resolve server identities to human-friendly names."""
+        id_set = set(server_ids or [])
+        if not id_set:
+            return []
+
+        names = []
+        for server in self.cached_servers:
+            if ptb_only and not server.get('is_test_branch', False):
+                continue
+
+            server_id = self._server_identity(server)
+            if server_id in id_set:
+                names.append(server.get('name', 'Unknown'))
+
+        # Fallback for any unmatched ids
+        if len(names) < len(id_set):
+            remaining = len(id_set) - len(names)
+            names.append(f"{remaining} unnamed/unknown lobby(s)")
+
+        return names
+
+    def add_next_game_waiter(self, user_id: int, channel_id: int, username: str, ptb_only: bool = False, skip_lobbies: Optional[List[str]] = None):
         """Add a user to the next game waitlist"""
         self.next_game_waiters[user_id] = {
             'channel_id': channel_id,
             'timestamp': datetime.now(timezone.utc),
             'username': username,
-            'ptb_only': ptb_only
+            'ptb_only': ptb_only,
+            'skip_lobbies': skip_lobbies or []
         }
         ptb_text = " (PTB only)" if ptb_only else ""
-        logger.info(f"Added {username} (ID: {user_id}) to next game waitlist{ptb_text}")
+        skip_text = " with skip" if skip_lobbies else ""
+        logger.info(f"Added {username} (ID: {user_id}) to next game waitlist{ptb_text}{skip_text}")
     
     def remove_next_game_waiter(self, user_id: int) -> bool:
         """Remove a user from the next game waitlist. Returns True if user was in list."""
@@ -897,6 +1132,11 @@ class ServerMonitor:
             trigger_servers = [s for s in trigger_servers if s.get('is_test_branch', False)]
             if not trigger_servers:
                 return False  # No PTB servers match
+
+        # Respect per-waiter skip list (current lobbies)
+        trigger_servers = self._filter_servers_for_waiter(trigger_servers, waiter_info)
+        if not trigger_servers:
+            return False
         
         # Separate servers by type for better messaging
         debrief_servers = [s for s in trigger_servers if s.get('status') == 'debrief']

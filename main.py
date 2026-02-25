@@ -132,8 +132,8 @@ async def list_servers(ctx, *, filter_args: str = ""):
     List all active servers with optional filtering
     
     Usage: !listservers [filter]
-    Filters: open, lobby, ingame, us, eu, competitive, casual, all
-    Examples: !listservers open, !listservers lobby us, !listservers all
+    Filters: ptb, open, lobby, ingame, us, eu, competitive, casual, all
+    Examples: !listservers ptb, !listservers open, !listservers lobby us, !listservers all
     """
     if not server_monitor or not formatter:
         await ctx.send("❌ Server monitoring not initialized yet. Please wait a moment.")
@@ -142,8 +142,13 @@ async def list_servers(ctx, *, filter_args: str = ""):
     # Parse filter arguments
     filters = {}
     show_all = False
+    ptb_only = False
     if filter_args:
         args = filter_args.lower().split()
+        if 'ptb' in args:
+            ptb_only = True
+            # remove ptb so it does not interfere with other filters
+            args = [arg for arg in args if arg != 'ptb']
         if 'all' in args:
             show_all = True
         if 'open' in args:
@@ -160,45 +165,15 @@ async def list_servers(ctx, *, filter_args: str = ""):
             filters['game_mode'] = 'competitive'
         if 'casual' in args:
             filters['game_mode'] = 'casual'
-    
-    # Get servers - use all servers if "all" is specified, otherwise use filtered cache
-    if show_all:
-        base_servers = server_monitor.cached_all_servers
-    else:
-        base_servers = server_monitor.cached_servers
-    
-    # Apply additional filters if specified
+
+    # Get servers - use helper to keep filter logic consistent
+    servers = server_monitor.get_servers_for_listservers(ptb_only, show_all, filters)
     if filters:
-        # Apply filters to the base server list
-        filtered_servers = []
-        for server in base_servers:
-            match = True
-            
-            if filters.get('open_lobby'):
-                if server.get('status') != 'lobby' or server.get('players', 0) >= server.get('map_capacity', 8):
-                    match = False
-            
-            if filters.get('status') and server.get('status') != filters['status']:
-                match = False
-            
-            if filters.get('region') and server.get('region', '').lower() != filters['region'].lower():
-                match = False
-            
-            if filters.get('game_mode'):
-                game_mode = server.get('game_mode', '').lower()
-                if filters['game_mode'].lower() == 'competitive' and 'competitive' not in game_mode:
-                    match = False
-                elif filters['game_mode'].lower() == 'casual' and 'casual' not in game_mode:
-                    match = False
-            
-            if match:
-                filtered_servers.append(server)
-        
-        servers = filtered_servers
         title_suffix = f" (Filtered: {filter_args})"
     else:
-        servers = base_servers
-        if show_all:
+        if ptb_only and not show_all:
+            title_suffix = " (PTB Servers)"
+        elif show_all:
             title_suffix = " (All Servers)"
         else:
             title_suffix = ""
@@ -214,12 +189,18 @@ async def list_servers(ctx, *, filter_args: str = ""):
                                               game_start_times=server_monitor.game_start_times)
     
     # Add filter help
-    footer_text = "Filters: open, lobby, ingame, us, eu, competitive, casual, all • Use !openlobbies for joinable servers"
+    footer_text = "Filters: ptb, open, lobby, ingame, us, eu, competitive, casual, all • Use !openlobbies for joinable servers"
     embed.set_footer(text=footer_text)
     message = await ctx.send(embed=embed)
     
     # Track this message for automatic updates
-    await server_monitor.track_message(message)
+    metadata = {
+        'command': 'listservers',
+        'filters': dict(filters),
+        'ptb_only': ptb_only,
+        'show_all': show_all
+    }
+    await server_monitor.track_message(message, metadata=metadata)
 
 @bot.command(name='openlobbies', aliases=['open', 'available'])
 async def open_lobbies(ctx):
@@ -676,9 +657,10 @@ async def next_game_notify(ctx, *, args: str = ""):
     """
     Get notified when the next game is ready to join.
     
-    Usage: !nextgame [ptb]
+    Usage: !nextgame [ptb] [--skip]
     - !nextgame - Notify for all servers
     - !nextgame ptb - Notify only for PTB (test branch) servers
+    - !nextgame --skip - Don't notify for lobbies already active right now
     
     You'll be pinged once when either:
     - A game enters debrief (game just ended, new one might start)
@@ -694,7 +676,9 @@ async def next_game_notify(ctx, *, args: str = ""):
     
     # Parse arguments
     args_lower = args.lower().strip()
-    ptb_only = args_lower == 'ptb'
+    tokens = [token for token in args_lower.split() if token]
+    ptb_only = any(token == 'ptb' for token in tokens)
+    skip_current_lobbies = any(token in ('--skip', '-s', 'skip') for token in tokens)
     
     # Check if user is already waiting
     if user_id in server_monitor.next_game_waiters:
@@ -710,6 +694,8 @@ async def next_game_notify(ctx, *, args: str = ""):
         wait_duration = datetime.now(timezone.utc) - wait_start
         minutes_waiting = int(wait_duration.total_seconds() / 60)
         current_ptb_only = wait_info.get('ptb_only', False)
+        current_skip = bool(wait_info.get('skip_lobbies'))
+        skip_names = server_monitor.resolve_server_names(wait_info.get('skip_lobbies', []), ptb_only=current_ptb_only) if current_skip else []
         
         embed.add_field(
             name="⏱️ Waiting Time",
@@ -721,6 +707,20 @@ async def next_game_notify(ctx, *, args: str = ""):
             embed.add_field(
                 name="🧪 Mode",
                 value="PTB servers only",
+                inline=False
+            )
+        
+        if current_skip:
+            skipped_list = ", ".join(skip_names[:5]) if skip_names else "current active lobbies"
+            if skip_names and len(skip_names) > 5:
+                skipped_list += f" (+{len(skip_names) - 5} more)"
+
+            embed.add_field(
+                name="⏭️ Skipping Current Lobbies",
+                value=(
+                    "You won't be pinged for lobbies that were already active when you opted in.\n"
+                    f"Skipping: {skipped_list}"
+                ),
                 inline=False
             )
         
@@ -737,7 +737,15 @@ async def next_game_notify(ctx, *, args: str = ""):
     await server_monitor.force_update()
     
     # Add user to waitlist with PTB preference
-    server_monitor.add_next_game_waiter(user_id, channel_id, username, ptb_only=ptb_only)
+    skip_lobbies = server_monitor.get_joinable_lobby_ids(ptb_only=ptb_only) if skip_current_lobbies else []
+    skip_lobby_names = server_monitor.resolve_server_names(skip_lobbies, ptb_only=ptb_only) if skip_lobbies else []
+    server_monitor.add_next_game_waiter(
+        user_id,
+        channel_id,
+        username,
+        ptb_only=ptb_only,
+        skip_lobbies=skip_lobbies
+    )
     
     # Immediately check if there are any matching servers
     matching_servers = server_monitor.find_matching_servers_for_notification(ptb_only=ptb_only)
@@ -760,6 +768,21 @@ async def next_game_notify(ctx, *, args: str = ""):
         timestamp=datetime.now()
     )
     
+    if skip_current_lobbies:
+        skipped_list = ", ".join(skip_lobby_names[:5]) if skip_lobby_names else "current active lobbies"
+        if skip_lobby_names and len(skip_lobby_names) > 5:
+            skipped_list += f" (+{len(skip_lobby_names) - 5} more)"
+
+        embed.add_field(
+            name="⏭️ Skip Current Lobbies",
+            value=(
+                "I won't ping you for lobbies already active right now. "
+                "I'll notify you when a new lobby opens or a game enters debrief.\n"
+                f"Skipping: {skipped_list}"
+            ),
+            inline=False
+        )
+
     embed.add_field(
         name="I'll notify you when:",
         value=(
