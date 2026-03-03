@@ -433,21 +433,27 @@ class Command(BaseCommand):
                 inline=False
             )
             
-            # Show recent changelog (last 3 versions)
-            changelog_text = ""
+            # Show concise recent changelog and keep within Discord field limits.
+            lines = []
             for entry in Config.CHANGELOG[:3]:
                 version = entry.get('version', 'Unknown')
                 date = entry.get('date', 'Unknown')
                 changes = entry.get('changes', [])
-                
-                changelog_text += f"**v{version}** ({date})\n"
-                for change in changes:
-                    changelog_text += f"• {change}\n"
-                changelog_text += "\n"
+
+                lines.append(f"**v{version}** ({date})")
+                for change in changes[:2]:
+                    lines.append(f"• {change}")
+                if len(changes) > 2:
+                    lines.append(f"• +{len(changes) - 2} more")
+                lines.append("")
+
+            changelog_text = "\n".join(lines).strip() or "No changelog available"
+            if len(changelog_text) > 1000:
+                changelog_text = changelog_text[:997].rstrip() + "..."
             
             embed.add_field(
                 name="📋 Recent Changes",
-                value=changelog_text.strip() or "No changelog available",
+                value=changelog_text,
                 inline=False
             )
             
@@ -1082,7 +1088,7 @@ class Command(BaseCommand):
                     content=f"❌ Failed to generate graph: {str(e)}"
                 )
         
-        @bot.command(name='commandlogs', aliases=['cmdlogs', 'logs'])
+        @bot.command(name='commandlogs', aliases=['cmdlogs', 'logs'], hidden=True)
         async def show_command_logs(ctx, limit: int = 20, command_filter: str = None):
             """
             View command usage logs (admin/debugging only)

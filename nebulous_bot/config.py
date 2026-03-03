@@ -64,9 +64,9 @@ class Config:
             "version": "2.3.1",
             "date": "2026-03-03",
             "changes": [
-                "Improved `!nextgame` queue handling to support separate standard/PTB wait states and mode-aware notifications",
-                "Added a daily 6pm PST queue interest alert that pings queued users when enough players are waiting",
-                "Hardened server-name output by neutralizing URL-like text in names (e.g. `discord.gg/...`) to prevent clickable/malicious links in alerts"
+                "Improved !nextgame queue handling for standard and PTB modes",
+                "Added a daily 6pm PST queue-interest alert",
+                "Sanitized URL-like text in server names for safer alerts"
             ]
         },
         {
