@@ -58,8 +58,17 @@ class Config:
     EMBED_COLOR_NO_SERVERS = 0xff0000  # Red
     
     # Version Information
-    VERSION = "2.3.0"
+    VERSION = "2.3.1"
     CHANGELOG = [
+        {
+            "version": "2.3.1",
+            "date": "2026-03-03",
+            "changes": [
+                "Improved `!nextgame` queue handling to support separate standard/PTB wait states and mode-aware notifications",
+                "Added a daily 6pm PST queue interest alert that pings queued users when enough players are waiting",
+                "Hardened server-name output by neutralizing URL-like text in names (e.g. `discord.gg/...`) to prevent clickable/malicious links in alerts"
+            ]
+        },
         {
             "version": "2.3.0",
             "date": "2026-01-01",

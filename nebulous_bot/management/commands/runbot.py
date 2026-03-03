@@ -792,8 +792,8 @@ class Command(BaseCommand):
             ptb_only = any(token == 'ptb' for token in tokens)
             skip_current_lobbies = any(token in ('--skip', '-s', 'skip') for token in tokens)
             
-            # Check if user is already waiting
-            if user_id in server_monitor.next_game_waiters:
+            # Check if user is already waiting in this queue mode
+            if server_monitor.is_user_waiting_for_next_game(user_id, ptb_only=ptb_only):
                 embed = discord.Embed(
                     title="🔔 Already Waiting",
                     description="You're already on the notification list! I'll ping you when a game is ready.",
@@ -801,7 +801,10 @@ class Command(BaseCommand):
                 )
                 
                 # Show current wait time and PTB status
-                wait_info = server_monitor.next_game_waiters[user_id]
+                wait_info = server_monitor.get_next_game_waiter(user_id, ptb_only=ptb_only)
+                if not wait_info:
+                    await ctx.send("❌ Could not read your current waitlist status. Please try again.")
+                    return
                 wait_start = wait_info['timestamp']
                 wait_duration = datetime.now(timezone.utc) - wait_start
                 minutes_waiting = int(wait_duration.total_seconds() / 60)
@@ -864,7 +867,11 @@ class Command(BaseCommand):
             
             if matching_servers:
                 # Immediately notify the user
-                notified = await server_monitor.notify_single_user_immediately(user_id, matching_servers)
+                notified = await server_monitor.notify_single_user_immediately(
+                    user_id,
+                    matching_servers,
+                    ptb_only=ptb_only
+                )
                 if notified:
                     # User was notified, no need for extra confirmation message
                     return

@@ -1,8 +1,9 @@
 import asyncio
 import logging
+import re
 from datetime import datetime, timedelta, timezone
 from collections import defaultdict
-from typing import List, Dict, Optional, Any
+from typing import List, Dict, Optional, Any, Tuple
 import discord
 from nebulous_bot.steam_api import SteamAPI
 from nebulous_bot.config import Config
@@ -14,6 +15,8 @@ PST = timezone(timedelta(hours=-8))
 logger = logging.getLogger(__name__)
 
 class ServerMonitor:
+    URL_HOST_PATTERN = re.compile(r'(?<!@)\b([a-z0-9][a-z0-9-]{0,62})\.([a-z]{2,24})(?=(?:/|\b))', re.IGNORECASE)
+
     def __init__(self, bot):
         self.bot = bot
         self.steam_api = SteamAPI()  # Using real Steam API now
@@ -48,8 +51,11 @@ class ServerMonitor:
         self.statistics_service = StatisticsService()
         
         # Track users waiting for next game notifications
-        # Format: {user_id: {'channel_id': int, 'timestamp': datetime, 'username': str}}
+        # Format: {(user_id, ptb_only): {'channel_id': int, 'timestamp': datetime, 'username': str, ...}}
         self.next_game_waiters = {}
+        
+        # Track daily queue alert checks for !nextgame (PST date of last check)
+        self.last_next_game_queue_alert_check_date = None
         
         # Track servers that just entered debriefing in the current cycle
         # Format: {server_id: server_dict}
@@ -65,6 +71,19 @@ class ServerMonitor:
     def set_formatter(self, formatter):
         """Set the formatter instance to use for embed creation"""
         self.formatter = formatter
+
+    @classmethod
+    def sanitize_server_name_for_display(cls, name: Any) -> str:
+        """
+        Neutralize URL-like strings in server names so Discord does not auto-link them.
+        Example: discord.gg/b -> discord .gg/b
+        """
+        safe_name = str(name or "Unknown")
+        # Break protocol and common URL prefix patterns first.
+        safe_name = safe_name.replace("https://", "https ://").replace("http://", "http ://")
+        safe_name = re.sub(r'(?i)\bwww\.', 'www .', safe_name)
+        # Break hostnames by inserting a space before the TLD dot.
+        return cls.URL_HOST_PATTERN.sub(r'\1 .\2', safe_name)
     
     async def track_message(self, message, metadata: Optional[Dict] = None):
         """Track a bot message for automatic updates"""
@@ -177,6 +196,9 @@ class ServerMonitor:
                 
                 await self._check_next_game_notifications()
                 logger.debug("Next game notifications checked")
+                
+                await self._check_daily_next_game_queue_alert()
+                logger.debug("Daily nextgame queue alert checked")
                 
                 logger.info(f"Monitoring loop iteration {iteration} complete. Sleeping {Config.UPDATE_INTERVAL}s...")
                 await asyncio.sleep(Config.UPDATE_INTERVAL)
@@ -758,6 +780,7 @@ class ServerMonitor:
         ptb_additions = [
             s for s in self.cached_all_servers
             if s.get('is_test_branch', False)
+               and s.get('players', 0) > 0
                and self._server_identity(s) not in {self._server_identity(b) for b in base_servers}
         ]
         if ptb_additions:
@@ -874,6 +897,79 @@ class ServerMonitor:
         
         except Exception as e:
             logger.error(f"Error checking next game notifications: {e}", exc_info=True)
+
+    async def _check_daily_next_game_queue_alert(self):
+        """
+        Once per PST day at/after 6pm, check !nextgame queue size.
+        If 4+ unique users are queued, ping all queued users by channel.
+        This is only an alert and does NOT clear the queue.
+        """
+        now_pst = datetime.now(PST)
+        today = now_pst.date()
+
+        # Run only once per PST day and only at/after 6pm PST.
+        if now_pst.hour < 18:
+            return
+        if self.last_next_game_queue_alert_check_date == today:
+            return
+
+        # Mark the day as checked even if queue is too small, to avoid repeated checks.
+        self.last_next_game_queue_alert_check_date = today
+
+        unique_user_ids = {user_id for user_id, _ in self.next_game_waiters.keys()}
+        queue_size = len(unique_user_ids)
+        if queue_size < 4:
+            logger.info(
+                f"Daily nextgame queue check skipped alert on {today}: "
+                f"{queue_size} user(s) queued (< 4 threshold)"
+            )
+            return
+
+        # Group by channel, dedupe users per channel across queue modes.
+        users_by_channel = defaultdict(set)
+        for (user_id, _), waiter_info in self.next_game_waiters.items():
+            channel_id = waiter_info.get('channel_id')
+            if channel_id:
+                users_by_channel[channel_id].add(user_id)
+
+        if not users_by_channel:
+            logger.warning(
+                f"Daily nextgame queue alert on {today} had {queue_size} queued user(s) "
+                "but no valid channel IDs were found"
+            )
+            return
+
+        alert_text = (
+            f"🎮 **{queue_size} people are in the `!nextgame` queue right now.** "
+            "Looks like enough interest to try getting a game going!"
+        )
+
+        sent_channels = 0
+        for channel_id, channel_user_ids in users_by_channel.items():
+            if not channel_user_ids:
+                continue
+
+            user_pings = " ".join(f"<@{user_id}>" for user_id in sorted(channel_user_ids))
+            channel = self.bot.get_channel(channel_id)
+            try:
+                if channel:
+                    await channel.send(f"{user_pings}\n{alert_text}")
+                    sent_channels += 1
+                else:
+                    # Fallback to DM if channel is unavailable.
+                    for user_id in channel_user_ids:
+                        try:
+                            user = await self.bot.fetch_user(user_id)
+                            await user.send(alert_text)
+                        except Exception as dm_error:
+                            logger.error(f"Failed daily queue alert DM to user {user_id}: {dm_error}")
+            except Exception as e:
+                logger.error(f"Failed sending daily nextgame queue alert to channel {channel_id}: {e}")
+
+        logger.info(
+            f"Sent daily nextgame queue alert for {queue_size} queued user(s) "
+            f"across {sent_channels} channel(s)"
+        )
     
     async def _notify_next_game_waiters(self, trigger_servers: List[Dict]):
         """Notify all waiting users about available games, grouping by channel and PTB preference"""
@@ -882,16 +978,17 @@ class ServerMonitor:
         
         # Group waiters by channel and PTB preference
         waiters_by_channel_and_ptb = {}
-        for user_id, waiter_info in self.next_game_waiters.items():
+        for waiter_key, waiter_info in self.next_game_waiters.items():
+            user_id, _ = waiter_key
             channel_id = waiter_info['channel_id']
             ptb_only = waiter_info.get('ptb_only', False)
             key = (channel_id, ptb_only)
             if key not in waiters_by_channel_and_ptb:
                 waiters_by_channel_and_ptb[key] = []
-            waiters_by_channel_and_ptb[key].append((user_id, waiter_info))
+            waiters_by_channel_and_ptb[key].append((waiter_key, user_id, waiter_info))
 
         # Notify all waiters, grouped by channel and PTB preference
-        waiters_to_remove = []
+        waiters_to_remove = set()
         for (channel_id, ptb_only), waiters in waiters_by_channel_and_ptb.items():
             base_servers = trigger_servers
             if ptb_only:
@@ -904,12 +1001,12 @@ class ServerMonitor:
             aggregated_servers = []
             aggregated_ids = set()
 
-            for user_id, waiter_info in waiters:
+            for waiter_key, user_id, waiter_info in waiters:
                 user_servers = self._filter_servers_for_waiter(base_servers, waiter_info)
                 if not user_servers:
                     continue  # Nothing to notify this user about (likely due to --skip)
 
-                eligible_waiters.append((user_id, waiter_info))
+                eligible_waiters.append((waiter_key, user_id, waiter_info))
                 for server in user_servers:
                     server_id = self._server_identity(server)
                     if server_id not in aggregated_ids:
@@ -919,73 +1016,47 @@ class ServerMonitor:
             if not eligible_waiters or not aggregated_servers:
                 continue  # No one to notify after applying skip filters
 
-            # Separate servers by type for better messaging
-            debrief_servers = [s for s in aggregated_servers if s.get('status') == 'debrief']
-            active_servers = [s for s in aggregated_servers if s.get('status') != 'debrief']
-
-            # Build notification message
-            message_parts = []
-            ptb_prefix = "🧪 PTB: " if ptb_only else ""
-
-            if debrief_servers:
-                debrief_list = []
-                for server in debrief_servers[:5]:  # Show up to 5
-                    name = server.get('name', 'Unknown')[:40]
-                    debrief_list.append(f"• {name}")
-                message_parts.append(f"{ptb_prefix}🎮 **{len(debrief_servers)} game(s) just finished (in debrief):**\n" + "\n".join(debrief_list))
-
-            if active_servers:
-                active_list = []
-                for server in active_servers[:5]:  # Show up to 5
-                    name = server.get('name', 'Unknown')[:40]
-                    players = server.get('players', 0)
-                    capacity = server.get('map_capacity', 8)
-                    available_slots = capacity - players
-                    active_list.append(f"• {name} - {players}/{capacity} players ({available_slots} slot(s) available)")
-                message_parts.append(f"{ptb_prefix}🚀 **{len(active_servers)} lobby(ies) filling up (3+ players, joinable):**\n" + "\n".join(active_list))
-
-            if not message_parts:
+            notification_embed = self._build_next_game_notification_embed(aggregated_servers, ptb_only=ptb_only)
+            if not notification_embed:
                 continue  # No matching servers for this group
-
-            notification_text = "\n\n".join(message_parts)
 
             try:
                 channel = self.bot.get_channel(channel_id)
                 if channel:
                     # Build ping string for eligible users in this channel
-                    user_pings = " ".join([f"<@{user_id}>" for user_id, _ in eligible_waiters])
-                    await channel.send(f"{user_pings}\n\n{notification_text}")
+                    user_pings = " ".join([f"<@{user_id}>" for _, user_id, _ in eligible_waiters])
+                    await channel.send(content=user_pings, embed=notification_embed)
 
                     # Log and mark for removal
-                    for user_id, waiter_info in eligible_waiters:
+                    for waiter_key, user_id, waiter_info in eligible_waiters:
                         ptb_text = " (PTB only)" if ptb_only else ""
                         logger.info(f"Notified {waiter_info['username']} (ID: {user_id}) about next game{ptb_text}")
-                        waiters_to_remove.append(user_id)
+                        waiters_to_remove.add(waiter_key)
                 else:
                     # Channel not found, try DM for each eligible user
-                    for user_id, waiter_info in eligible_waiters:
+                    for waiter_key, user_id, waiter_info in eligible_waiters:
                         try:
                             user = await self.bot.fetch_user(user_id)
-                            await user.send(f"Game alert! 🎮\n\n{notification_text}")
+                            await user.send(embed=notification_embed)
                             ptb_text = " (PTB only)" if ptb_only else ""
                             logger.info(f"Notified {waiter_info['username']} (ID: {user_id}) via DM about next game{ptb_text}")
-                            waiters_to_remove.append(user_id)
+                            waiters_to_remove.add(waiter_key)
                         except Exception as dm_error:
                             logger.error(f"Failed to notify user {user_id} via DM: {dm_error}")
-                            waiters_to_remove.append(user_id)  # Remove them anyway after failed attempt
+                            waiters_to_remove.add(waiter_key)  # Remove them anyway after failed attempt
             except Exception as e:
                 logger.error(f"Error notifying users in channel {channel_id}: {e}")
                 # Mark all eligible waiters in this channel for removal on error
-                for user_id, _ in eligible_waiters:
-                    waiters_to_remove.append(user_id)
+                for waiter_key, _, _ in eligible_waiters:
+                    waiters_to_remove.add(waiter_key)
         
         # Remove notified users
-        for user_id in waiters_to_remove:
-            if user_id in self.next_game_waiters:
-                del self.next_game_waiters[user_id]
+        for waiter_key in waiters_to_remove:
+            if waiter_key in self.next_game_waiters:
+                del self.next_game_waiters[waiter_key]
         
         if waiters_to_remove:
-            logger.info(f"Removed {len(waiters_to_remove)} users from next game waitlist after notification")
+            logger.info(f"Removed {len(waiters_to_remove)} next game waitlist entries after notification")
     
     def get_joinable_lobby_ids(self, ptb_only: bool = False) -> List[str]:
         """Return identities of current joinable lobbies (3+ players, not full)."""
@@ -1042,7 +1113,7 @@ class ServerMonitor:
 
             server_id = self._server_identity(server)
             if server_id in id_set:
-                names.append(server.get('name', 'Unknown'))
+                names.append(self.sanitize_server_name_for_display(server.get('name', 'Unknown')))
 
         # Fallback for any unmatched ids
         if len(names) < len(id_set):
@@ -1051,9 +1122,27 @@ class ServerMonitor:
 
         return names
 
+    def _next_game_waiter_key(self, user_id: int, ptb_only: bool) -> Tuple[int, bool]:
+        """Build the waitlist key for a user and queue mode."""
+        return (user_id, ptb_only)
+
+    def get_next_game_waiter(self, user_id: int, ptb_only: bool = False) -> Optional[Dict]:
+        """Return waitlist info for a specific queue mode."""
+        return self.next_game_waiters.get(self._next_game_waiter_key(user_id, ptb_only))
+
+    def is_user_waiting_for_next_game(self, user_id: int, ptb_only: Optional[bool] = None) -> bool:
+        """
+        Check whether a user is already queued.
+        If ptb_only is None, checks any queue mode for that user.
+        """
+        if ptb_only is None:
+            return any(waiter_user_id == user_id for waiter_user_id, _ in self.next_game_waiters.keys())
+        return self._next_game_waiter_key(user_id, ptb_only) in self.next_game_waiters
+
     def add_next_game_waiter(self, user_id: int, channel_id: int, username: str, ptb_only: bool = False, skip_lobbies: Optional[List[str]] = None):
         """Add a user to the next game waitlist"""
-        self.next_game_waiters[user_id] = {
+        waiter_key = self._next_game_waiter_key(user_id, ptb_only)
+        self.next_game_waiters[waiter_key] = {
             'channel_id': channel_id,
             'timestamp': datetime.now(timezone.utc),
             'username': username,
@@ -1064,18 +1153,36 @@ class ServerMonitor:
         skip_text = " with skip" if skip_lobbies else ""
         logger.info(f"Added {username} (ID: {user_id}) to next game waitlist{ptb_text}{skip_text}")
     
-    def remove_next_game_waiter(self, user_id: int) -> bool:
-        """Remove a user from the next game waitlist. Returns True if user was in list."""
-        if user_id in self.next_game_waiters:
-            username = self.next_game_waiters[user_id]['username']
-            del self.next_game_waiters[user_id]
-            logger.info(f"Removed {username} (ID: {user_id}) from next game waitlist")
-            return True
-        return False
+    def remove_next_game_waiter(self, user_id: int, ptb_only: Optional[bool] = None) -> bool:
+        """
+        Remove a user from the next game waitlist.
+        If ptb_only is None, remove user from all queue modes.
+        Returns True if at least one waitlist entry was removed.
+        """
+        if ptb_only is not None:
+            waiter_key = self._next_game_waiter_key(user_id, ptb_only)
+            if waiter_key in self.next_game_waiters:
+                username = self.next_game_waiters[waiter_key]['username']
+                del self.next_game_waiters[waiter_key]
+                ptb_text = " (PTB only)" if ptb_only else ""
+                logger.info(f"Removed {username} (ID: {user_id}) from next game waitlist{ptb_text}")
+                return True
+            return False
+
+        keys_to_remove = [key for key in self.next_game_waiters if key[0] == user_id]
+        if not keys_to_remove:
+            return False
+
+        username = self.next_game_waiters[keys_to_remove[0]]['username']
+        for key in keys_to_remove:
+            del self.next_game_waiters[key]
+
+        logger.info(f"Removed {username} (ID: {user_id}) from {len(keys_to_remove)} next game waitlist queue(s)")
+        return True
     
     def get_next_game_waiters_count(self) -> int:
-        """Get the number of users waiting for next game notifications"""
-        return len(self.next_game_waiters)
+        """Get the number of unique users waiting for next game notifications."""
+        return len({user_id for user_id, _ in self.next_game_waiters.keys()})
     
     def find_matching_servers_for_notification(self, ptb_only: bool = False) -> List[Dict]:
         """
@@ -1114,16 +1221,68 @@ class ServerMonitor:
                     trigger_servers.append(server)
         
         return trigger_servers
+
+    def _build_next_game_notification_embed(self, trigger_servers: List[Dict], ptb_only: bool = False) -> Optional[discord.Embed]:
+        """Build an embed for next game alerts."""
+        if not trigger_servers:
+            return None
+
+        debrief_servers = [s for s in trigger_servers if s.get('status') == 'debrief']
+        active_servers = [s for s in trigger_servers if s.get('status') != 'debrief']
+        if not debrief_servers and not active_servers:
+            return None
+
+        title = "🧪 PTB Game Ready!" if ptb_only else "🚀 Game Ready!"
+        description = (
+            "A PTB game is ready to join or just entered debrief."
+            if ptb_only else
+            "A game is ready to join or just entered debrief."
+        )
+        embed = discord.Embed(
+            title=title,
+            description=description,
+            color=Config.EMBED_COLOR,
+            timestamp=datetime.now(timezone.utc)
+        )
+
+        if debrief_servers:
+            debrief_list = []
+            for server in debrief_servers[:5]:
+                name = self.sanitize_server_name_for_display(server.get('name', 'Unknown'))[:40]
+                debrief_list.append(f"• {name}")
+            embed.add_field(
+                name=f"🎮 {len(debrief_servers)} game(s) just finished (in debrief)",
+                value="\n".join(debrief_list),
+                inline=False
+            )
+
+        if active_servers:
+            active_list = []
+            for server in active_servers[:5]:
+                name = self.sanitize_server_name_for_display(server.get('name', 'Unknown'))[:40]
+                players = server.get('players', 0)
+                capacity = server.get('map_capacity', 8)
+                available_slots = capacity - players
+                active_list.append(f"• {name} - {players}/{capacity} players ({available_slots} slot(s) available)")
+            embed.add_field(
+                name=f"🚀 {len(active_servers)} lobby(ies) filling up (3+ players, joinable)",
+                value="\n".join(active_list),
+                inline=False
+            )
+
+        embed.set_footer(text="Use !listservers or !openlobbies to see all servers")
+        return embed
     
-    async def notify_single_user_immediately(self, user_id: int, trigger_servers: List[Dict]) -> bool:
+    async def notify_single_user_immediately(self, user_id: int, trigger_servers: List[Dict], ptb_only: bool = False) -> bool:
         """
-        Notify a single user immediately about available games.
+        Notify a single user immediately about available games for a specific queue mode.
         Returns True if notification was sent, False otherwise.
         """
-        if user_id not in self.next_game_waiters or not trigger_servers:
+        waiter_key = self._next_game_waiter_key(user_id, ptb_only)
+        if waiter_key not in self.next_game_waiters or not trigger_servers:
             return False
         
-        waiter_info = self.next_game_waiters[user_id]
+        waiter_info = self.next_game_waiters[waiter_key]
         channel_id = waiter_info['channel_id']
         ptb_only = waiter_info.get('ptb_only', False)
         
@@ -1138,40 +1297,17 @@ class ServerMonitor:
         if not trigger_servers:
             return False
         
-        # Separate servers by type for better messaging
-        debrief_servers = [s for s in trigger_servers if s.get('status') == 'debrief']
-        active_servers = [s for s in trigger_servers if s.get('status') != 'debrief']
-        
-        # Build notification message
-        message_parts = []
-        
-        if debrief_servers:
-            debrief_list = []
-            for server in debrief_servers[:5]:  # Show up to 5
-                name = server.get('name', 'Unknown')[:40]
-                debrief_list.append(f"• {name}")
-            message_parts.append(f"🎮 **{len(debrief_servers)} game(s) just finished (in debrief):**\n" + "\n".join(debrief_list))
-        
-        if active_servers:
-            active_list = []
-            for server in active_servers[:5]:  # Show up to 5
-                name = server.get('name', 'Unknown')[:40]
-                players = server.get('players', 0)
-                capacity = server.get('map_capacity', 8)
-                available_slots = capacity - players
-                active_list.append(f"• {name} - {players}/{capacity} players ({available_slots} slot(s) available)")
-            message_parts.append(f"🚀 **{len(active_servers)} lobby(ies) filling up (3+ players, joinable):**\n" + "\n".join(active_list))
-        
-        notification_text = "\n\n".join(message_parts)
-        notification_text += "\n\nUse `!listservers` or `!openlobbies` to see all servers!"
+        notification_embed = self._build_next_game_notification_embed(trigger_servers, ptb_only=ptb_only)
+        if not notification_embed:
+            return False
         
         try:
             channel = self.bot.get_channel(channel_id)
             if channel:
-                await channel.send(f"<@{user_id}>\n\n{notification_text}")
+                await channel.send(content=f"<@{user_id}>", embed=notification_embed)
                 logger.info(f"Immediately notified {waiter_info['username']} (ID: {user_id}) about available games")
                 # Remove user from waitlist after immediate notification
-                del self.next_game_waiters[user_id]
+                del self.next_game_waiters[waiter_key]
                 # Clear debrief transitions if this was the only waiter
                 if not self.next_game_waiters:
                     self.recent_debrief_transitions.clear()
@@ -1180,9 +1316,9 @@ class ServerMonitor:
                 # Channel not found, try DM
                 try:
                     user = await self.bot.fetch_user(user_id)
-                    await user.send(f"Game alert! 🎮\n\n{notification_text}")
+                    await user.send(embed=notification_embed)
                     logger.info(f"Immediately notified {waiter_info['username']} (ID: {user_id}) via DM about available games")
-                    del self.next_game_waiters[user_id]
+                    del self.next_game_waiters[waiter_key]
                     if not self.next_game_waiters:
                         self.recent_debrief_transitions.clear()
                     return True
