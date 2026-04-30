@@ -1,11 +1,9 @@
 import xml.etree.ElementTree as ET
 import numpy as np
-import copy
 import os
 import matplotlib
 matplotlib.use('Agg')  # Use non-interactive backend
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 import io
 try:
     from PIL import Image
@@ -13,7 +11,7 @@ try:
 except ImportError:
     PIL_AVAILABLE = False
     try:
-        import imageio
+        import imageio  # noqa: F401  # feature-detection probe; presence drives IMAGEIO_AVAILABLE
         IMAGEIO_AVAILABLE = True
     except ImportError:
         IMAGEIO_AVAILABLE = False
@@ -222,8 +220,7 @@ def compact_formation(
             for i in range(len(pos)):
                 if i == leader_idx:
                     continue
-                
-                ship_key_i = ids[i]
+
                 other_pos = pos[i]
                 
                 # Check against all armed ships
@@ -628,7 +625,7 @@ def create_formation_animation(
             initial_array = np.array(initial_frame)
             # Duplicate initial frame for 1 second (fps frames)
             # Add tiny imperceptible change to prevent PIL optimization
-            for i in range(int(fps)):
+            for _ in range(int(fps)):
                 frame_copy = initial_array.copy()
                 # Add tiny random noise (0-1 pixel value change) that won't be visible
                 noise = np.random.randint(0, 2, frame_copy.shape, dtype=np.uint8)
@@ -676,7 +673,7 @@ def create_formation_animation(
             frame_array = np.array(frame)
             # Duplicate each frame 5 times to slow down the animation
             # Add tiny imperceptible change to prevent PIL optimization
-            for i in range(5):
+            for _ in range(5):
                 frame_copy = frame_array.copy()
                 # Add tiny random noise (0-1 pixel value change) that won't be visible
                 noise = np.random.randint(0, 2, frame_copy.shape, dtype=np.uint8)
@@ -704,7 +701,7 @@ def create_formation_animation(
         # Convert to array and back to create distinct objects
         if PIL_AVAILABLE:
             final_array = np.array(final_frame)
-            for i in range(pause_frames):
+            for _ in range(pause_frames):
                 # Add tiny imperceptible change to prevent PIL optimization
                 frame_copy = final_array.copy()
                 noise = np.random.randint(0, 2, frame_copy.shape, dtype=np.uint8)

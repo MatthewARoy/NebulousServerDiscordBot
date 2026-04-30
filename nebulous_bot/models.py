@@ -1,7 +1,4 @@
 from django.db import models
-from django.db.models import Count, Avg, Sum, Q
-from django.utils import timezone
-from datetime import timedelta
 
 
 class BotStatus(models.Model):

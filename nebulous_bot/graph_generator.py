@@ -6,11 +6,9 @@ import matplotlib
 matplotlib.use('Agg')  # Use non-interactive backend
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
-from datetime import datetime, timedelta
-from typing import List, Tuple, Optional
+from datetime import datetime
+from typing import List, Tuple
 import io
-import os
-import tempfile
 import logging
 
 logger = logging.getLogger(__name__)

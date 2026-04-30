@@ -87,7 +87,6 @@ DATABASES = {
 # Configure SQLite for network storage (Azure Files)
 # This runs after database connection to set PRAGMA values
 if DB_PATH and '/mnt/data' in str(DB_PATH):
-    import sqlite3
     from django.db.backends.signals import connection_created
     
     def configure_sqlite_for_network(sender, connection, **kwargs):

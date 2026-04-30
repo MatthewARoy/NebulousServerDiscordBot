@@ -40,7 +40,7 @@ class Config:
                 for config in configs
             ]
         except (json.JSONDecodeError, KeyError, ValueError) as e:
-            raise ValueError(f"Invalid SERVER_CONFIGS format: {e}. Expected format: [{{'guild_id': 123, 'status_channel_id': 456, 'notification_channel_id': 789, 'notification_role_id': 101112}}]")
+            raise ValueError(f"Invalid SERVER_CONFIGS format: {e}. Expected format: [{{'guild_id': 123, 'status_channel_id': 456, 'notification_channel_id': 789, 'notification_role_id': 101112}}]") from e
     
     # Steam Configuration
     STEAM_API_KEY = os.getenv('STEAM_API_KEY')

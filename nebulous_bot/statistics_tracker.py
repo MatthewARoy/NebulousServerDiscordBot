@@ -4,9 +4,8 @@ Handles game session tracking, player snapshots, and statistics aggregation.
 """
 
 import logging
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta
 from typing import Dict, List, Optional
-from django.db.models import Count, Avg, Sum, F, Q
 from django.utils import timezone as django_timezone
 
 from nebulous_bot.models import (

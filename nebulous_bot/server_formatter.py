@@ -4,8 +4,8 @@ Centralizes all server display logic, Discord embed creation, and formatting con
 """
 
 import discord
-from datetime import datetime
-from typing import List, Dict, Optional, Callable
+from datetime import datetime, timezone
+from typing import List, Dict, Optional
 from nebulous_bot.config import Config
 
 
@@ -247,7 +247,6 @@ class ServerFormatter:
                                 max_servers: int = 15, last_update: datetime = None, game_start_times: Dict = None) -> discord.Embed:
         """Create embed for server list commands"""
         # Use Discord's native timestamp feature for clean, localized timestamps
-        from datetime import timezone
         
         if not servers:
             return discord.Embed(
@@ -286,7 +285,6 @@ class ServerFormatter:
     def create_lobby_list_embed(self, servers: List[Dict], last_update: datetime = None) -> discord.Embed:
         """Create embed for open lobby command"""
         # Use Discord's native timestamp feature for clean, localized timestamps
-        from datetime import timezone
         
         if not servers:
             return discord.Embed(
@@ -334,7 +332,7 @@ class ServerFormatter:
                 color=Config.EMBED_COLOR_NO_SERVERS,
                 timestamp=update_time
             )
-            embed.set_footer(text=f"🟢 = Open Lobby • 🔴 = Game In Progress • 🟡 = Debrief • Updates every 30s")
+            embed.set_footer(text="🟢 = Open Lobby • 🔴 = Game In Progress • 🟡 = Debrief • Updates every 30s")
             return embed
         
         # Sort servers for display
@@ -380,7 +378,7 @@ class ServerFormatter:
         )
         
         # Add footer with status legend (timestamp is shown automatically by Discord)
-        footer_text = f"🟢 = Open Lobby • 🔴 = Game In Progress • 🟡 = Debrief • Updates every 30s"
+        footer_text = "🟢 = Open Lobby • 🔴 = Game In Progress • 🟡 = Debrief • Updates every 30s"
         embed.set_footer(text=footer_text)
         
         return embed

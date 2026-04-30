@@ -1,0 +1,17 @@
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+extend-exclude = ["docs/archive", ".venv", "staging"]
+
+[tool.ruff.lint]
+# Bug-focused, not style-focused. CI flags real problems (undefined names,
+# unused imports, common bug patterns), not whitespace.
+# F: pyflakes — undefined names, unused imports, etc.
+# B: flake8-bugbear — likely bugs (mutable defaults, except: pass, etc.)
+select = ["F", "B"]
+ignore = [
+    "B008",  # function call in argument default — common Django pattern
+]
+
+[tool.pytest.ini_options]
+testpaths = ["formation_optimizer/tests"]

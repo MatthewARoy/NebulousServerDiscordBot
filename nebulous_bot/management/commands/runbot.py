@@ -57,8 +57,8 @@ class Command(BaseCommand):
             command_prefix=Config.COMMAND_PREFIX, 
             intents=intents
         )
-        command_metrics_logger = setup_command_metrics(bot)
-        
+        setup_command_metrics(bot)
+
         # Global variables
         server_monitor = None
         formatter = None
@@ -322,9 +322,9 @@ class Command(BaseCommand):
                         exc = server_monitor.monitoring_task.exception()
                         info.append(f"**Task Exception:** {exc}")
                     except:
-                        info.append(f"**Task Exception:** Unable to retrieve")
+                        info.append("**Task Exception:** Unable to retrieve")
                 else:
-                    info.append(f"**Task Status:** Running")
+                    info.append("**Task Status:** Running")
             
             info.append(f"**Cached Servers:** {len(server_monitor.cached_servers)}")
             info.append(f"**Last Update:** {server_monitor.last_update}")
@@ -1384,7 +1384,7 @@ class Command(BaseCommand):
                             raise ValueError("Fleet file contains no <InitialFormation> elements")
                         
                     except ET.ParseError as e:
-                        raise ValueError(f"Invalid XML format: {str(e)}")
+                        raise ValueError(f"Invalid XML format: {str(e)}") from e
                     
                     # Optimize the fleet file
                     # Only capture animation if we're generating images

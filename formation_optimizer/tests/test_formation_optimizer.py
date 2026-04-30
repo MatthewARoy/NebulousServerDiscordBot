@@ -22,8 +22,7 @@ from formation_optimizer.formation_optimizer import (
     compact_formation,
     optimize_fleet_file,
     visualize_formation_comparison,
-    _draw_sphere,
-    _plot_formation
+    _draw_sphere
 )
 
 
@@ -286,7 +285,6 @@ class TestFormationOptimizer(unittest.TestCase):
         import matplotlib
         matplotlib.use('Agg')
         import matplotlib.pyplot as plt
-        from mpl_toolkits.mplot3d import Axes3D
         
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')

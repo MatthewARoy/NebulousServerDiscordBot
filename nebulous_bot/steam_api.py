@@ -71,7 +71,7 @@ class SteamAPI:
         try:
             # This would query specific server info
             # Implementation depends on available Steam API endpoints
-            url = f"https://api.steampowered.com/ISteamApps/GetServersAtAddress/v1/"
+            url = "https://api.steampowered.com/ISteamApps/GetServersAtAddress/v1/"
             params = {
                 'key': self.api_key,
                 'addr': server_address
@@ -215,7 +215,6 @@ class SteamAPI:
         
         try:
             if 'response' in raw_data and 'servers' in raw_data['response']:
-                server_tasks = []
                 basic_servers = []
                 
                 for server_data in raw_data['response']['servers']:

@@ -46,7 +46,7 @@ def test_visualization(fleet_file=None, min_radius_meters=350.0, open_image=Fals
     
     if not fleet_file.exists():
         print(f"❌ Error: Fleet file not found: {fleet_file}")
-        print(f"   Please provide a valid fleet file path.")
+        print("   Please provide a valid fleet file path.")
         return False
     
     print(f"📁 Loading fleet file: {fleet_file.name}")
@@ -59,14 +59,14 @@ def test_visualization(fleet_file=None, min_radius_meters=350.0, open_image=Fals
         result = optimize_fleet_file(str(fleet_file), min_distance_meters=min_radius_meters)
         optimized_path, before_positions, after_positions, ship_names = result
         
-        print(f"✅ Optimization complete!")
+        print("✅ Optimization complete!")
         print(f"   Optimized file: {optimized_path}")
         print()
         
         # Count ships
         ships_before = {k: v for k, v in before_positions.items() if k != "leader"}
         ships_after = {k: v for k, v in after_positions.items() if k != "leader"}
-        print(f"📊 Formation stats:")
+        print("📊 Formation stats:")
         print(f"   Ships in formation: {len(ships_before)}")
         print()
         
@@ -84,7 +84,7 @@ def test_visualization(fleet_file=None, min_radius_meters=350.0, open_image=Fals
             f.write(viz_bytes)
         
         file_size_kb = len(viz_bytes) / 1024
-        print(f"✅ Visualization saved!")
+        print("✅ Visualization saved!")
         print(f"   File: {output_file}")
         print(f"   Size: {file_size_kb:.1f} KB")
         print()
@@ -104,10 +104,10 @@ def test_visualization(fleet_file=None, min_radius_meters=350.0, open_image=Fals
         )
         
         print("📈 Statistics:")
-        print(f"   Before Optimization:")
+        print("   Before Optimization:")
         print(f"     Average Radius: {avg_radius_before:.2f} meters")
         print(f"     Average Spacing: {avg_spacing_before:.2f} meters")
-        print(f"   After Optimization:")
+        print("   After Optimization:")
         print(f"     Average Radius: {avg_radius_after:.2f} meters")
         print(f"     Average Spacing: {avg_spacing_after:.2f} meters")
         print()
@@ -126,7 +126,7 @@ def test_visualization(fleet_file=None, min_radius_meters=350.0, open_image=Fals
                     duration_ms=100
                 )
                 gif_size_kb = os.path.getsize(gif_path) / 1024
-                print(f"✅ Animation GIF saved!")
+                print("✅ Animation GIF saved!")
                 print(f"   File: {gif_path}")
                 print(f"   Size: {gif_size_kb:.1f} KB")
                 print()
@@ -142,7 +142,7 @@ def test_visualization(fleet_file=None, min_radius_meters=350.0, open_image=Fals
                             os.startfile(gif_path)
                         elif system == "Linux":
                             subprocess.run(["xdg-open", gif_path])
-                        print(f"🎬 Opened GIF in default viewer")
+                        print("🎬 Opened GIF in default viewer")
                     except Exception as e:
                         print(f"⚠️  Could not open GIF automatically: {e}")
             except Exception as e:
@@ -164,7 +164,7 @@ def test_visualization(fleet_file=None, min_radius_meters=350.0, open_image=Fals
                     os.startfile(str(output_file))
                 elif system == "Linux":
                     subprocess.run(["xdg-open", str(output_file)])
-                print(f"🖼️  Opened image in default viewer")
+                print("🖼️  Opened image in default viewer")
             except Exception as e:
                 print(f"⚠️  Could not open image automatically: {e}")
                 print(f"   Please open manually: {output_file}")

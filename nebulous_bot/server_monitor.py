@@ -181,7 +181,7 @@ class ServerMonitor:
                 logger.debug(f"Server list updated: {len(self.cached_servers)} servers")
                 
                 await self._update_status_message()
-                logger.info(f"📤 Status message update cycle completed")
+                logger.info("📤 Status message update cycle completed")
                 
                 if self.tracked_update_task is None or self.tracked_update_task.done():
                     self.tracked_update_task = asyncio.create_task(self._update_tracked_messages())
@@ -1214,7 +1214,7 @@ class ServerMonitor:
                         trigger_servers.append(server)
         
         # Also check recent debrief transitions
-        for server_id, server in self.recent_debrief_transitions.items():
+        for _server_id, server in self.recent_debrief_transitions.items():
             # Filter by PTB if requested
             if not ptb_only or server.get('is_test_branch', False):
                 if server not in trigger_servers:
