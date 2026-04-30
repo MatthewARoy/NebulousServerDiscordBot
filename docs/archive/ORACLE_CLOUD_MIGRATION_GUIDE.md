@@ -169,7 +169,7 @@ You have two options:
 #### Option A: Use Docker Hub (Recommended)
 
 ```bash
-# On your local machine
+# On your local machine, in your clone of the repo
 cd path/to/NebulousServerDiscordBot
 
 # Build for ARM64 (Oracle uses ARM)
