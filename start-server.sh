@@ -24,10 +24,9 @@ if [ -n "$DB_PATH" ]; then
     chmod 755 "$DB_DIR" 2>/dev/null || true
   fi
   
-  # Wait for mount to stabilize (Azure Files can be slow)
+  # Brief wait so any block-storage mount is fully ready before we open the DB
   if [ -d "/mnt/data" ]; then
-    echo "   Waiting for Azure Files mount to stabilize..."
-    sleep 3
+    sleep 2
   fi
   
   # Check if existing database file exists and is valid
@@ -95,7 +94,7 @@ except Exception:
       echo ""
       echo "   Common causes:"
       echo "   - Database file is locked by another process"
-      echo "   - Network storage (Azure Files) is slow or unavailable"
+      echo "   - Block storage volume is slow or unavailable"
       echo "   - Insufficient permissions on database directory"
       echo ""
       if [ -n "$DB_PATH" ]; then

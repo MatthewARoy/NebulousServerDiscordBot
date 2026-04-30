@@ -1,59 +1,56 @@
-# Deployment Guide
+# Deployment
 
-This directory contains all deployment-related files for the Nebulous Server Discord Bot.
+The bot runs on Oracle Cloud Infrastructure (OCI) Always Free using Docker. This
+directory contains the Docker build, the Oracle setup/deploy scripts, and a
+couple of generic helpers.
 
-## Directory Structure
+## Layout
 
 ```
 deployment/
-├── azure/               # Azure-specific deployment files
-│   ├── azure-container-app.yaml
-│   ├── azure-pipelines.yml
-│   └── TROUBLESHOOTING.md
-├── docker/              # Docker configuration
+├── docker/
 │   ├── Dockerfile
-│   ├── docker-compose.yml
-│   └── docker-compose.azure.yml
-└── scripts/             # Deployment helper scripts
-    ├── deploy-azure.sh
-    ├── deploy-azure-local-build.sh
-    ├── check-azure-logs.sh
-    ├── diagnose-azure-bot.sh
-    ├── setup-azure-providers.sh
-    ├── load-env.sh
-    └── start-server.sh
+│   └── docker-compose.yml          # local dev compose
+├── oracle/
+│   ├── README.md                   # full Oracle deployment guide
+│   ├── ORACLE_SETUP_CHECKLIST.md
+│   ├── docker-compose.oracle.yml   # OCI-tuned compose
+│   ├── setup-oracle-vm.sh          # one-time VM setup
+│   ├── deploy-to-oracle.sh         # deploy from local
+│   └── oci-config.sh
+└── scripts/
+    ├── load-env.sh                 # safely source .env (handles JSON values)
+    └── test-env.sh                 # validate .env contents
 ```
 
-## Quick Start
+The container entrypoint script (`start-server.sh`) lives at the repo root because
+the Dockerfile copies the whole project into `/app` and runs `./start-server.sh`.
 
-### Local Development
+
+## Quick start
+
+### Local development (no container)
 ```bash
-# From project root
-python main.py
-# or use the launcher
-python run.py
+pip install -r requirements.txt
+cp env_example.txt .env   # then fill in tokens
+python manage.py migrate
+python manage.py runbot
 ```
 
-### Docker (Local)
+### Local Docker
 ```bash
-# From project root
-cd deployment/docker
-docker-compose up
-
-# Or build and run from project root
-docker-compose -f deployment/docker/docker-compose.yml up --build
+docker compose -f deployment/docker/docker-compose.yml up --build
 ```
 
-### Azure Deployment
+### Oracle Cloud (production)
+See [`oracle/README.md`](oracle/README.md) for the full guide.
+
 ```bash
-# From project root
-cd deployment/scripts
-./deploy-azure.sh
+# from local machine, after setting up the VM once
+./deployment/oracle/deploy-to-oracle.sh
 ```
 
-## Documentation
+## See also
 
-- **Azure Troubleshooting**: See `azure/TROUBLESHOOTING.md`
-- **Main README**: See project root `README.md`
-- **Django Setup**: See `../docs/README_DJANGO.md`
-
+- Project root [`README.md`](../README.md) — feature list and command reference
+- [`docs/`](../docs/) — deeper documentation and historical notes

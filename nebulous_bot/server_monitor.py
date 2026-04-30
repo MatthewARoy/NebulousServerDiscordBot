@@ -40,7 +40,7 @@ class ServerMonitor:
         self.health_check_task = None  # Self-healing health check
         self.tracked_update_task = None  # Background task for updating tracked messages
         
-        # Formatter will be set by main.py to avoid duplicate instances
+        # Formatter is set by the runbot management command after construction
         self.formatter = None
         
         # Track state transition times for servers
