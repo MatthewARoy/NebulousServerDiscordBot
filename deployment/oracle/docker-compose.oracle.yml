@@ -1,18 +1,25 @@
-version: '3.8'
-
-# Docker Compose configuration for Oracle Cloud Infrastructure
-# Copy this to your VM as docker-compose.yml
+# Docker Compose configuration for Oracle Cloud Infrastructure.
+# Copy this to your VM as docker-compose.yml.
+#
+# Memory limits below are tuned for the Always Free E2.1.Micro shape (1 OCPU,
+# 1 GB RAM, but only ~503 MiB usable in practice). They cap the bot well below
+# total RAM so the kernel kills the container — not the host — if the bot
+# leaks. See docs/archive/ for the swap-thrash incident write-up.
+#
+# `mem_limit` is used (top-level) instead of `deploy.resources.limits` because
+# `deploy.resources` only takes effect under Docker Swarm, not vanilla
+# `docker compose up`. `mem_limit` is honoured by both.
 
 services:
   bot:
     # Option 1: Use Docker Hub image (recommended)
     image: <your-dockerhub-username>/nebulous-bot:latest
-    
+
     # Option 2: Build locally on VM
     # build:
     #   context: .
     #   dockerfile: deployment/docker/Dockerfile
-    
+
     container_name: nebulous-discord-bot
     env_file:
       - .env
@@ -33,13 +40,11 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-    # Resource limits (adjust based on your VM size)
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 1.5G
-        reservations:
-          cpus: '0.25'
-          memory: 512M
 
+    # --- Resource limits ---
+    # Hard cap on RSS. If the bot grows past this, the kernel OOM-kills the
+    # container (and the restart policy brings it back), instead of letting
+    # pages spill to swap and stalling the host.
+    mem_limit: 350m
+    mem_reservation: 200m
+    cpus: 1.0
