@@ -1,101 +1,89 @@
-# Quick Start Guide
+# Quickstart
 
-## Choose Your Deployment Method
+Get the bot running on your machine in about five minutes.
 
-### Option 1: Standalone Python (Simple)
-Best for: Local development, small-scale use
+## Prerequisites
+
+- Python 3.11+ (the production container uses 3.11-slim)
+- A Discord bot token and Application ID
+  ([Discord Developer Portal](https://discord.com/developers/applications))
+- A Steam Web API key
+  ([Steam Web API Key page](https://steamcommunity.com/dev/apikey))
+- A Discord server you can install the bot into, plus the channel ID where
+  you want the live status message to live (enable Developer Mode in Discord,
+  right-click → Copy ID)
+
+## 1. Install
 
 ```bash
-# Install dependencies
+git clone https://github.com/MatthewARoy/NebulousServerDiscordBot.git
+cd NebulousServerDiscordBot
+python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-
-# Configure environment
-cp env_example.txt .env
-# Edit .env with your tokens
-
-# Run the bot
-python main.py
 ```
 
-### Option 2: Django Framework (Recommended for Production)
-Best for: Production deployments, scaling, monitoring
+## 2. Configure
 
 ```bash
-# Install dependencies
-pip install -r requirements.txt
-
-# Configure environment
 cp env_example.txt .env
-# Edit .env with your tokens
+```
 
-# Run migrations
+Edit `.env` and fill in at minimum:
+
+- `DISCORD_TOKEN`
+- `APPLICATION_ID`
+- `STEAM_API_KEY`
+- `SERVER_CONFIGS` — a JSON array, e.g.
+  `[{"guild_id": 1234567890, "status_channel_id": 9876543210}]`
+
+See [CONFIGURATION.md](CONFIGURATION.md) for the full set of variables.
+
+## 3. Initialize the database
+
+```bash
 python manage.py migrate
+```
 
-# Start the bot
+This creates `db.sqlite3` in the project root with all the tables the bot
+needs (sessions, snapshots, command logs, etc.).
+
+## 4. Invite the bot to your Discord server
+
+In the Developer Portal, build an OAuth2 URL with the `bot` scope and these
+permissions: Read Messages, Send Messages, Embed Links, Use External Emojis,
+Read Message History, and (optionally) Mention Roles. Open the URL and add
+the bot to your server.
+
+## 5. Run
+
+```bash
 python manage.py runbot
 ```
 
-### Option 3: Docker (Local Container)
-Best for: Testing containerized deployment locally
+You should see `✅ Bot connected as ...` and `✅ Server monitoring started`
+in the console. The configured channel will get a live-updating status
+embed within ~30 seconds.
+
+## Try it out
+
+In your Discord server:
+
+```
+!status
+!listservers
+!openlobbies
+!stats
+```
+
+See [COMMANDS.md](COMMANDS.md) for the full command reference.
+
+## Running with Docker
 
 ```bash
-# Configure environment
-cp env_example.txt .env
-# Edit .env with your tokens
-
-# Build and run
-docker-compose up --build
+docker compose -f deployment/docker/docker-compose.yml up --build
 ```
 
-### Option 4: Azure Container Apps (Cloud Production)
-Best for: Cloud production deployment, auto-scaling, high availability
+## Going to production
 
-```bash
-# Prerequisites: Azure CLI installed, logged in
-az login
-
-# Configure environment
-cp env_example.txt .env
-# Edit .env with your tokens
-
-# Deploy to Azure
-chmod +x deploy-azure.sh
-./deploy-azure.sh
-```
-
-See [README_DJANGO.md](README_DJANGO.md) for detailed Azure deployment instructions.
-
-## Required Configuration
-
-All deployment methods require these environment variables:
-
-```env
-DISCORD_TOKEN=your_discord_bot_token
-APPLICATION_ID=your_application_id
-STEAM_API_KEY=your_steam_api_key
-SERVER_CONFIGS=[{"guild_id": 1234567890, "status_channel_id": 0987654321}]
-```
-
-### Getting Your Tokens
-
-1. **Discord Bot Token**: https://discord.com/developers/applications
-2. **Steam API Key**: https://steamcommunity.com/dev/apikey
-3. **Guild/Channel IDs**: Enable Developer Mode in Discord, right-click → Copy ID
-
-## What's the Difference?
-
-| Feature | Standalone | Django | Docker | Azure |
-|---------|-----------|--------|--------|-------|
-| Setup Complexity | ⭐ | ⭐⭐ | ⭐⭐ | ⭐⭐⭐ |
-| Production Ready | ✅ | ✅✅ | ✅✅ | ✅✅✅ |
-| Database Logging | ❌ | ✅ | ✅ | ✅ |
-| Admin Interface | ❌ | ✅ | ✅ | ✅ |
-| Health Monitoring | ❌ | ✅ | ✅ | ✅✅ |
-| Auto-Scaling | ❌ | ❌ | ❌ | ✅ |
-| Cloud Hosting | ❌ | ❌ | ❌ | ✅ |
-
-## Next Steps
-
-- **Standalone**: See main [README.md](README.md)
-- **Django/Docker/Azure**: See [README_DJANGO.md](README_DJANGO.md)
-
+The bot is designed for Oracle Cloud Infrastructure (Always Free tier). See
+[`../deployment/oracle/README.md`](../deployment/oracle/README.md).

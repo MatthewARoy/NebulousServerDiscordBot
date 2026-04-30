@@ -1,27 +1,28 @@
-# Documentation Index
+# Documentation
 
-This directory contains all project documentation.
+Project documentation for the Nebulous: Fleet Command Discord bot. The
+[root README](../README.md) is the entry point — the files here go deeper.
 
-## Core Documentation
+## Guides
 
-- **[Main README](../README.md)** - Project overview and quick start
-- **[Django & Azure Setup](README_DJANGO.md)** - Django framework and Azure deployment guide
-- **[Migration Guide](MIGRATION_GUIDE.md)** - Upgrading from standalone to Django
-- **[Quick Start](QUICKSTART.md)** - Get started quickly
-- **[Project Index](INDEX.md)** - Complete documentation navigation
+- **[QUICKSTART.md](QUICKSTART.md)** — get the bot running locally in a few
+  minutes.
+- **[CONFIGURATION.md](CONFIGURATION.md)** — reference for every supported
+  environment variable.
+- **[COMMANDS.md](COMMANDS.md)** — every Discord command, its aliases,
+  arguments, and what it does.
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** — high-level map of the codebase: how
+  the Django app, the bot, and the Steam integration fit together.
 
 ## Deployment
 
-- **[Deployment Guide](../deployment/README.md)** - Docker and Azure deployment
-- **[Azure Troubleshooting](../deployment/azure/TROUBLESHOOTING.md)** - Azure-specific issues
+- **[../deployment/README.md](../deployment/README.md)** — overview of Docker
+  and Oracle Cloud deployment.
+- **[../deployment/oracle/README.md](../deployment/oracle/README.md)** —
+  step-by-step Oracle Cloud Free Tier deployment.
 
 ## Archive
 
-Historical and one-time setup documentation can be found in `archive/`:
-- Apple Silicon M1/M2 setup fixes
-- Azure ACR tasks workarounds
-- Conversion completion notes
-- Deployment summaries
-
-These files are kept for reference but are not needed for normal operation.
-
+[`archive/`](archive/) holds historical implementation notes, migration
+write-ups, and one-off design docs. They are kept for context but are not
+required reading.
