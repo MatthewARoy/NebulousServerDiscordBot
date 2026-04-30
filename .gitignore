@@ -4,6 +4,7 @@ __pycache__/
 *$py.class
 *.so
 .Python
+.venv/
 env/
 venv/
 ENV/
@@ -24,11 +25,19 @@ wheels/
 *.egg
 
 # Django
-*.log
 db.sqlite3
 db.sqlite3-journal
 staticfiles/
 media/
+
+# Database artifacts (backups, migration dumps)
+*-db.sqlite3
+db.*.sqlite3
+db.*.b64
+db.*.lenb64
+db.*.raw
+database-backups/
+staging/
 
 # Environment
 .env
@@ -54,6 +63,13 @@ logs/
 steam_debug_report.json
 steam_debug.log
 
+# Formation optimizer test outputs
+formation_optimizer/tests/outputs/
+
 # Docker
 docker-compose.override.yml
 
+# Local-only personal ops notes (never commit operational details like
+# production VM IPs, SSH paths, or host filesystem layout)
+ORACLE_CONNECT.md
+ORACLE_SERVER_ISSUES.md
