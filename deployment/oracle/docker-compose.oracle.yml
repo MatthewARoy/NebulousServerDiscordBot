@@ -1,14 +1,13 @@
 # Docker Compose configuration for Oracle Cloud Infrastructure.
 # Copy this to your VM as docker-compose.yml.
 #
-# Memory limits below are tuned for the Always Free E2.1.Micro shape (1 OCPU,
-# 1 GB RAM, but only ~503 MiB usable in practice). They cap the bot well below
-# total RAM so the kernel kills the container — not the host — if the bot
-# leaks. See docs/archive/ for the swap-thrash incident write-up.
-#
-# `mem_limit` is used (top-level) instead of `deploy.resources.limits` because
-# `deploy.resources` only takes effect under Docker Swarm, not vanilla
-# `docker compose up`. `mem_limit` is honoured by both.
+# No explicit memory limit. The bot ran for 8 weeks unconstrained on the
+# Always Free E2.1.Micro shape without issue. The wedges experienced on
+# 2026-04-30 turned out to be `dnf-makecache` OOMs, not bot memory growth —
+# see docs/OPS.md. Capping the container would have introduced a new
+# failure mode (cgroup OOM-killing the container during legitimate bursts
+# like !graph or !formation GIF rendering) without addressing the actual
+# trigger.
 
 services:
   bot:
@@ -40,11 +39,3 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-
-    # --- Resource limits ---
-    # Hard cap on RSS. If the bot grows past this, the kernel OOM-kills the
-    # container (and the restart policy brings it back), instead of letting
-    # pages spill to swap and stalling the host.
-    mem_limit: 350m
-    mem_reservation: 200m
-    cpus: 1.0

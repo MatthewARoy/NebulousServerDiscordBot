@@ -1,152 +1,133 @@
 # Operations notes
 
 Production runs on a single OCI Always Free E2.1.Micro VM (1 OCPU, ~503 MiB
-usable RAM, 3.5 GiB swap). The shape is generous enough at idle but a single
-`!graph` invocation plus a Discord rate-limit retry burst can push the working
-set into swap, where reading swap-backed pages stalls every other process —
-including sshd. Below are the host-side mitigations that keep the VM
-responsive on this shape without spending money. Apply them once after
-provisioning.
+usable RAM, 3.5 GiB swap). The shape is small but adequate — the bot ran for
+8 weeks unattended without incident before a single trigger took it down
+five times in one day. This document is the post-mortem and the runbook.
 
-## Why this matters
+## The actual trigger: `dnf-makecache`
 
-When the bot's RSS grows past free RAM, the kernel pages cold memory to swap.
-On the small SSD-backed swapfile, paging in is slow enough that the system
-spends most of its time servicing page faults. `sshd`'s pages get evicted too,
-so even logging in to recover stops working. From the outside it looks like
-"the VM is dead"; from a console it looks like everything is in `D` (disk
-wait) state. The fix is a defense in depth that (a) keeps the working set
-small, (b) caps the container so it gets killed cleanly before swap thrash
-can spiral, and (c) installs an OOM killer that fires *before* the kernel's
-slow path.
+`dnf-makecache.service` is a systemd timer that prebuilds Oracle Linux's dnf
+metadata cache so subsequent `dnf install` calls are fast. Its working set
+is large — on this shape, dnf wants ~295 MiB resident for a cache rebuild.
+On a 503 MiB box, that plus the running bot plus the OS exceeds total RAM
+under any kind of burst load. When that happens, the kernel OOM-kills dnf,
+but on the way down sshd's pages get evicted to the small SSD-backed swap
+and the host becomes unreachable. Soft reboot does **not** clear the
+condition; only an OCI Console Stop → Start does (cold boot wipes swap).
 
-## 1. Lower swappiness
+Smoking-gun journal entries (recognise these):
 
-Default `vm.swappiness=60` is too aggressive for this shape. Drop it so the
-kernel only reaches for swap when it has no choice.
+```
+kernel: dockerd invoked oom-killer ...
+kernel: oom-kill: ... task=dnf, pid=11367
+kernel: Out of memory: Killed process 11367 (dnf) ...
+systemd: dnf-makecache.service: A process of this unit has been killed by the OOM killer.
+systemd: dnf-makecache.service: Failed with result 'oom-kill'.
+```
+
+## The fix (already applied)
 
 ```bash
+sudo systemctl disable --now dnf-makecache.timer
+sudo systemctl mask dnf-makecache.service
+```
+
+The timer no longer fires; the service is symlinked to `/dev/null` and
+cannot be reactivated. Manual `dnf install/update` still works — the cache
+just rebuilds on demand instead of being preemptively prepared. On a bot VM
+that gets touched once a quarter, that's a non-issue.
+
+If you ever need to revert: `sudo systemctl unmask dnf-makecache.service &&
+sudo systemctl enable --now dnf-makecache.timer`. Don't, unless the failure
+mode is gone for unrelated reasons.
+
+## Companion mitigations also applied
+
+These don't address the trigger directly but reduce the chance that a
+*different* OOM event ever produces the same SSH-wedge pattern.
+
+```bash
+# Lower kernel's eagerness to use swap (default 60 → 10).
 echo 'vm.swappiness=10' | sudo tee /etc/sysctl.d/99-low-swap.conf
 sudo sysctl --system
-sysctl vm.swappiness   # confirm: 10
 ```
 
-## 2. Install earlyoom
+Plus a code change: `nebulous_bot/graph_generator.py` lazy-imports
+matplotlib + numpy on first `!graph` invocation rather than at bot startup,
+which keeps idle RSS ~80–120 MiB lighter.
 
-`earlyoom` watches free memory and free swap, kills the heaviest process
-when either drops below a threshold, and exits in milliseconds — far faster
-than the kernel's OOM killer, which is what wedges the system.
+## When the bot is reported "down"
+
+The first hypothesis should still be SSH-wedge from memory pressure. Triage:
 
 ```bash
+# Is the VM reachable at all?
+nc -zv 64.181.240.159 22         # tcp/22
+nc -zv 64.181.240.159 8000       # bot port
+
+# If 22 is reachable but ssh hangs at "Connection timed out during banner
+# exchange", the VM is wedged. Recovery is OCI Console → Stop → Start.
+# Soft Reboot does not clear it.
+```
+
+Once SSH responds, do a focused read-only audit before applying any new
+mitigations. The cause is usually the journal:
+
+```bash
+sudo journalctl --since '24 hours ago' --no-pager | grep -iE 'oom|killed process|out of memory'
+```
+
+The `task=...` field on the OOM line names the killer. If it's `dnf`,
+verify dnf-makecache hasn't crept back in (`systemctl is-enabled
+dnf-makecache.timer` should say `disabled`, the service should be
+`masked`). If it's something else, deal with that something else — don't
+just add more mitigations.
+
+## Optional defense-in-depth (not currently installed)
+
+If you ever want belt-and-suspenders against a future unknown OOM trigger,
+the most useful next step is `earlyoom` — a userspace OOM killer that fires
+faster than the kernel's slow path (which is what wedges sshd). It's in
+EPEL, not the default Oracle Linux 9 repos:
+
+```bash
+sudo dnf install -y oracle-epel-release-el9
 sudo dnf install -y earlyoom
-sudo systemctl edit earlyoom    # opens an override file
-```
-
-In the editor, paste:
-
-```
+sudo mkdir -p /etc/systemd/system/earlyoom.service.d
+sudo tee /etc/systemd/system/earlyoom.service.d/override.conf <<'EOF'
 [Service]
 ExecStart=
 ExecStart=/usr/bin/earlyoom -m 10 -s 50 --avoid '^(sshd|systemd|systemd-.*)$' --prefer '^(python|gunicorn)$'
-```
-
-Then:
-
-```bash
+EOF
+sudo systemctl daemon-reload
 sudo systemctl enable --now earlyoom
-sudo systemctl status earlyoom   # should be active (running)
 ```
 
-Thresholds:
-
-- `-m 10`: kill when free RAM drops below 10 %.
-- `-s 50`: also kill when free swap drops below 50 %.
-- `--avoid`: never kill ssh, systemd.
-- `--prefer`: target the bot's processes first when over the threshold.
-
-## 3. Cap the container memory
-
-Already done in `deployment/oracle/docker-compose.oracle.yml` via `mem_limit:
-350m`. After the next deploy, verify with:
-
-```bash
-docker stats --no-stream nebulous-discord-bot
-# MEM USAGE / LIMIT should show .../350MiB
-```
-
-If the bot tries to grow past 350 MiB the cgroup OOM fires, the container
-dies, and `restart: unless-stopped` brings it back. The host stays
-responsive throughout.
-
-## 4. External health watchdog
-
-A minute-cron that hits the local health endpoint and restarts the compose
-stack on repeated failure. Backstop for the case where the in-container
-healthcheck-driven restart isn't enough.
-
-Save this script as `/home/opc/bin/bot-watchdog.sh`:
-
-```bash
-#!/bin/bash
-# Restart the bot if /health/ has failed 2 minutes in a row.
-set -u
-STATE_FILE=/tmp/bot-watchdog.state
-COMPOSE_DIR=/home/opc/NebulousServerDiscordBot
-
-if curl -sf -m 5 http://localhost:8000/health/ > /dev/null; then
-    : > "$STATE_FILE"
-    exit 0
-fi
-
-# Failure: increment counter
-fails=$(cat "$STATE_FILE" 2>/dev/null || echo 0)
-fails=$((fails + 1))
-echo "$fails" > "$STATE_FILE"
-
-if [ "$fails" -ge 2 ]; then
-    logger -t bot-watchdog "health endpoint failed ${fails} consecutive checks; restarting"
-    cd "$COMPOSE_DIR" && /usr/bin/docker compose restart bot
-    : > "$STATE_FILE"
-fi
-```
-
-Install it:
-
-```bash
-mkdir -p /home/opc/bin
-chmod +x /home/opc/bin/bot-watchdog.sh
-
-# Add to crontab
-( crontab -l 2>/dev/null; echo "* * * * * /home/opc/bin/bot-watchdog.sh" ) | crontab -
-crontab -l   # confirm the line is there
-```
-
-`logger` writes to the system journal, so any restarts will show up in
-`journalctl -t bot-watchdog`.
+Skipping this for now since the actual trigger is removed. Add only if a
+new unrelated OOM vector shows up.
 
 ## Verification after applying everything
 
 ```bash
-# Memory and swap headroom
-free -h
+# Trigger removed
+systemctl is-enabled dnf-makecache.timer    # disabled
+systemctl is-active dnf-makecache.timer     # inactive
 
-# earlyoom alive
-systemctl is-active earlyoom
+# Companion mitigations
+sysctl vm.swappiness                        # 10
 
-# Container limit honoured
-docker stats --no-stream | grep nebulous-discord-bot
-
-# Watchdog runs (wait one minute, then)
-journalctl -t bot-watchdog -n 5
-
-# Confirm the bot is healthy
+# Bot healthy
 curl -s http://localhost:8000/health/
+
+# Idle RSS sanity-check
+docker stats --no-stream nebulous-discord-bot
 ```
 
 ## When this isn't enough
 
-If you keep seeing wedges or restarts despite all of the above, the next move
-is the shape bump to A1.Flex (still Always Free, ARM64, 1 OCPU / 6 GB RAM).
-That requires a stop → edit-shape → start, plus rebuilding the Docker image
-for `linux/arm64` if the current image is x86_64. See
-`deployment/oracle/README.md`.
+If wedges return despite all of the above and the journal shows OOM kills
+from new sources you can't easily disable, the next move is the shape bump
+to A1.Flex (still Always Free, ARM64, 1 OCPU / 6 GB RAM). That's a
+stop → edit-shape → start, plus rebuilding the Docker image for
+`linux/arm64`. See `deployment/oracle/README.md`.

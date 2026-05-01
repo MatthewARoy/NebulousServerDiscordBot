@@ -257,14 +257,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 1.5G
-        reservations:
-          cpus: '0.25'
-          memory: 512M
 COMPOSE_EOF
     
     # Build on VM
