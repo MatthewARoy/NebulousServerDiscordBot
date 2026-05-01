@@ -20,16 +20,23 @@ class Config:
     
     @classmethod
     def _load_server_configs(cls):
-        """Load server configurations from environment variables"""
-        server_configs_json = os.getenv('SERVER_CONFIGS')
+        """Load bootstrap server configurations from environment variables.
+
+        Empty / unset is now allowed: guilds added via Discord's Add-to-Server
+        flow can self-configure with !setstatuschannel and friends, which write
+        to the GuildConfig table. The env-var SERVER_CONFIGS is just the
+        original way and stays supported as a "factory default" set of guilds.
+        """
+        server_configs_json = os.getenv('SERVER_CONFIGS', '').strip()
         if not server_configs_json:
-            raise ValueError("SERVER_CONFIGS environment variable is required")
-        
+            cls.SERVER_CONFIGS = []
+            return
+
         try:
             configs = json.loads(server_configs_json)
             if not isinstance(configs, list):
                 raise ValueError("SERVER_CONFIGS must be a JSON array")
-            
+
             cls.SERVER_CONFIGS = [
                 {
                     'guild_id': int(config['guild_id']),
@@ -41,6 +48,37 @@ class Config:
             ]
         except (json.JSONDecodeError, KeyError, ValueError) as e:
             raise ValueError(f"Invalid SERVER_CONFIGS format: {e}. Expected format: [{{'guild_id': 123, 'status_channel_id': 456, 'notification_channel_id': 789, 'notification_role_id': 101112}}]") from e
+
+    @classmethod
+    def get_server_configs(cls):
+        """Return the merged list of guild configs (env bootstrap + DB rows).
+
+        Env entries supply factory-default channels for guilds the maintainer
+        deploys with. DB rows (written by admin commands) override on
+        guild_id collision and add new guilds. A guild whose DB row has a
+        null status_channel_id is omitted: the admin hasn't picked a
+        channel yet, so there's nowhere to post.
+
+        Always call this (never the bare cls.SERVER_CONFIGS attribute) when
+        you need the live, current set of guilds the bot should act on.
+        """
+        # Lazy import to avoid Django app-loading at module import time.
+        from nebulous_bot.models import GuildConfig
+
+        merged = {entry['guild_id']: dict(entry) for entry in cls.SERVER_CONFIGS}
+
+        for row in GuildConfig.objects.all():
+            if row.status_channel_id is None:
+                merged.pop(row.guild_id, None)
+                continue
+            merged[row.guild_id] = {
+                'guild_id': row.guild_id,
+                'status_channel_id': row.status_channel_id,
+                'notification_channel_id': row.notification_channel_id,
+                'notification_role_id': row.notification_role_id,
+            }
+
+        return list(merged.values())
     
     # Steam Configuration
     STEAM_API_KEY = os.getenv('STEAM_API_KEY')
@@ -131,29 +169,26 @@ class Config:
     @classmethod
     def validate(cls):
         """Validate that all required configuration is present"""
-        # Load server configurations
+        # Load env-var bootstrap server configurations (may be empty)
         cls._load_server_configs()
-        
+
         # Validate required variables
         required_vars = [
             ('DISCORD_TOKEN', cls.DISCORD_TOKEN),
             ('STEAM_API_KEY', cls.STEAM_API_KEY),
             ('APPLICATION_ID', cls.APPLICATION_ID)
         ]
-        
+
         missing = [name for name, value in required_vars if not value]
         if missing:
             raise ValueError(f"Missing required environment variables: {', '.join(missing)}")
-        
-        # Validate that at least one server is configured
-        if not cls.SERVER_CONFIGS:
-            raise ValueError("No server configurations found. Please set SERVER_CONFIGS")
-        
-        # Validate each server config
+
+        # Validate the shape of each env-var bootstrap entry. Per-guild DB
+        # rows are validated when written by the admin commands, not here.
         for i, config in enumerate(cls.SERVER_CONFIGS):
             if not config.get('guild_id'):
                 raise ValueError(f"Server config {i}: missing guild_id")
             if not config.get('status_channel_id'):
                 raise ValueError(f"Server config {i}: missing status_channel_id")
-        
-        return True 
+
+        return True

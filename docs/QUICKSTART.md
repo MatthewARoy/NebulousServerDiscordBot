@@ -33,8 +33,11 @@ Edit `.env` and fill in at minimum:
 - `DISCORD_TOKEN`
 - `APPLICATION_ID`
 - `STEAM_API_KEY`
-- `SERVER_CONFIGS` — a JSON array, e.g.
-  `[{"guild_id": 1234567890, "status_channel_id": 9876543210}]`
+
+`SERVER_CONFIGS` is optional. You can either pre-seed it with the guilds
+you're deploying for (see [CONFIGURATION.md](CONFIGURATION.md)), or leave
+it unset and let admins of each guild set themselves up at runtime with
+`!setstatuschannel` — see [COMMANDS.md](COMMANDS.md#per-guild-setup-admin).
 
 See [CONFIGURATION.md](CONFIGURATION.md) for the full set of variables.
 

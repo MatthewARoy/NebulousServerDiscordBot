@@ -1,6 +1,31 @@
 from django.db import models
 
 
+class GuildConfig(models.Model):
+    """
+    Per-guild configuration written by admins via the !setstatuschannel /
+    !setnotificationchannel / !setnotificationrole commands.
+
+    Coexists with the env-var SERVER_CONFIGS bootstrap list. At read time
+    the two are merged: env entries provide defaults, DB rows override on
+    matching guild_id. New guilds added via Discord's Add-to-Server flow
+    have no env entry and live entirely here.
+    """
+    guild_id = models.BigIntegerField(primary_key=True)
+    status_channel_id = models.BigIntegerField(null=True, blank=True)
+    notification_channel_id = models.BigIntegerField(null=True, blank=True)
+    notification_role_id = models.BigIntegerField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Guild config'
+        verbose_name_plural = 'Guild configs'
+
+    def __str__(self):
+        return f"GuildConfig(guild_id={self.guild_id}, status_channel={self.status_channel_id})"
+
+
 class BotStatus(models.Model):
     """Track bot status and metrics"""
     timestamp = models.DateTimeField(auto_now_add=True)

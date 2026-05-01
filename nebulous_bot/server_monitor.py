@@ -353,11 +353,16 @@ class ServerMonitor:
 
     async def _update_status_message(self):
         """Update the persistent status message in Discord (create new one every hour)"""
-        if not Config.SERVER_CONFIGS or not self.formatter:
+        if not self.formatter:
             return
-        
-        # Update status message for each configured server
-        for server_config in Config.SERVER_CONFIGS:
+
+        # Pull the merged env+DB config off-loop (Django ORM is sync).
+        from asgiref.sync import sync_to_async
+        configs = await sync_to_async(Config.get_server_configs, thread_sensitive=True)()
+        if not configs:
+            return
+
+        for server_config in configs:
             await self._update_status_message_for_server(server_config)
     
     async def _update_status_message_for_server(self, server_config: Dict):
@@ -594,9 +599,12 @@ class ServerMonitor:
         """Check if player count exceeds threshold and send notifications if needed"""
         # Calculate total active players across all servers
         total_players = sum(server.get('players', 0) for server in self.cached_servers)
-        
-        # Check notifications for each configured server
-        for server_config in Config.SERVER_CONFIGS:
+
+        # Pull the merged env+DB config off-loop.
+        from asgiref.sync import sync_to_async
+        configs = await sync_to_async(Config.get_server_configs, thread_sensitive=True)()
+
+        for server_config in configs:
             await self._check_and_send_notification_for_server(server_config, total_players)
     
     async def _check_and_send_notification_for_server(self, server_config: Dict, total_players: int):

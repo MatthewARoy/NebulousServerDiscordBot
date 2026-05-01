@@ -80,7 +80,32 @@ Bot health, deployment time, monitoring task state, and a command summary.
 ### `!version` — aliases `!v`, `!changelog`
 Current version and recent changelog entries (mirrors `nebulous_bot/config.py`).
 
-## Admin
+## Per-guild setup (admin)
+
+These let an admin in any guild the bot has joined point it at the right
+channels. Settings are stored per-guild in the database and override the
+maintainer's bootstrap config (see [CONFIGURATION.md](CONFIGURATION.md)).
+
+### `!setstatuschannel [#channel]` — alias `!setstatus`
+Sets the channel where the bot posts the live, auto-updating server
+status embed. With no argument, defaults to the channel the command is
+run in. Admin-only.
+
+### `!setnotificationchannel [#channel]` — alias `!setnotifchannel`
+Sets the channel for player-threshold pings. Optional — without it, no
+threshold pings are sent for this guild. Admin-only.
+
+### `!setnotificationrole @role` — alias `!setnotifrole`
+Sets which role the bot pings on threshold notifications. Admin-only.
+
+### `!removestatus` — alias `!unsetstatus`
+Stops the live status embed in this guild. Admin-only.
+
+### `!showsetup` — aliases `!mysetup`, `!guildconfig`
+Shows the current setup for this guild and indicates whether it's coming
+from a `!set...` command, the bootstrap config, or unset.
+
+## Admin (operations)
 
 ### `!restartmonitor` — alias `!restart`
 Restart the server-monitoring loop (administrator only).

@@ -11,11 +11,23 @@ this document drifts, that file wins.
 | `DISCORD_TOKEN` | Bot token from the Discord Developer Portal. |
 | `APPLICATION_ID` | Application ID from the Developer Portal (General Information). |
 | `STEAM_API_KEY` | Steam Web API key. |
-| `SERVER_CONFIGS` | JSON array of `{guild_id, status_channel_id, …}` entries — see below. |
 
-### `SERVER_CONFIGS`
+### Optional bootstrap: `SERVER_CONFIGS`
 
-A JSON array on a single line. Each entry maps one Discord server to:
+Pre-seed a list of guilds the bot should immediately know about — useful
+when you (the maintainer) deploy the bot for a known set of servers. Any
+guild *not* listed here can still set itself up at runtime via the
+[`!setstatuschannel` admin command](COMMANDS.md#per-guild-setup-admin),
+which writes to the database.
+
+DB rows take precedence over env entries on `guild_id` collision, so a
+guild admin can override the maintainer's bootstrap setting if they want.
+
+If you don't need pre-seeded guilds, leave `SERVER_CONFIGS` unset. The bot
+will start with no configured guilds and onboard each new join via
+`!setstatuschannel`.
+
+Format: a JSON array on a single line. Each entry maps one Discord server to:
 
 - `guild_id` *(required)* — the Discord server ID.
 - `status_channel_id` *(required)* — channel for the live-updating status embed.
