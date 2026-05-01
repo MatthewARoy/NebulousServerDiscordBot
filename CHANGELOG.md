@@ -4,6 +4,18 @@ The bot reads its own changelog from `nebulous_bot/config.py` (`Config.CHANGELOG
 to power the in-Discord `!version` command, so that file is the source of truth
 for current and recent releases. This document mirrors it for readers on GitHub.
 
+## 2.3.2 — 2026-05-01
+
+- Fixed a rare error that could affect the live server status message right
+  after the bot started up.
+- Stability improvements.
+
+(Maintainer notes: traced the recurring brief outages to `dnf-makecache`
+overrunning available RAM under bot load; disabled and masked. Lazy-loaded
+matplotlib + numpy to drop idle RSS by ~80–120 MiB. Fixed a latent
+`NameError` in `ServerFormatter.create_status_embed`. Postmortem in
+[`docs/OPS.md`](docs/OPS.md).)
+
 ## 2.3.1 — 2026-03-03
 
 - Improved `!nextgame` queue handling for standard and PTB modes.

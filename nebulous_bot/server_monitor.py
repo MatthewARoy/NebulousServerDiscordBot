@@ -350,9 +350,7 @@ class ServerMonitor:
         old_server_ids = set(self.game_start_times.keys()) - current_server_ids
         for old_id in old_server_ids:
             del self.game_start_times[old_id]
-    
-    # TODO Check Duplication: Game timing methods moved to ServerFormatter to eliminate circular dependency
-    
+
     async def _update_status_message(self):
         """Update the persistent status message in Discord (create new one every hour)"""
         if not Config.SERVER_CONFIGS or not self.formatter:
@@ -746,7 +744,6 @@ class ServerMonitor:
     
     def _create_server_status_embed(self, formatter) -> discord.Embed:
         """Create Discord embed with current server status"""
-        # TODO Check Duplication: Replaced with centralized formatter - verify formatting matches expectations
         return formatter.create_status_embed(self.cached_servers, self.last_update, self.game_start_times)
     
     def get_open_lobbies(self) -> List[Dict]:

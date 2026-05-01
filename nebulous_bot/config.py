@@ -58,8 +58,16 @@ class Config:
     EMBED_COLOR_NO_SERVERS = 0xff0000  # Red
     
     # Version Information
-    VERSION = "2.3.1"
+    VERSION = "2.3.2"
     CHANGELOG = [
+        {
+            "version": "2.3.2",
+            "date": "2026-05-01",
+            "changes": [
+                "Fixed a rare error that could affect the live server status message right after the bot started up",
+                "Stability improvements"
+            ]
+        },
         {
             "version": "2.3.1",
             "date": "2026-03-03",
