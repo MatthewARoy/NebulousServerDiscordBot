@@ -21,20 +21,17 @@ Cloud's Always Free tier.
 
 ## What it looks like
 
-A live, refreshing **server status** embed pinned in your Discord channel
-shows every active Nebulous lobby and game with player counts, maps, and
-modes. `!graph players online` renders a 7-day activity chart from the
-bot's persisted snapshots. `!mapstats` ranks the most-played maps by
-frequency, average duration, and player count.
+**Live server status** — pinned in your channel, refreshes every 30 seconds:
 
-<!-- Screenshots will go here. To add, drop PNGs at docs/images/ as:
-       live-status.png · graph-players.png · mapstats.png
-     and uncomment the block below. -->
-<!--
 ![Live server status embed](docs/images/live-status.png)
+
+**`!graph players online`** — 7-day activity at a glance:
+
 ![Players online over the last 7 days](docs/images/graph-players.png)
+
+**`!mapstats`** — most-played maps with averages:
+
 ![Map play frequency top 10](docs/images/mapstats.png)
--->
 
 
 ## Highlights
