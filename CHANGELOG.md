@@ -4,6 +4,11 @@ The bot reads its own changelog from `nebulous_bot/config.py` (`Config.CHANGELOG
 to power the in-Discord `!version` command, so that file is the source of truth
 for current and recent releases. This document mirrors it for readers on GitHub.
 
+## 2.3.3 — 2026-05-04
+
+- `!nextgame lobby` only pings when a lobby is ready; debrief alerts are
+  suppressed. Stacks with `ptb` and `--skip`.
+
 ## 2.3.2 — 2026-05-01
 
 - Fixed a rare error that could affect the live server status message right

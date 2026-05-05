@@ -1080,16 +1080,21 @@ class ServerMonitor:
 
     def _filter_servers_for_waiter(self, trigger_servers: List[Dict], waiter_info: Dict) -> List[Dict]:
         """
-        Apply waiter-specific filters (skip current lobbies) to trigger servers.
+        Apply waiter-specific filters (skip current lobbies, lobby-only mode) to trigger servers.
         When a skipped lobby leaves lobby state, it is removed from the skip list
         so future new lobbies on that server can notify the user.
         """
         skip_ids = set(waiter_info.get('skip_lobbies', []))
+        lobby_only = waiter_info.get('lobby_only', False)
         filtered = []
 
         for server in trigger_servers:
             server_id = self._server_identity(server)
             status = server.get('status')
+
+            if lobby_only and status == 'debrief':
+                # In lobby-only mode, ignore servers that just entered debrief
+                continue
 
             if status == 'lobby' and server_id in skip_ids:
                 # Skip lobbies that were active when the user opted in with --skip
@@ -1144,7 +1149,7 @@ class ServerMonitor:
             return any(waiter_user_id == user_id for waiter_user_id, _ in self.next_game_waiters.keys())
         return self._next_game_waiter_key(user_id, ptb_only) in self.next_game_waiters
 
-    def add_next_game_waiter(self, user_id: int, channel_id: int, username: str, ptb_only: bool = False, skip_lobbies: Optional[List[str]] = None):
+    def add_next_game_waiter(self, user_id: int, channel_id: int, username: str, ptb_only: bool = False, skip_lobbies: Optional[List[str]] = None, lobby_only: bool = False):
         """Add a user to the next game waitlist"""
         waiter_key = self._next_game_waiter_key(user_id, ptb_only)
         self.next_game_waiters[waiter_key] = {
@@ -1152,11 +1157,13 @@ class ServerMonitor:
             'timestamp': datetime.now(timezone.utc),
             'username': username,
             'ptb_only': ptb_only,
-            'skip_lobbies': skip_lobbies or []
+            'skip_lobbies': skip_lobbies or [],
+            'lobby_only': lobby_only
         }
         ptb_text = " (PTB only)" if ptb_only else ""
+        lobby_text = " (lobby only)" if lobby_only else ""
         skip_text = " with skip" if skip_lobbies else ""
-        logger.info(f"Added {username} (ID: {user_id}) to next game waitlist{ptb_text}{skip_text}")
+        logger.info(f"Added {username} (ID: {user_id}) to next game waitlist{ptb_text}{lobby_text}{skip_text}")
     
     def remove_next_game_waiter(self, user_id: int, ptb_only: Optional[bool] = None) -> bool:
         """
