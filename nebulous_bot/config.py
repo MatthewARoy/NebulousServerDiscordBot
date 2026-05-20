@@ -96,8 +96,15 @@ class Config:
     EMBED_COLOR_NO_SERVERS = 0xff0000  # Red
     
     # Version Information
-    VERSION = "2.3.2"
+    VERSION = "2.3.3"
     CHANGELOG = [
+        {
+            "version": "2.3.3",
+            "date": "2026-05-04",
+            "changes": [
+                "Added !nextgame lobby option to only ping when a lobby is ready (suppresses debrief alerts); stacks with ptb and --skip"
+            ]
+        },
         {
             "version": "2.3.2",
             "date": "2026-05-01",
