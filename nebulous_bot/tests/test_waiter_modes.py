@@ -39,3 +39,20 @@ def test_no_filter_returns_all_ready_servers():
     matched = monitor.find_matching_servers_for_notification()
     names = {s['name'] for s in matched}
     assert names == {'Modded Lobby', 'Vanilla Lobby'}
+
+
+def debrief(name, *, modded=False):
+    return {
+        'name': name, 'status': 'debrief', 'players': 0,
+        'map_capacity': 8, 'is_modded': modded, 'is_test_branch': False,
+        'address': '1.2.3.4', 'gameport': 0, 'id': name,
+    }
+
+
+def test_modded_only_filters_debrief_servers():
+    monitor = make_monitor([
+        debrief('Modded Debrief', modded=True),
+        debrief('Vanilla Debrief', modded=False),
+    ])
+    matched = monitor.find_matching_servers_for_notification(modded_only=True)
+    assert {s['name'] for s in matched} == {'Modded Debrief'}
