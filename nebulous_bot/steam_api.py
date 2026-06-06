@@ -194,8 +194,8 @@ class SteamAPI:
     def _extract_direct_nebulous_rules(self, raw_rules: dict) -> dict:
         """Extract any direct Nebulous rules from the raw ServerRules response (from debug script)"""
         nebulous_rule_keys = {
-            'inprogress', 'submode', 'map', 'competitive', 'autobal', 
-            'rankrestricted', 'modded', 'version', 'gamemode', 'modFriendly'
+            'inprogress', 'submode', 'map', 'competitive', 'autobal',
+            'rankrestricted', 'version', 'gamemode', 'modfriendly', 'modlist'
         }
         
         direct_rules = {}
@@ -317,6 +317,7 @@ class SteamAPI:
             'competitive': False,
             'autobalance': False,
             'rank_restricted': False,
+            'is_modded': False,
             'in_progress': '0'  # Default to lobby
         }
         
@@ -351,7 +352,10 @@ class SteamAPI:
             
             # Rank restrictions
             server['rank_restricted'] = rules.get('rankrestricted', '0') == '1'
-            
+
+            # Modded: server is running mods if it advertises a non-empty mod list
+            server['is_modded'] = self._rules_indicate_modded(rules)
+
             # Version from rules (prefer rules over Steam API)
             # Check case-insensitively since rules might come from different sources
             version_key = None
@@ -423,6 +427,20 @@ class SteamAPI:
         
         return 8  # Default assumption for unknown maps
     
+    @staticmethod
+    def _rules_indicate_modded(rules: Optional[Dict]) -> bool:
+        """A server is 'modded' when it advertises a non-empty mod list.
+
+        modFriendly=1 only means mods are *permitted*; a non-empty modList
+        means mods are actually loaded (full modded gameplay, e.g. MFC). The
+        rule key is 'modList' on the JSON path and 'modlist' on the direct
+        path, so check both.
+        """
+        if not rules:
+            return False
+        mod_list = rules.get('modList') or rules.get('modlist') or ''
+        return bool(str(mod_list).strip())
+
     # Region tokens found in server names, checked when IP-range lookup fails.
     # The official ERI servers tag their names ("(US EAST)", "(US WEST)"),
     # which survives the server moving hosts — unlike hardcoded IP ranges.
