@@ -921,7 +921,7 @@ class ServerMonitor:
         # Mark the day as checked even if queue is too small, to avoid repeated checks.
         self.last_next_game_queue_alert_check_date = today
 
-        unique_user_ids = {user_id for user_id, _ in self.next_game_waiters.keys()}
+        unique_user_ids = {key[0] for key in self.next_game_waiters.keys()}
         queue_size = len(unique_user_ids)
         if queue_size < 4:
             logger.info(
@@ -932,7 +932,8 @@ class ServerMonitor:
 
         # Group by channel, dedupe users per channel across queue modes.
         users_by_channel = defaultdict(set)
-        for (user_id, _), waiter_info in self.next_game_waiters.items():
+        for waiter_key, waiter_info in self.next_game_waiters.items():
+            user_id = waiter_key[0]
             channel_id = waiter_info.get('channel_id')
             if channel_id:
                 users_by_channel[channel_id].add(user_id)
@@ -981,25 +982,24 @@ class ServerMonitor:
         if not self.next_game_waiters or not trigger_servers:
             return
         
-        # Group waiters by channel and PTB preference
-        waiters_by_channel_and_ptb = {}
+        # Group waiters by channel and queue mode (PTB / modded)
+        waiters_by_channel_and_mode = {}
         for waiter_key, waiter_info in self.next_game_waiters.items():
-            user_id, _ = waiter_key
+            user_id = waiter_key[0]
             channel_id = waiter_info['channel_id']
             ptb_only = waiter_info.get('ptb_only', False)
-            key = (channel_id, ptb_only)
-            if key not in waiters_by_channel_and_ptb:
-                waiters_by_channel_and_ptb[key] = []
-            waiters_by_channel_and_ptb[key].append((waiter_key, user_id, waiter_info))
+            modded_only = waiter_info.get('modded_only', False)
+            key = (channel_id, ptb_only, modded_only)
+            if key not in waiters_by_channel_and_mode:
+                waiters_by_channel_and_mode[key] = []
+            waiters_by_channel_and_mode[key].append((waiter_key, user_id, waiter_info))
 
-        # Notify all waiters, grouped by channel and PTB preference
+        # Notify all waiters, grouped by channel and queue mode
         waiters_to_remove = set()
-        for (channel_id, ptb_only), waiters in waiters_by_channel_and_ptb.items():
-            base_servers = trigger_servers
-            if ptb_only:
-                base_servers = [s for s in trigger_servers if s.get('is_test_branch', False)]
-                if not base_servers:
-                    continue  # No PTB servers match, skip this group
+        for (channel_id, ptb_only, modded_only), waiters in waiters_by_channel_and_mode.items():
+            base_servers = [s for s in trigger_servers if self._server_matches_mode(s, ptb_only, modded_only)]
+            if not base_servers:
+                continue  # No servers match this mode, skip this group
 
             # Apply per-waiter skip filtering and collect which users should be pinged
             eligible_waiters = []
@@ -1021,7 +1021,7 @@ class ServerMonitor:
             if not eligible_waiters or not aggregated_servers:
                 continue  # No one to notify after applying skip filters
 
-            notification_embed = self._build_next_game_notification_embed(aggregated_servers, ptb_only=ptb_only)
+            notification_embed = self._build_next_game_notification_embed(aggregated_servers, ptb_only=ptb_only, modded_only=modded_only)
             if not notification_embed:
                 continue  # No matching servers for this group
 
@@ -1035,7 +1035,8 @@ class ServerMonitor:
                     # Log and mark for removal
                     for waiter_key, user_id, waiter_info in eligible_waiters:
                         ptb_text = " (PTB only)" if ptb_only else ""
-                        logger.info(f"Notified {waiter_info['username']} (ID: {user_id}) about next game{ptb_text}")
+                        modded_text = " (modded only)" if modded_only else ""
+                        logger.info(f"Notified {waiter_info['username']} (ID: {user_id}) about next game{ptb_text}{modded_text}")
                         waiters_to_remove.add(waiter_key)
                 else:
                     # Channel not found, try DM for each eligible user
@@ -1044,7 +1045,8 @@ class ServerMonitor:
                             user = await self.bot.fetch_user(user_id)
                             await user.send(embed=notification_embed)
                             ptb_text = " (PTB only)" if ptb_only else ""
-                            logger.info(f"Notified {waiter_info['username']} (ID: {user_id}) via DM about next game{ptb_text}")
+                            modded_text = " (modded only)" if modded_only else ""
+                            logger.info(f"Notified {waiter_info['username']} (ID: {user_id}) via DM about next game{ptb_text}{modded_text}")
                             waiters_to_remove.add(waiter_key)
                         except Exception as dm_error:
                             logger.error(f"Failed to notify user {user_id} via DM: {dm_error}")
@@ -1241,7 +1243,7 @@ class ServerMonitor:
 
         return trigger_servers
 
-    def _build_next_game_notification_embed(self, trigger_servers: List[Dict], ptb_only: bool = False) -> Optional[discord.Embed]:
+    def _build_next_game_notification_embed(self, trigger_servers: List[Dict], ptb_only: bool = False, modded_only: bool = False) -> Optional[discord.Embed]:
         """Build an embed for next game alerts."""
         if not trigger_servers:
             return None
@@ -1251,10 +1253,18 @@ class ServerMonitor:
         if not debrief_servers and not active_servers:
             return None
 
-        title = "🧪 PTB Game Ready!" if ptb_only else "🚀 Game Ready!"
+        tags = []
+        if ptb_only:
+            tags.append("PTB")
+        if modded_only:
+            tags.append("Modded")
+        prefix = f"[{' · '.join(tags)}] " if tags else ""
+        emoji = "🧪" if ptb_only else ("🛠️" if modded_only else "🚀")
+        title = f"{emoji} {prefix}Game Ready!"
+        kind = " ".join(tags).lower()
         description = (
-            "A PTB game is ready to join or just entered debrief."
-            if ptb_only else
+            f"A {kind} game is ready to join or just entered debrief."
+            if tags else
             "A game is ready to join or just entered debrief."
         )
         embed = discord.Embed(
@@ -1292,34 +1302,34 @@ class ServerMonitor:
         embed.set_footer(text="Use !listservers or !openlobbies to see all servers")
         return embed
     
-    async def notify_single_user_immediately(self, user_id: int, trigger_servers: List[Dict], ptb_only: bool = False) -> bool:
+    async def notify_single_user_immediately(self, user_id: int, trigger_servers: List[Dict], ptb_only: bool = False, modded_only: bool = False) -> bool:
         """
         Notify a single user immediately about available games for a specific queue mode.
         Returns True if notification was sent, False otherwise.
         """
-        waiter_key = self._next_game_waiter_key(user_id, ptb_only)
+        waiter_key = self._next_game_waiter_key(user_id, ptb_only, modded_only)
         if waiter_key not in self.next_game_waiters or not trigger_servers:
             return False
-        
+
         waiter_info = self.next_game_waiters[waiter_key]
         channel_id = waiter_info['channel_id']
         ptb_only = waiter_info.get('ptb_only', False)
-        
-        # Filter servers by PTB preference if needed
-        if ptb_only:
-            trigger_servers = [s for s in trigger_servers if s.get('is_test_branch', False)]
-            if not trigger_servers:
-                return False  # No PTB servers match
+        modded_only = waiter_info.get('modded_only', False)
+
+        # Filter servers by queue mode (PTB / modded) if needed
+        trigger_servers = [s for s in trigger_servers if self._server_matches_mode(s, ptb_only, modded_only)]
+        if not trigger_servers:
+            return False
 
         # Respect per-waiter skip list (current lobbies)
         trigger_servers = self._filter_servers_for_waiter(trigger_servers, waiter_info)
         if not trigger_servers:
             return False
         
-        notification_embed = self._build_next_game_notification_embed(trigger_servers, ptb_only=ptb_only)
+        notification_embed = self._build_next_game_notification_embed(trigger_servers, ptb_only=ptb_only, modded_only=modded_only)
         if not notification_embed:
             return False
-        
+
         try:
             channel = self.bot.get_channel(channel_id)
             if channel:
