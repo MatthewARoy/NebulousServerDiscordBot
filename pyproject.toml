@@ -14,4 +14,4 @@ ignore = [
 ]
 
 [tool.pytest.ini_options]
-testpaths = ["formation_optimizer/tests"]
+testpaths = ["formation_optimizer/tests", "nebulous_bot/tests"]

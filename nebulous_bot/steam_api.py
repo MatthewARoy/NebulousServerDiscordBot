@@ -306,7 +306,7 @@ class SteamAPI:
             'version': server_data.get('version', ''),
             'secure': server_data.get('secure', False),
             'dedicated': server_data.get('dedicated', True),
-            'region': self._determine_region(server_data.get('addr', '')),
+            'region': self._determine_region(server_data.get('addr', ''), server_name),
             'has_password': False,
             'ping': 0,
             
@@ -423,11 +423,34 @@ class SteamAPI:
         
         return 8  # Default assumption for unknown maps
     
-    def _determine_region(self, address: str) -> str:
-        """Determine server region from IP address"""
+    # Region tokens found in server names, checked when IP-range lookup fails.
+    # The official ERI servers tag their names ("(US EAST)", "(US WEST)"),
+    # which survives the server moving hosts — unlike hardcoded IP ranges.
+    _REGION_NAME_PATTERNS = [
+        ('US', [r'US\s*EAST', r'US\s*WEST', r'\bUSA?\b', r'\bNA\b']),
+        ('EU', [r'\bEU\b', r'EUROPE', r'\bEUR\b']),
+        ('AU', [r'AUSTRALIA', r'\bAUS\b', r'\bAU\b', r'OCEANIA', r'\bOCE\b']),
+        ('AS', [r'\bASIA\b', r'\bSEA\b', r'\bSGP\b', r'\bSG\b', r'JAPAN', r'JPN', r'\bJP\b', r'\bCN\b', r'CHINA']),
+    ]
+
+    def _determine_region(self, address: str, name: str = '') -> str:
+        """Determine server region from IP address, falling back to the name.
+
+        IP ranges are authoritative when they match, but Nebulous servers
+        periodically change hosts (which silently broke region detection for
+        the official ERI servers). When the IP doesn't resolve, parse a region
+        tag out of the server name as a backstop.
+        """
+        region = self._determine_region_from_ip(address)
+        if region == 'Unknown':
+            region = self._determine_region_from_name(name)
+        return region
+
+    def _determine_region_from_ip(self, address: str) -> str:
+        """Determine server region from known Nebulous IP ranges."""
         if not address:
             return 'Unknown'
-        
+
         # Common Nebulous server IP ranges
         if address.startswith('207.174.97.') or address.startswith('23.132.156.'):
             return 'US'
@@ -439,6 +462,18 @@ class SteamAPI:
             return 'AS'
         else:
             return 'Unknown'
+
+    def _determine_region_from_name(self, name: str) -> str:
+        """Parse a region tag (e.g. "US EAST", "EU", "JPN") out of a server name."""
+        if not name:
+            return 'Unknown'
+
+        import re
+        upper = name.upper()
+        for code, patterns in self._REGION_NAME_PATTERNS:
+            if any(re.search(pattern, upper) for pattern in patterns):
+                return code
+        return 'Unknown'
     
     def _compare_versions(self, version1: str, version2: str) -> int:
         """

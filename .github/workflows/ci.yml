@@ -36,5 +36,5 @@ jobs:
           SERVER_CONFIGS: '[{"guild_id": 1, "status_channel_id": 2}]'
         run: python manage.py check
 
-      - name: Run formation_optimizer tests
-        run: pytest formation_optimizer/tests -v
+      - name: Run tests
+        run: pytest -v
