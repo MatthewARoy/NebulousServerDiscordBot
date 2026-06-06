@@ -1063,7 +1063,7 @@ class ServerMonitor:
         if waiters_to_remove:
             logger.info(f"Removed {len(waiters_to_remove)} next game waitlist entries after notification")
     
-    def get_joinable_lobby_ids(self, ptb_only: bool = False) -> List[str]:
+    def get_joinable_lobby_ids(self, ptb_only: bool = False, modded_only: bool = False) -> List[str]:
         """Return identities of current joinable lobbies (3+ players, not full)."""
         lobby_ids = set()
         for server in self.cached_servers:
@@ -1073,7 +1073,7 @@ class ServerMonitor:
             capacity = server.get('map_capacity', 8)
             if players < 3 or players >= capacity:
                 continue
-            if ptb_only and not server.get('is_test_branch', False):
+            if not self._server_matches_mode(server, ptb_only, modded_only):
                 continue
             lobby_ids.add(self._server_identity(server))
         return list(lobby_ids)
@@ -1110,7 +1110,7 @@ class ServerMonitor:
         waiter_info['skip_lobbies'] = list(skip_ids)
         return filtered
 
-    def resolve_server_names(self, server_ids: List[str], ptb_only: bool = False) -> List[str]:
+    def resolve_server_names(self, server_ids: List[str], ptb_only: bool = False, modded_only: bool = False) -> List[str]:
         """Best-effort resolve server identities to human-friendly names."""
         id_set = set(server_ids or [])
         if not id_set:
@@ -1118,7 +1118,7 @@ class ServerMonitor:
 
         names = []
         for server in self.cached_servers:
-            if ptb_only and not server.get('is_test_branch', False):
+            if not self._server_matches_mode(server, ptb_only, modded_only):
                 continue
 
             server_id = self._server_identity(server)
@@ -1132,38 +1132,40 @@ class ServerMonitor:
 
         return names
 
-    def _next_game_waiter_key(self, user_id: int, ptb_only: bool) -> Tuple[int, bool]:
+    def _next_game_waiter_key(self, user_id: int, ptb_only: bool, modded_only: bool = False) -> Tuple[int, bool, bool]:
         """Build the waitlist key for a user and queue mode."""
-        return (user_id, ptb_only)
+        return (user_id, ptb_only, modded_only)
 
-    def get_next_game_waiter(self, user_id: int, ptb_only: bool = False) -> Optional[Dict]:
+    def get_next_game_waiter(self, user_id: int, ptb_only: bool = False, modded_only: bool = False) -> Optional[Dict]:
         """Return waitlist info for a specific queue mode."""
-        return self.next_game_waiters.get(self._next_game_waiter_key(user_id, ptb_only))
+        return self.next_game_waiters.get(self._next_game_waiter_key(user_id, ptb_only, modded_only))
 
-    def is_user_waiting_for_next_game(self, user_id: int, ptb_only: Optional[bool] = None) -> bool:
+    def is_user_waiting_for_next_game(self, user_id: int, ptb_only: Optional[bool] = None, modded_only: bool = False) -> bool:
         """
         Check whether a user is already queued.
         If ptb_only is None, checks any queue mode for that user.
         """
         if ptb_only is None:
-            return any(waiter_user_id == user_id for waiter_user_id, _ in self.next_game_waiters.keys())
-        return self._next_game_waiter_key(user_id, ptb_only) in self.next_game_waiters
+            return any(key[0] == user_id for key in self.next_game_waiters.keys())
+        return self._next_game_waiter_key(user_id, ptb_only, modded_only) in self.next_game_waiters
 
-    def add_next_game_waiter(self, user_id: int, channel_id: int, username: str, ptb_only: bool = False, skip_lobbies: Optional[List[str]] = None, lobby_only: bool = False):
+    def add_next_game_waiter(self, user_id: int, channel_id: int, username: str, ptb_only: bool = False, skip_lobbies: Optional[List[str]] = None, lobby_only: bool = False, modded_only: bool = False):
         """Add a user to the next game waitlist"""
-        waiter_key = self._next_game_waiter_key(user_id, ptb_only)
+        waiter_key = self._next_game_waiter_key(user_id, ptb_only, modded_only)
         self.next_game_waiters[waiter_key] = {
             'channel_id': channel_id,
             'timestamp': datetime.now(timezone.utc),
             'username': username,
             'ptb_only': ptb_only,
+            'modded_only': modded_only,
             'skip_lobbies': skip_lobbies or [],
             'lobby_only': lobby_only
         }
         ptb_text = " (PTB only)" if ptb_only else ""
+        modded_text = " (modded only)" if modded_only else ""
         lobby_text = " (lobby only)" if lobby_only else ""
         skip_text = " with skip" if skip_lobbies else ""
-        logger.info(f"Added {username} (ID: {user_id}) to next game waitlist{ptb_text}{lobby_text}{skip_text}")
+        logger.info(f"Added {username} (ID: {user_id}) to next game waitlist{ptb_text}{modded_text}{lobby_text}{skip_text}")
     
     def remove_next_game_waiter(self, user_id: int, ptb_only: Optional[bool] = None) -> bool:
         """
@@ -1194,7 +1196,7 @@ class ServerMonitor:
     
     def get_next_game_waiters_count(self) -> int:
         """Get the number of unique users waiting for next game notifications."""
-        return len({user_id for user_id, _ in self.next_game_waiters.keys()})
+        return len({key[0] for key in self.next_game_waiters.keys()})
     
     def _server_matches_mode(self, server: Dict, ptb_only: bool, modded_only: bool) -> bool:
         """Whether a server passes the active narrowing filters for a waiter."""
