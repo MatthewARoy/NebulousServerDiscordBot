@@ -1196,42 +1196,47 @@ class ServerMonitor:
         """Get the number of unique users waiting for next game notifications."""
         return len({user_id for user_id, _ in self.next_game_waiters.keys()})
     
-    def find_matching_servers_for_notification(self, ptb_only: bool = False) -> List[Dict]:
+    def _server_matches_mode(self, server: Dict, ptb_only: bool, modded_only: bool) -> bool:
+        """Whether a server passes the active narrowing filters for a waiter."""
+        if ptb_only and not server.get('is_test_branch', False):
+            return False
+        if modded_only and not server.get('is_modded', False):
+            return False
+        return True
+
+    def find_matching_servers_for_notification(self, ptb_only: bool = False, modded_only: bool = False) -> List[Dict]:
         """
         Find servers that match the notification criteria:
         - Lobby servers with 3+ players but less than max capacity
         - Servers in debrief status
-        - If ptb_only=True, only return PTB (test branch) servers
+        - If ptb_only=True, only PTB (test branch) servers
+        - If modded_only=True, only servers running mods (non-empty modList)
         Returns list of matching servers.
         """
         trigger_servers = []
-        
+
         # Check for joinable lobby servers with 3+ players
         for server in self.cached_servers:
             if server.get('status') == 'lobby':
                 players = server.get('players', 0)
                 capacity = server.get('map_capacity', 8)
-                # Only notify for lobbies with 3+ players that still have space
                 if players >= 3 and players < capacity:
-                    # Filter by PTB if requested
-                    if not ptb_only or server.get('is_test_branch', False):
+                    if self._server_matches_mode(server, ptb_only, modded_only):
                         trigger_servers.append(server)
-        
+
         # Check for servers in debrief
         for server in self.cached_servers:
             if server.get('status') == 'debrief':
-                # Filter by PTB if requested
-                if not ptb_only or server.get('is_test_branch', False):
+                if self._server_matches_mode(server, ptb_only, modded_only):
                     if server not in trigger_servers:
                         trigger_servers.append(server)
-        
+
         # Also check recent debrief transitions
         for _server_id, server in self.recent_debrief_transitions.items():
-            # Filter by PTB if requested
-            if not ptb_only or server.get('is_test_branch', False):
+            if self._server_matches_mode(server, ptb_only, modded_only):
                 if server not in trigger_servers:
                     trigger_servers.append(server)
-        
+
         return trigger_servers
 
     def _build_next_game_notification_embed(self, trigger_servers: List[Dict], ptb_only: bool = False) -> Optional[discord.Embed]:
