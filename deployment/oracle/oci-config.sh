@@ -11,7 +11,7 @@
 # Or set the same environment variables in your shell.
 
 # --- VM connection details (REQUIRED — set these) ---
-export OCI_VM_HOST="${OCI_VM_HOST:?Set OCI_VM_HOST to your Oracle VM's public IP}"
+export OCI_VM_HOST="${OCI_VM_HOST:?Set OCI_VM_HOST to the Oracle VM public IP}"
 export OCI_VM_USER="${OCI_VM_USER:-opc}"
 export OCI_SSH_KEY="${OCI_SSH_KEY:-$HOME/.ssh/id_ed25519}"
 
