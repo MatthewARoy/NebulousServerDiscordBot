@@ -26,14 +26,13 @@ class SteamAPI:
             await self.session.close()
         self.session = None
     
-    async def get_game_servers(self, limit: int = 100, include_all: bool = False) -> List[Dict]:
+    async def get_game_servers(self, include_all: bool = False) -> List[Dict]:
         """
         Get game servers for Nebulous: Fleet Command using Steam Web API.
         Uses the GetServerList endpoint and enriches with server rules data.
-        
+
         Args:
-            limit: Maximum number of servers to return
-            include_all: If True, include all servers (empty, private, with bots). 
+            include_all: If True, include all servers (empty, private, with bots).
                         If False, filter out empty, private, and bot servers.
         """
         if not self.session:
@@ -60,32 +59,6 @@ class SteamAPI:
         except Exception as e:
             logger.error(f"Error fetching server data: {e}")
             return []
-    
-    async def get_server_info(self, server_address: str) -> Optional[Dict]:
-        """Get detailed information about a specific server"""
-        if not self.session:
-            ssl_context = ssl.create_default_context(cafile=certifi.where())
-            connector = aiohttp.TCPConnector(ssl=ssl_context)
-            self.session = aiohttp.ClientSession(connector=connector)
-        
-        try:
-            # This would query specific server info
-            # Implementation depends on available Steam API endpoints
-            url = "https://api.steampowered.com/ISteamApps/GetServersAtAddress/v1/"
-            params = {
-                'key': self.api_key,
-                'addr': server_address
-            }
-            
-            async with self.session.get(url, params=params) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    return data
-                    
-        except Exception as e:
-            logger.error(f"Error fetching server info for {server_address}: {e}")
-            
-        return None
     
     def _query_server_rules_sync(self, server_address: str) -> Optional[Dict]:
         """
@@ -208,22 +181,14 @@ class SteamAPI:
     async def _parse_server_data_with_rules(self, raw_data: Dict, include_all: bool = False) -> List[Dict]:
         """Parse raw Steam API response and enrich with server rules data"""
         servers = []
-        
-        # Server blacklist - add servers that should be filtered out
-        blacklisted_servers = {
-        }
-        
+
         try:
             if 'response' in raw_data and 'servers' in raw_data['response']:
                 basic_servers = []
-                
+
                 for server_data in raw_data['response']['servers']:
                     server_name = server_data.get('name', 'Unknown Server')
-                    
-                    # Skip blacklisted servers (always skip these)
-                    if server_name in blacklisted_servers:
-                        continue
-                    
+
                     # Apply filtering only if include_all is False
                     if not include_all:
                         # Skip servers with bots
@@ -575,43 +540,4 @@ class SteamAPI:
         elif 'arena' in name_lower or 'fight club' in name_lower:
             return 'Arena'
         else:
-            return 'Standard'
-
-class MockSteamAPI(SteamAPI):
-    """Mock Steam API for testing purposes"""
-    
-    async def get_game_servers(self, limit: int = 100) -> List[Dict]:
-        """Return mock server data for testing"""
-        import random
-        
-        mock_servers = []
-        server_names = [
-            "Nebulous Combat Arena",
-            "Fleet Command Central",
-            "Tactical Warfare Server",
-            "Combat Training Ground",
-            "Elite Fleet Battle",
-            "Nebulous Skirmish Zone"
-        ]
-        
-        maps = ["Asteroid Field", "Deep Space", "Binary System", "Nebula Cluster", "Station Perimeter"]
-        
-        for i in range(random.randint(3, 8)):
-            players = random.randint(0, 16)
-            max_players = random.choice([8, 12, 16, 20])
-            
-            server = {
-                'name': random.choice(server_names) + f" #{i+1}",
-                'address': f"192.168.1.{100+i}:27015",
-                'players': players,
-                'max_players': max_players,
-                'map': random.choice(maps),
-                'game_mode': random.choice(["Conquest", "Elimination", "Escort", "Defense"]),
-                'has_password': random.choice([True, False]),
-                'version': "1.4.2",
-                'ping': random.randint(20, 200),
-                'secure': True
-            }
-            mock_servers.append(server)
-            
-        return mock_servers 
+            return 'Standard' 

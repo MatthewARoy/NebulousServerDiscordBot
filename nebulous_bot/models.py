@@ -41,20 +41,6 @@ class BotStatus(models.Model):
         return f"Status at {self.timestamp}: {self.total_players} players, {self.open_lobbies} lobbies"
 
 
-class NotificationLog(models.Model):
-    """Log player threshold notifications"""
-    timestamp = models.DateTimeField(auto_now_add=True)
-    guild_id = models.BigIntegerField()
-    player_count = models.IntegerField()
-    threshold = models.IntegerField()
-    
-    class Meta:
-        ordering = ['-timestamp']
-    
-    def __str__(self):
-        return f"Notification at {self.timestamp}: {self.player_count} players (threshold: {self.threshold})"
-
-
 class CommandLog(models.Model):
     """
     Track every bot command invocation for usage metrics.

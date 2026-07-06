@@ -212,9 +212,7 @@ class ServerMonitor:
                 # Continue running even after errors
                 logger.info(f"Continuing monitoring loop despite error. Sleeping {Config.UPDATE_INTERVAL}s...")
                 await asyncio.sleep(Config.UPDATE_INTERVAL)
-        
-        logger.error("❌ CRITICAL: Monitoring loop exited unexpectedly!")
-    
+
     async def _health_check_loop(self):
         """Self-healing health check that restarts monitoring if it stops"""
         logger.info("Health check loop started - checking every 60 seconds")
@@ -841,32 +839,6 @@ class ServerMonitor:
             return self.filter_servers(base_servers, filters)
         return base_servers
 
-    def get_servers_by_criteria(self, **criteria) -> List[Dict]:
-        """Filter servers by various criteria"""
-        filtered_servers = self.cached_servers.copy()
-        
-        for key, value in criteria.items():
-            if key == 'has_players':
-                filtered_servers = [s for s in filtered_servers if (s.get('players', 0) > 0) == value]
-            elif key == 'open_lobby':
-                # Only servers in lobby state and accepting players
-                # Use map capacity instead of server max capacity
-                if value:
-                    filtered_servers = [s for s in filtered_servers if 
-                                  (s.get('status') == 'lobby' and s.get('players', 0) < s.get('map_capacity', 8)) == value]
-            elif key == 'no_password':
-                filtered_servers = [s for s in filtered_servers if (not s.get('has_password', False)) == value]
-            elif key == 'map':
-                filtered_servers = [s for s in filtered_servers if s.get('map', '').lower() == value.lower()]
-            elif key == 'game_mode':
-                filtered_servers = [s for s in filtered_servers if s.get('game_mode', '').lower() == value.lower()]
-            elif key == 'region':
-                filtered_servers = [s for s in filtered_servers if s.get('region', '').lower() == value.lower()]
-            elif key == 'status':
-                filtered_servers = [s for s in filtered_servers if s.get('status', '') == value]
-        
-        return filtered_servers
-    
     async def force_update(self):
         """Force an immediate update of server data"""
         await self._update_server_list()

@@ -52,19 +52,12 @@ class ServerConstants:
     # Special indicator emojis
     PASSWORD_EMOJI = "🔒"
     SECURE_EMOJI = "🛡️"
-    COMPETITIVE_EMOJI = "🏆"
-    AUTOBALANCE_EMOJI = "⚖️"
-    RANK_RESTRICTED_EMOJI = "🏅"
     TEST_BRANCH_EMOJI = "🧪"
 
 
 class ServerFormatter:
     """Utility class for formatting server information in Discord embeds"""
-    
-    def __init__(self, server_monitor=None):
-        """Initialize formatter with optional server monitor for game timing info"""
-        self.server_monitor = server_monitor
-    
+
     @staticmethod
     def sort_servers_by_priority(servers: List[Dict]) -> List[Dict]:
         """Sort servers by status priority (lobby first) then by player count"""
@@ -185,16 +178,6 @@ class ServerFormatter:
         region_flag = ServerFormatter.get_region_flag(region)
         icons.append(region_flag)
         
-        return icons
-    
-    @staticmethod
-    def get_enhanced_status_icons(server: Dict) -> Dict[str, str]:
-        """Get enhanced status indicators including competitive flags"""
-        icons = {
-            'competitive': ServerConstants.COMPETITIVE_EMOJI if server.get('competitive', False) else "",
-            'autobalance': ServerConstants.AUTOBALANCE_EMOJI if server.get('autobalance', False) else "", 
-            'rank_restricted': ServerConstants.RANK_RESTRICTED_EMOJI if server.get('rank_restricted', False) else ""
-        }
         return icons
     
     def create_server_field_value(self, server: Dict, game_start_times: Dict = None) -> str:
