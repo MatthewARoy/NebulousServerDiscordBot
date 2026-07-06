@@ -166,6 +166,10 @@ class ServerMonitor:
             except asyncio.CancelledError:
                 pass
             logger.info("Tracked message updates stopped")
+
+        # Release the persistent Steam HTTP session; it is lazily recreated
+        # if monitoring starts again.
+        await self.steam_api.close()
     
     async def _monitoring_loop(self):
         """Main monitoring loop that runs every UPDATE_INTERVAL seconds"""
@@ -255,44 +259,38 @@ class ServerMonitor:
         """Fetch latest server information from Steam API with server rules"""
         try:
             logger.debug("Fetching servers from Steam API...")
-            async with self.steam_api as api:
-                # Get filtered servers (default behavior)
-                servers = await api.get_game_servers()
-                
-                # Also get all servers for !listservers all command
-                all_servers = await api.get_game_servers(include_all=True)
+            # Single sweep: fetch every server (with A2S rules) once, then
+            # derive the default-filtered view locally. Previously this was
+            # two GetServerList calls + two full rules sweeps per cycle.
+            all_servers = await self.steam_api.get_game_servers()
+            servers = [s for s in all_servers if self.steam_api.passes_default_filter(s)]
 
-                # Fallback: if all_servers failed, use filtered list so !listservers all is not empty
-                if not all_servers and servers:
-                    logger.warning("Steam API returned no all_servers; falling back to filtered servers")
-                    all_servers = list(servers)
-                
-                logger.debug(f"Received {len(servers)} filtered servers, {len(all_servers)} total servers from Steam API")
-                
-                # Track state transitions and game start times
-                await self._track_game_start_times(servers)
-                
-                # Servers now come with real status from server rules
-                self.cached_servers = servers
-                self.cached_all_servers = all_servers
-                self.last_update = datetime.now(timezone.utc)
+            logger.debug(f"Received {len(all_servers)} servers from Steam API ({len(servers)} after default filter)")
 
-                # If we already know stable version, reapply PTB flags to both caches
-                if self.stable_version:
-                    self._recalculate_test_branch_flags()
-                
-                # If stable version hasn't been determined yet, determine it immediately
-                if self.stable_version is None:
-                    self._determine_stable_version()
-                
-                # Log stats
-                total_servers = len(servers)
-                active_players = sum(s.get('players', 0) for s in servers)
-                open_lobbies = len(self.get_open_lobbies())
-                in_game = len([s for s in servers if s.get('status') == 'in_game'])
-                
-                logger.info(f"✅ Updated server list at {self.last_update.strftime('%H:%M:%S')}: {total_servers} servers, {active_players} players, {open_lobbies} open lobbies, {in_game} in-game")
-                
+            # Track state transitions and game start times
+            await self._track_game_start_times(servers)
+
+            # Servers now come with real status from server rules
+            self.cached_servers = servers
+            self.cached_all_servers = all_servers
+            self.last_update = datetime.now(timezone.utc)
+
+            # If we already know stable version, reapply PTB flags to both caches
+            if self.stable_version:
+                self._recalculate_test_branch_flags()
+
+            # If stable version hasn't been determined yet, determine it immediately
+            if self.stable_version is None:
+                self._determine_stable_version()
+
+            # Log stats
+            total_servers = len(servers)
+            active_players = sum(s.get('players', 0) for s in servers)
+            open_lobbies = len(self.get_open_lobbies())
+            in_game = len([s for s in servers if s.get('status') == 'in_game'])
+
+            logger.debug(f"✅ Updated server list at {self.last_update.strftime('%H:%M:%S')}: {total_servers} servers, {active_players} players, {open_lobbies} open lobbies, {in_game} in-game")
+
         except Exception as e:
             logger.error(f"❌ Failed to update server list: {e}", exc_info=True)
     

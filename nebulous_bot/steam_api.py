@@ -14,51 +14,57 @@ class SteamAPI:
         self.session = None
         self.stable_version = None  # Set dynamically from ServerMonitor
         
-    async def __aenter__(self):
-        # Create SSL context for secure connections
-        ssl_context = ssl.create_default_context(cafile=certifi.where())
-        connector = aiohttp.TCPConnector(ssl=ssl_context)
-        self.session = aiohttp.ClientSession(connector=connector)
-        return self
-        
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def close(self):
+        """Close the persistent HTTP session (call on shutdown)."""
         if self.session and not self.session.closed:
             await self.session.close()
         self.session = None
-    
-    async def get_game_servers(self, include_all: bool = False) -> List[Dict]:
-        """
-        Get game servers for Nebulous: Fleet Command using Steam Web API.
-        Uses the GetServerList endpoint and enriches with server rules data.
 
-        Args:
-            include_all: If True, include all servers (empty, private, with bots).
-                        If False, filter out empty, private, and bot servers.
+    async def get_game_servers(self) -> List[Dict]:
         """
-        if not self.session:
+        Get ALL game servers for Nebulous: Fleet Command using Steam Web API,
+        enriched with A2S server-rules data (real game state, map, mods).
+
+        Returns the unfiltered list; callers that want the default display
+        set (no empty/bot/private servers) filter with passes_default_filter.
+        The HTTP session is created lazily and reused across calls — one
+        session for the life of the bot instead of one per poll cycle.
+        """
+        if not self.session or self.session.closed:
             ssl_context = ssl.create_default_context(cafile=certifi.where())
             connector = aiohttp.TCPConnector(ssl=ssl_context)
             self.session = aiohttp.ClientSession(connector=connector)
-        
+
         try:
             url = "https://api.steampowered.com/IGameServersService/GetServerList/v1/"
             params = {
                 'key': self.api_key,
                 'filter': f'\\appid\\{Config.NEBULOUS_APP_ID}'
             }
-            
+
             async with self.session.get(url, params=params) as response:
                 if response.status == 200:
                     data = await response.json()
-                    servers = await self._parse_server_data_with_rules(data, include_all=include_all)
+                    servers = await self._parse_server_data_with_rules(data)
                     return servers
                 else:
                     logger.error(f"Steam API request failed with status {response.status}")
                     return []
-                    
+
         except Exception as e:
             logger.error(f"Error fetching server data: {e}")
             return []
+
+    def passes_default_filter(self, server: Dict) -> bool:
+        """Default visibility filter: hide empty, bot-hosting, and private
+        servers. Applied to enhanced server dicts from get_game_servers."""
+        if server.get('bots', 0) > 0:
+            return False
+        if server.get('players', 0) == 0:
+            return False
+        if self._is_private_server(server.get('name', '')):
+            return False
+        return True
     
     def _query_server_rules_sync(self, server_address: str) -> Optional[Dict]:
         """
@@ -178,7 +184,7 @@ class SteamAPI:
         
         return direct_rules if direct_rules else {}
     
-    async def _parse_server_data_with_rules(self, raw_data: Dict, include_all: bool = False) -> List[Dict]:
+    async def _parse_server_data_with_rules(self, raw_data: Dict) -> List[Dict]:
         """Parse raw Steam API response and enrich with server rules data"""
         servers = []
 
@@ -188,27 +194,10 @@ class SteamAPI:
 
                 for server_data in raw_data['response']['servers']:
                     server_name = server_data.get('name', 'Unknown Server')
-
-                    # Apply filtering only if include_all is False
-                    if not include_all:
-                        # Skip servers with bots
-                        bots = server_data.get('bots', 0)
-                        if bots > 0:
-                            continue
-                        
-                        # Skip empty servers (no players)
-                        players = server_data.get('players', 0)
-                        if players == 0:
-                            continue
-                        
-                        # Skip servers with passwords (private)
-                        if self._is_private_server(server_name):
-                            continue
-                    # When include_all=True, include all servers (with bots, empty, private)
-                    # Still get player count for display
                     players = server_data.get('players', 0)
-                    
-                    # Store basic server data
+
+                    # No filtering here: all servers are enhanced; display
+                    # filtering happens downstream via passes_default_filter.
                     basic_servers.append((server_data, server_name, players))
                 
                 # Query server rules for each server (with concurrency limit)
@@ -265,7 +254,7 @@ class SteamAPI:
             'gameport': server_data.get('gameport', 0),
             'players': players,
             'max_players': server_data.get('max_players', 0),
-            'bots': 0,  # Always 0 since we filter out servers with bots
+            'bots': server_data.get('bots', 0),
             'map': map_name,
             'map_capacity': map_capacity,
             'version': server_data.get('version', ''),
