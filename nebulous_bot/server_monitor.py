@@ -9,8 +9,10 @@ from nebulous_bot.steam_api import SteamAPI
 from nebulous_bot.config import Config
 from nebulous_bot.statistics_tracker import StatisticsService
 
-# PST timezone
-PST = timezone(timedelta(hours=-8))
+# Pacific time (DST-aware). Community-facing schedules ("6pm PST") mean
+# local Pacific wall-clock time, not a fixed UTC-8 offset.
+from zoneinfo import ZoneInfo
+PST = ZoneInfo("America/Los_Angeles")
 
 logger = logging.getLogger(__name__)
 

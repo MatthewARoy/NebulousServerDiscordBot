@@ -9,9 +9,6 @@ aiohttp>=3.8.0
 # Configuration
 python-dotenv>=1.0.0
 
-# Timezone support
-pytz>=2023.3
-
 # HTTP and API
 certifi>=2023.7.22
 

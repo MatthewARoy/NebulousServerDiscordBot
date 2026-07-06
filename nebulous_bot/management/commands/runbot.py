@@ -473,16 +473,14 @@ class Command(BaseCommand):
             from django.utils import timezone as django_timezone
             from datetime import timedelta
             from asgiref.sync import sync_to_async
-            import pytz
-            
-            # PST timezone for consistent display
-            pst = pytz.timezone('America/Los_Angeles')
-            
+            from zoneinfo import ZoneInfo
+
+            # Pacific timezone for consistent display
+            pst = ZoneInfo('America/Los_Angeles')
+
             @sync_to_async
             def get_statistics():
-                import pytz
-                pst = pytz.timezone('America/Los_Angeles')
-                
+
                 # Calculate timeframe
                 now = django_timezone.now()
                 if timeframe == "today":
