@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(.venv/Scripts/python -m pytest:*)",
+      "Bash(.venv/Scripts/python -m ruff:*)",
+      "Bash(.venv/bin/python -m pytest:*)",
+      "Bash(.venv/bin/python -m ruff:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+      "PowerShell(.venv/Scripts/python -m pytest:*)",
+      "PowerShell(.venv/Scripts/python -m ruff:*)",
+      "PowerShell(git status:*)",
+      "PowerShell(git diff:*)",
+      "PowerShell(git log:*)"
+    ]
+  }
+}

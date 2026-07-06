@@ -73,3 +73,6 @@ docker-compose.override.yml
 # production VM IPs, SSH paths, or host filesystem layout)
 ORACLE_CONNECT.md
 ORACLE_SERVER_ISSUES.md
+
+# Claude Code personal settings (machine-local)
+.claude/settings.local.json
