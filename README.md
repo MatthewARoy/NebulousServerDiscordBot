@@ -66,8 +66,8 @@ moderation bot, music bot, leveling bot, or a general-purpose Discord bot.
 
 ## Tech stack
 
-Python 3.11 · Django 5 · discord.py · SQLite · Docker · Oracle Cloud (OCI
-Always Free).
+Python 3.11 · Django 4.2 LTS · discord.py · SQLite · Docker · Oracle Cloud
+(OCI Always Free).
 
 ## Repo layout
 

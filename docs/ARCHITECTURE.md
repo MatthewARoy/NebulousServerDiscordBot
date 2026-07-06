@@ -4,8 +4,9 @@ A short tour of how the project fits together.
 
 ## Stack
 
-- **Python 3.11**, **Django 5** (used for ORM, migrations, admin, and a tiny
-  HTTP healthcheck — there's no user-facing web UI).
+- **Python 3.11**, **Django 4.2 LTS** (used for ORM, migrations, admin, and a
+  tiny HTTP healthcheck — there's no user-facing web UI). Pinned `<5.0`
+  deliberately: LTS support and a smaller footprint on the RAM-constrained VM.
 - **discord.py** for the bot.
 - **SQLite** for persistence. The DB lives at `db.sqlite3` in development and
   on a mounted block-storage volume in production.
