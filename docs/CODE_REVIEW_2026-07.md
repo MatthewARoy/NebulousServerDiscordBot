@@ -144,6 +144,22 @@ loop in `.claude/skills/verify/SKILL.md`.
     models, `pytz` etc. inside a dozen command bodies (`!stats` imports pytz
     twice at different scopes). Falls out naturally during the cog split (#23).
 
+## Found post-review (observed in production logs, 2026-07-06 deploy)
+
+28. **Ongoing-game recovery never runs.** On every bot startup:
+    `ERROR ... statistics_tracker Error recovering ongoing games: You cannot
+    call this from an async context - use a thread or sync_to_async.`
+    `GameSessionTracker.__init__` runs inside async `on_ready` (via
+    `ServerMonitor.__init__` → `StatisticsService()`), so the
+    `GameSession.objects.filter(is_ongoing=True)` query trips Django's
+    async-context guard; the `list()` workaround in the comment predates that
+    guard. Consequence: games in progress across a restart are never
+    reattached — their rows stay `is_ongoing=True` forever and the game is
+    double-counted when re-detected. Pre-existing (file unchanged since
+    2026-04-29); observed on the 2.3.4 deploy. **Fix:** defer
+    `_recover_ongoing_games()` to the first `StatisticsService.update()`
+    call, which already runs in an executor thread.
+
 ## Non-issues (checked, fine as-is)
 
 - `Config.CHANGELOG` vs root `CHANGELOG.md` duplication is documented as
