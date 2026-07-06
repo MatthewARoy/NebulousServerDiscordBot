@@ -12,10 +12,12 @@ from nebulous_bot.config import Config
 class ServerConstants:
     """Constants for server display formatting"""
     
-    # Status priority for sorting (lower number = higher priority)
+    # Status priority for sorting (lower number = higher priority).
+    # Debrief sorts above in-game: those servers will be joinable soon.
     STATUS_PRIORITY = {
         'lobby': 0,
-        'unknown': 1, 
+        'debrief': 1,
+        'unknown': 1,
         'in_game': 2
     }
     

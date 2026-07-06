@@ -1141,19 +1141,21 @@ class ServerMonitor:
         skip_text = " with skip" if skip_lobbies else ""
         logger.info(f"Added {username} (ID: {user_id}) to next game waitlist{ptb_text}{modded_text}{lobby_text}{skip_text}")
     
-    def remove_next_game_waiter(self, user_id: int, ptb_only: Optional[bool] = None) -> bool:
+    def remove_next_game_waiter(self, user_id: int, ptb_only: Optional[bool] = None, modded_only: bool = False) -> bool:
         """
         Remove a user from the next game waitlist.
-        If ptb_only is None, remove user from all queue modes.
+        If ptb_only is None, remove user from all queue modes; otherwise
+        remove exactly the (ptb_only, modded_only) queue entry.
         Returns True if at least one waitlist entry was removed.
         """
         if ptb_only is not None:
-            waiter_key = self._next_game_waiter_key(user_id, ptb_only)
+            waiter_key = self._next_game_waiter_key(user_id, ptb_only, modded_only)
             if waiter_key in self.next_game_waiters:
                 username = self.next_game_waiters[waiter_key]['username']
                 del self.next_game_waiters[waiter_key]
                 ptb_text = " (PTB only)" if ptb_only else ""
-                logger.info(f"Removed {username} (ID: {user_id}) from next game waitlist{ptb_text}")
+                modded_text = " (modded only)" if modded_only else ""
+                logger.info(f"Removed {username} (ID: {user_id}) from next game waitlist{ptb_text}{modded_text}")
                 return True
             return False
 

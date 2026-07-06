@@ -151,19 +151,25 @@ class SteamAPI:
             if isinstance(rules_data, str):
                 if not rules_data or not rules_data.strip():
                     return {}
-                
-                # Handle both single quotes (Python dict format) and double quotes (JSON)  
+
                 if rules_data.startswith('{') and rules_data.endswith('}'):
+                    # Try strict JSON first — swapping quotes before parsing
+                    # corrupts payloads containing apostrophes.
                     try:
-                        # Try JSON parsing first
+                        return json.loads(rules_data)
+                    except json.JSONDecodeError:
+                        pass
+                    # Python-literal dicts (single-quoted)
+                    try:
+                        return ast.literal_eval(rules_data)
+                    except (ValueError, SyntaxError):
+                        pass
+                    # Last resort for malformed mixed-quote payloads
+                    try:
                         return json.loads(rules_data.replace("'", '"'))
                     except json.JSONDecodeError:
-                        try:
-                            # Try Python literal evaluation
-                            return ast.literal_eval(rules_data)
-                        except (ValueError, SyntaxError):
-                            pass
-            
+                        pass
+
             return {}
             
         except Exception as e:
