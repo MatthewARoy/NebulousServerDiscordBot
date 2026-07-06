@@ -4,6 +4,22 @@ The bot reads its own changelog from `nebulous_bot/config.py` (`Config.CHANGELOG
 to power the in-Discord `!version` command, so that file is the source of truth
 for current and recent releases. This document mirrors it for readers on GitHub.
 
+## 2.3.4 — 2026-07-06
+
+- Faster and lighter: the bot now polls Steam once per update cycle and uses
+  less memory at startup.
+- The daily 6pm Pacific `!nextgame` queue alert now respects daylight saving
+  time.
+- Busy commands have short cooldowns and clearer error messages.
+
+(Maintainer notes: full code review in `docs/CODE_REVIEW_2026-07.md`; this
+release lands items #1–#22 and #24 — fixed the broken `test_statistics`
+command, removed dead code (`MockSteamAPI`, `NotificationLog`, unused deps),
+lazy-imported `formation_optimizer` to keep numpy/matplotlib off the startup
+path, deduplicated the Steam sweep with a persistent HTTP session, gated
+`!commandlogs` behind `is_owner`, standardized on zoneinfo Pacific time,
+switched to a rotating log file, and hardened the A2S rules JSON parser.)
+
 ## 2.3.3 — 2026-05-04
 
 - `!nextgame lobby` only pings when a lobby is ready; debrief alerts are

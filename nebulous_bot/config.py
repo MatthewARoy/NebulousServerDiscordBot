@@ -96,8 +96,17 @@ class Config:
     EMBED_COLOR_NO_SERVERS = 0xff0000  # Red
     
     # Version Information
-    VERSION = "2.3.3"
+    VERSION = "2.3.4"
     CHANGELOG = [
+        {
+            "version": "2.3.4",
+            "date": "2026-07-06",
+            "changes": [
+                "Faster and lighter: the bot now polls Steam once per update cycle and uses less memory at startup",
+                "The daily 6pm Pacific !nextgame queue alert now respects daylight saving time",
+                "Busy commands have short cooldowns and clearer error messages"
+            ]
+        },
         {
             "version": "2.3.3",
             "date": "2026-05-04",
