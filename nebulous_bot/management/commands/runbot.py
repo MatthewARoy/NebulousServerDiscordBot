@@ -140,6 +140,7 @@ class Command(BaseCommand):
         # Stopping monitoring on disconnect was causing issues with reconnections
 
         @bot.command(name='listservers', aliases=['ls', 'servers'])
+        @commands.cooldown(1, 15, commands.BucketType.channel)
         async def list_servers(ctx, *, filter_args: str = ""):
             """
             List all active servers with optional filtering
@@ -217,6 +218,7 @@ class Command(BaseCommand):
             await server_monitor.track_message(message, metadata=metadata)
 
         @bot.command(name='openlobbies', aliases=['open', 'available'])
+        @commands.cooldown(1, 15, commands.BucketType.channel)
         async def open_lobbies(ctx):
             """List servers with available player slots"""
             if not server_monitor or not formatter:
@@ -232,6 +234,7 @@ class Command(BaseCommand):
             await server_monitor.track_message(message)
 
         @bot.command(name='refresh', aliases=['update'])
+        @commands.cooldown(1, 30, commands.BucketType.channel)
         async def refresh_servers(ctx):
             """Force refresh the server list"""
             if not server_monitor:
@@ -770,6 +773,7 @@ class Command(BaseCommand):
             await ctx.send(embed=embed)
 
         @bot.command(name='nextgame', aliases=['notify', 'notifyme', 'ng'])
+        @commands.cooldown(2, 30, commands.BucketType.user)
         async def next_game_notify(ctx, *, args: str = ""):
             """
             Get notified when the next game is ready to join.
@@ -1042,6 +1046,7 @@ class Command(BaseCommand):
                 await ctx.send(embed=embed)
 
         @bot.command(name='graph')
+        @commands.cooldown(1, 15, commands.BucketType.channel)
         async def show_graph(ctx, *, graph_args: str = "players online"):
             """
             Display a graph of data over the last week.
@@ -1148,9 +1153,10 @@ class Command(BaseCommand):
                 )
         
         @bot.command(name='commandlogs', aliases=['cmdlogs', 'logs'], hidden=True)
+        @commands.is_owner()
         async def show_command_logs(ctx, limit: int = 20, command_filter: str = None):
             """
-            View command usage logs (admin/debugging only)
+            View command usage logs (bot owner only — exposes cross-guild usage data)
             
             Usage: !commandlogs [limit] [command_name]
             Examples: !commandlogs 10, !commandlogs 50 stats
@@ -1317,6 +1323,7 @@ class Command(BaseCommand):
                 await ctx.send(embed=embed)
         
         @bot.command(name='formation', aliases=['form', 'optimize'])
+        @commands.cooldown(1, 30, commands.BucketType.user)
         async def optimize_formation(ctx, *, args: str = None):
             """
             Optimize a fleet formation file by compacting ships while maintaining minimum distance.
@@ -1820,15 +1827,42 @@ class Command(BaseCommand):
 
         @bot.event
         async def on_command_error(ctx, error):
-            """Handle command errors"""
+            """Handle command errors with user-friendly messages.
+
+            Raw exception text is logged, never echoed to the channel.
+            """
             if isinstance(error, commands.CommandNotFound):
                 return  # Ignore unknown commands
-            
-            logger.error(f"Command error in {ctx.command}: {error}")
-            
+
+            if isinstance(error, commands.CommandOnCooldown):
+                await ctx.send(
+                    f"⏳ `!{ctx.command}` is on cooldown — try again in {error.retry_after:.0f}s. "
+                    "(Recent results keep updating in place.)"
+                )
+                return
+
+            if isinstance(error, (commands.NotOwner, commands.MissingPermissions)):
+                await ctx.send("❌ You don't have permission to use this command.")
+                return
+
+            if isinstance(error, commands.NoPrivateMessage):
+                await ctx.send("❌ This command only works in a server, not in DMs.")
+                return
+
+            if isinstance(error, (commands.BadArgument, commands.MissingRequiredArgument)):
+                await ctx.send(
+                    f"❌ Invalid usage. See `!help {ctx.command.qualified_name}` for examples."
+                )
+                return
+
+            if isinstance(error, commands.CheckFailure):
+                await ctx.send("❌ You can't use this command here.")
+                return
+
+            logger.error(f"Command error in {ctx.command}: {error}", exc_info=error)
             embed = discord.Embed(
                 title="❌ Command Error",
-                description=f"An error occurred: {str(error)}",
+                description="Something went wrong running that command. The error has been logged.",
                 color=Config.EMBED_COLOR_NO_SERVERS
             )
             await ctx.send(embed=embed)
