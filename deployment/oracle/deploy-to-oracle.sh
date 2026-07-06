@@ -223,10 +223,16 @@ if [[ "$BUILD_ON_VM" =~ ^[Yy]$ ]]; then
     rsync -avz --exclude '__pycache__' \
                --exclude '*.pyc' \
                --exclude '.git' \
+               --exclude '.venv' \
+               --exclude 'venv' \
                --exclude 'db.sqlite3' \
+               --exclude 'db.*.sqlite3' \
+               --exclude 'staging' \
                --exclude '*.log' \
                --exclude 'node_modules' \
                --exclude '.env' \
+               --exclude 'ORACLE_CONNECT.md' \
+               --exclude 'ORACLE_SERVER_ISSUES.md' \
                -e "ssh -i $VM_SSH_KEY" \
                "$PROJECT_ROOT/" "$VM_USER@$VM_HOST:$REMOTE_DIR/"
     
