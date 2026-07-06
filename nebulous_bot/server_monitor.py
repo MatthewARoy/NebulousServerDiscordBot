@@ -181,13 +181,13 @@ class ServerMonitor:
         while True:
             try:
                 iteration += 1
-                logger.info(f"Monitoring loop iteration {iteration} starting...")
-                
+                logger.debug(f"Monitoring loop iteration {iteration} starting...")
+
                 await self._update_server_list()
                 logger.debug(f"Server list updated: {len(self.cached_servers)} servers")
-                
+
                 await self._update_status_message()
-                logger.info("📤 Status message update cycle completed")
+                logger.debug("📤 Status message update cycle completed")
                 
                 if self.tracked_update_task is None or self.tracked_update_task.done():
                     self.tracked_update_task = asyncio.create_task(self._update_tracked_messages())
@@ -206,7 +206,7 @@ class ServerMonitor:
                 await self._check_daily_next_game_queue_alert()
                 logger.debug("Daily nextgame queue alert checked")
                 
-                logger.info(f"Monitoring loop iteration {iteration} complete. Sleeping {Config.UPDATE_INTERVAL}s...")
+                logger.debug(f"Monitoring loop iteration {iteration} complete. Sleeping {Config.UPDATE_INTERVAL}s...")
                 await asyncio.sleep(Config.UPDATE_INTERVAL)
             except asyncio.CancelledError:
                 logger.warning("⚠️ Monitoring loop cancelled - this should only happen on bot shutdown")
@@ -418,7 +418,7 @@ class ServerMonitor:
                 # Update existing message
                 try:
                     await status_message.edit(embed=embed)
-                    logger.info(f"✅ Updated existing status message for guild {guild_id}")
+                    logger.debug(f"✅ Updated existing status message for guild {guild_id}")
                 except discord.NotFound:
                     # Message was deleted, create a new one
                     # Determine stable version when creating new status message
@@ -542,7 +542,7 @@ class ServerMonitor:
                 del self.tracked_messages[channel_id]
 
         if total_updated > 0 or total_removed > 0:
-            logger.info(f"Updated {total_updated} tracked messages, removed {total_removed} deleted messages")
+            logger.debug(f"Updated {total_updated} tracked messages, removed {total_removed} deleted messages")
 
     async def _refresh_tracked_message(self, channel, channel_id: int, idx: int, msg_info: Dict[str, Any]) -> Dict[str, Any]:
         """Refresh a single tracked message and return its update state."""

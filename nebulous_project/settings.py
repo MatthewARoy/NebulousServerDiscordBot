@@ -160,8 +160,12 @@ LOGGING = {
             'formatter': 'verbose',
         },
         'file': {
-            'class': 'logging.FileHandler',
+            # Rotating: the production VM has little disk and the bot logs
+            # continuously; an unbounded file eventually fills the volume.
+            'class': 'logging.handlers.RotatingFileHandler',
             'filename': BASE_DIR / 'nebulous_bot.log',
+            'maxBytes': 5 * 1024 * 1024,  # 5 MiB
+            'backupCount': 3,
             'formatter': 'verbose',
         },
     },
