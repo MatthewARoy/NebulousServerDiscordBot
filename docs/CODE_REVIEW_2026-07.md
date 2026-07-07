@@ -151,7 +151,10 @@ loop in `.claude/skills/verify/SKILL.md`.
 
 ## Found post-review (observed in production logs, 2026-07-06 deploy)
 
-28. **Ongoing-game recovery never runs.** On every bot startup:
+28. **FIXED in 2.4.1.** Recovery is deferred to the first executor-thread
+    `StatisticsService.update()`; recovery also closes stale `is_ongoing`
+    rows (>6h old — prod had 595) as invalid instead of reattaching them.
+    Original finding: **Ongoing-game recovery never runs.** On every bot startup:
     `ERROR ... statistics_tracker Error recovering ongoing games: You cannot
     call this from an async context - use a thread or sync_to_async.`
     `GameSessionTracker.__init__` runs inside async `on_ready` (via

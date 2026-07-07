@@ -26,20 +26,39 @@ class GameSessionTracker:
         # Track ongoing game sessions in memory
         # Format: {server_id: game_session_id}
         self.active_sessions = {}
-        self._recover_ongoing_games()
-    
+        # Recovery is deferred to the first update() call: __init__ runs
+        # inside async on_ready, where Django's ORM raises
+        # SynchronousOnlyOperation. update() runs in an executor thread.
+        self._recovery_pending = True
+
+    def ensure_recovered(self):
+        """Run ongoing-game recovery once, from a sync (executor) context."""
+        if self._recovery_pending:
+            self._recovery_pending = False
+            self._recover_ongoing_games()
+
+    # Sessions older than this cannot plausibly still be running (games are
+    # well under an hour); close them as invalid instead of reattaching.
+    STALE_RECOVERY_AGE = timedelta(hours=6)
+
     def _recover_ongoing_games(self):
         """
         Recover ongoing games from database on bot restart.
         This allows us to continue tracking games that started before the bot restarted.
-        
-        Note: This is called from __init__ in a synchronous context,
-        but the StatisticsService is instantiated in an async context (the bot startup).
-        We use list() to force evaluation of the queryset within the try block,
-        avoiding lazy evaluation issues.
+
+        Stale rows are closed first: recovery was broken for months (item
+        #28), so restarts and vanished servers left hundreds of rows with
+        is_ongoing=True. Reattaching those would finalize them with
+        months-long durations and poison the statistics.
         """
         try:
-            # Force immediate evaluation with list() to avoid async context issues
+            cutoff = django_timezone.now() - self.STALE_RECOVERY_AGE
+            stale_count = GameSession.objects.filter(
+                is_ongoing=True, game_start__lt=cutoff
+            ).update(is_ongoing=False, is_valid_game=False)
+            if stale_count:
+                logger.info(f"Closed {stale_count} stale ongoing session(s) older than {self.STALE_RECOVERY_AGE}")
+
             ongoing_games = list(GameSession.objects.filter(is_ongoing=True))
             recovered_count = 0
             
@@ -244,6 +263,10 @@ class StatisticsService:
         Args:
             servers: List of current server states
         """
+        # First call after startup: reattach ongoing games from the DB.
+        # Safe here (executor thread), unsafe in __init__ (event loop).
+        self.game_tracker.ensure_recovered()
+
         # Track game sessions (saved immediately to database)
         for server in servers:
             try:

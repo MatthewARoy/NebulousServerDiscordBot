@@ -4,6 +4,18 @@ The bot reads its own changelog from `nebulous_bot/config.py` (`Config.CHANGELOG
 to power the in-Discord `!version` command, so that file is the source of truth
 for current and recent releases. This document mirrors it for readers on GitHub.
 
+## 2.4.1 — 2026-07-06
+
+- Games in progress now survive bot restarts and are tracked to completion
+  (statistics accuracy fix).
+
+(Maintainer notes: review item #28 — recovery ran in async `on_ready` where
+the ORM raises `SynchronousOnlyOperation`, so it silently failed since ~Dec.
+Now deferred to the first executor-thread `update()`. Recovery also closes
+stale `is_ongoing` rows older than 6h as invalid — prod had 595 of them,
+which fixed recovery would otherwise have "finalized" with months-long
+durations, poisoning `!stats`.)
+
 ## 2.4.0 — 2026-07-06
 
 - Added `!nextgame newplayer` (aliases `np`, `beginner`) — get pinged only for

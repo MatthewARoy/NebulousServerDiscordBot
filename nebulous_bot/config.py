@@ -96,8 +96,15 @@ class Config:
     EMBED_COLOR_NO_SERVERS = 0xff0000  # Red
     
     # Version Information
-    VERSION = "2.4.0"
+    VERSION = "2.4.1"
     CHANGELOG = [
+        {
+            "version": "2.4.1",
+            "date": "2026-07-06",
+            "changes": [
+                "Games in progress now survive bot restarts and are tracked to completion (statistics accuracy fix)"
+            ]
+        },
         {
             "version": "2.4.0",
             "date": "2026-07-06",
