@@ -790,7 +790,7 @@ class Command(BaseCommand):
             - !nextgame modded - Notify only for servers running mods
             - !nextgame newplayer - Notify only for new-player servers
             - !nextgame lobby - Only notify when a lobby is ready (skip debrief alerts)
-            - !nextgame --skip - Don't notify for lobbies already active right now
+            - !nextgame --skip (or -skip) - Don't notify for lobbies already active right now
 
             You'll be pinged once when either:
             - A game enters debrief (game just ended, new one might start)
@@ -814,7 +814,7 @@ class Command(BaseCommand):
             modded_only = any(token in ('modded', 'mod', 'mfc') for token in tokens)
             newplayer_only = any(token in ('newplayer', 'new-player', 'np', 'beginner') for token in tokens)
             lobby_only = any(token in ('lobby', '--lobby', '-l') for token in tokens)
-            skip_current_lobbies = any(token in ('--skip', '-s', 'skip') for token in tokens)
+            skip_current_lobbies = any(token in ('--skip', '-skip', '-s', 'skip') for token in tokens)
 
             # Check if user is already waiting in this queue mode
             if server_monitor.is_user_waiting_for_next_game(user_id, ptb_only=ptb_only, modded_only=modded_only, newplayer_only=newplayer_only):

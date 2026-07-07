@@ -102,7 +102,8 @@ class Config:
             "version": "2.4.0",
             "date": "2026-07-06",
             "changes": [
-                "Added !nextgame newplayer — get pinged only for new-player servers (stacks with ptb, modded, lobby, --skip)"
+                "Added !nextgame newplayer — get pinged only for new-player servers (stacks with ptb, modded, lobby, --skip)",
+                "-skip now works as an alias of --skip"
             ]
         },
         {

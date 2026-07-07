@@ -9,6 +9,7 @@ for current and recent releases. This document mirrors it for readers on GitHub.
 - Added `!nextgame newplayer` (aliases `np`, `beginner`) — get pinged only for
   new-player servers, detected from the server name. Stacks with `ptb`,
   `modded`, `lobby`, and `--skip`; each combination is its own queue.
+- `-skip` now works as an alias of `--skip`.
 
 ## 2.3.5 — 2026-07-06
 

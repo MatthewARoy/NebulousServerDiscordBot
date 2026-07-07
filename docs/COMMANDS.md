@@ -41,7 +41,8 @@ Modifiers (stackable — each one you add narrows the queue further):
 - `newplayer` (also `np`, `beginner`) — only notify for new-player servers
   (detected from the server name, e.g. "New Player" / "Beginner").
 - `lobby` — only ping when a lobby is ready; suppress debrief alerts.
-- `--skip` — ignore lobbies that were already active when you opted in.
+- `--skip` (also `-skip`, `skip`) — ignore lobbies that were already active
+  when you opted in.
 
 Each modifier combination is its own queue: you can wait for a modded game
 and a new-player game at the same time. `!cancelnextgame` clears all of them.
