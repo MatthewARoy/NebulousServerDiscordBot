@@ -278,7 +278,11 @@ class SteamAPI:
             'autobalance': False,
             'rank_restricted': False,
             'is_modded': False,
-            'in_progress': '0'  # Default to lobby
+            'in_progress': '0',  # Default to lobby
+
+            # Name-based (rules never override): the official new-player
+            # servers tag their names, same convention as region tags.
+            'is_new_player': self._is_new_player_server(server_name),
         }
         
         # Enhance with server rules if available
@@ -387,6 +391,18 @@ class SteamAPI:
         
         return 8  # Default assumption for unknown maps
     
+    # Name tokens marking servers intended for new players. Kept in sync
+    # with the heuristics in _determine_game_mode.
+    _NEW_PLAYER_NAME_PATTERN = r'new\s*player|beginner|newbie|training'
+
+    @classmethod
+    def _is_new_player_server(cls, name: str) -> bool:
+        """Whether a server advertises itself as a new-player server."""
+        import re
+        if not name:
+            return False
+        return re.search(cls._NEW_PLAYER_NAME_PATTERN, name, re.IGNORECASE) is not None
+
     @staticmethod
     def _rules_indicate_modded(rules: Optional[Dict]) -> bool:
         """A server is 'modded' when it advertises a non-empty mod list.

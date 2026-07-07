@@ -96,8 +96,15 @@ class Config:
     EMBED_COLOR_NO_SERVERS = 0xff0000  # Red
     
     # Version Information
-    VERSION = "2.3.5"
+    VERSION = "2.4.0"
     CHANGELOG = [
+        {
+            "version": "2.4.0",
+            "date": "2026-07-06",
+            "changes": [
+                "Added !nextgame newplayer — get pinged only for new-player servers (stacks with ptb, modded, lobby, --skip)"
+            ]
+        },
         {
             "version": "2.3.5",
             "date": "2026-07-06",

@@ -4,6 +4,12 @@ The bot reads its own changelog from `nebulous_bot/config.py` (`Config.CHANGELOG
 to power the in-Discord `!version` command, so that file is the source of truth
 for current and recent releases. This document mirrors it for readers on GitHub.
 
+## 2.4.0 — 2026-07-06
+
+- Added `!nextgame newplayer` (aliases `np`, `beginner`) — get pinged only for
+  new-player servers, detected from the server name. Stacks with `ptb`,
+  `modded`, `lobby`, and `--skip`; each combination is its own queue.
+
 ## 2.3.5 — 2026-07-06
 
 - Fixed the first `!graph` or `!formation` after a restart hanging the bot

@@ -28,16 +28,23 @@ Force-fetches fresh data from Steam, bypassing the 30-second poll interval.
 
 ## Notifications
 
-### `!nextgame [ptb] [--skip]` — aliases `!notify`, `!notifyme`, `!ng`
+### `!nextgame [ptb] [modded] [newplayer] [lobby] [--skip]` — aliases `!notify`, `!notifyme`, `!ng`
 Pings you once when a game looks ready. Triggers on:
 
 - a lobby reaching 3+ players (and not full), or
 - a game entering debrief (about to roll over).
 
-Modifiers:
+Modifiers (stackable — each one you add narrows the queue further):
 
 - `ptb` — only notify for test-branch servers.
+- `modded` (also `mod`, `mfc`) — only notify for servers running mods.
+- `newplayer` (also `np`, `beginner`) — only notify for new-player servers
+  (detected from the server name, e.g. "New Player" / "Beginner").
+- `lobby` — only ping when a lobby is ready; suppress debrief alerts.
 - `--skip` — ignore lobbies that were already active when you opted in.
+
+Each modifier combination is its own queue: you can wait for a modded game
+and a new-player game at the same time. `!cancelnextgame` clears all of them.
 
 ### `!cancelnextgame` — alias `!nextgamecancel`
 Removes you from the waitlist.

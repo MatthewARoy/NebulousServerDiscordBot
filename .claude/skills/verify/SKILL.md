@@ -21,6 +21,11 @@ On Windows the venv python is `.venv/Scripts/python`; on Linux/macOS it's
 .venv/Scripts/python -m pytest -q
 ```
 
+**Never pipe pytest through `tail`/`grep` inside a `&&` chain that gates a
+commit** — the pipe replaces pytest's exit code with the filter's, so a
+collection error can slip straight into a commit (this happened once).
+Run pytest bare; read the last line yourself.
+
 Then the Django system check (needs stub env vars — tests set these via
 `nebulous_bot/tests/conftest.py`, but `manage.py` does not):
 

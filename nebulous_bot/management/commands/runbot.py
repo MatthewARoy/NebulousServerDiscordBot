@@ -414,7 +414,7 @@ class Command(BaseCommand):
                     "`!mapstats` - View map statistics\n"
                     "`!serverstats` - View server statistics\n"
                     "`!graph` - Display graphs of data over the last week\n"
-                    "`!nextgame` - Get notified when a game is ready (add `lobby` to skip debrief alerts)\n"
+                    "`!nextgame` - Get notified when a game is ready (options: `ptb`, `modded`, `newplayer`, `lobby`, `--skip`)\n"
                     "`!formation` - Optimize fleet formation file\n"
                     "`!refresh` - Force update\n"
                     "`!version` - Show version and changelog\n"
@@ -784,10 +784,11 @@ class Command(BaseCommand):
             """
             Get notified when the next game is ready to join.
 
-            Usage: !nextgame [ptb] [modded] [lobby] [--skip]
+            Usage: !nextgame [ptb] [modded] [newplayer] [lobby] [--skip]
             - !nextgame - Notify for all servers
             - !nextgame ptb - Notify only for PTB (test branch) servers
             - !nextgame modded - Notify only for servers running mods
+            - !nextgame newplayer - Notify only for new-player servers
             - !nextgame lobby - Only notify when a lobby is ready (skip debrief alerts)
             - !nextgame --skip - Don't notify for lobbies already active right now
 
@@ -811,19 +812,20 @@ class Command(BaseCommand):
             tokens = [token for token in args_lower.split() if token]
             ptb_only = any(token == 'ptb' for token in tokens)
             modded_only = any(token in ('modded', 'mod', 'mfc') for token in tokens)
+            newplayer_only = any(token in ('newplayer', 'new-player', 'np', 'beginner') for token in tokens)
             lobby_only = any(token in ('lobby', '--lobby', '-l') for token in tokens)
             skip_current_lobbies = any(token in ('--skip', '-s', 'skip') for token in tokens)
-            
+
             # Check if user is already waiting in this queue mode
-            if server_monitor.is_user_waiting_for_next_game(user_id, ptb_only=ptb_only, modded_only=modded_only):
+            if server_monitor.is_user_waiting_for_next_game(user_id, ptb_only=ptb_only, modded_only=modded_only, newplayer_only=newplayer_only):
                 embed = discord.Embed(
                     title="🔔 Already Waiting",
                     description="You're already on the notification list! I'll ping you when a game is ready.",
                     color=Config.EMBED_COLOR
                 )
                 
-                # Show current wait time and PTB status
-                wait_info = server_monitor.get_next_game_waiter(user_id, ptb_only=ptb_only, modded_only=modded_only)
+                # Show current wait time and mode status
+                wait_info = server_monitor.get_next_game_waiter(user_id, ptb_only=ptb_only, modded_only=modded_only, newplayer_only=newplayer_only)
                 if not wait_info:
                     await ctx.send("❌ Could not read your current waitlist status. Please try again.")
                     return
@@ -832,9 +834,10 @@ class Command(BaseCommand):
                 minutes_waiting = int(wait_duration.total_seconds() / 60)
                 current_ptb_only = wait_info.get('ptb_only', False)
                 current_modded_only = wait_info.get('modded_only', False)
+                current_newplayer_only = wait_info.get('newplayer_only', False)
                 current_lobby_only = wait_info.get('lobby_only', False)
                 current_skip = bool(wait_info.get('skip_lobbies'))
-                skip_names = server_monitor.resolve_server_names(wait_info.get('skip_lobbies', []), ptb_only=current_ptb_only, modded_only=current_modded_only) if current_skip else []
+                skip_names = server_monitor.resolve_server_names(wait_info.get('skip_lobbies', []), ptb_only=current_ptb_only, modded_only=current_modded_only, newplayer_only=current_newplayer_only) if current_skip else []
 
                 embed.add_field(
                     name="⏱️ Waiting Time",
@@ -853,6 +856,13 @@ class Command(BaseCommand):
                     embed.add_field(
                         name="🛠️ Modded Mode",
                         value="Modded servers only",
+                        inline=False
+                    )
+
+                if current_newplayer_only:
+                    embed.add_field(
+                        name="🌱 New Player Mode",
+                        value="New-player servers only",
                         inline=False
                     )
 
@@ -889,9 +899,9 @@ class Command(BaseCommand):
             # Force update to get fresh server data before checking
             await server_monitor.force_update()
             
-            # Add user to waitlist with PTB / modded preferences
-            skip_lobbies = server_monitor.get_joinable_lobby_ids(ptb_only=ptb_only, modded_only=modded_only) if skip_current_lobbies else []
-            skip_lobby_names = server_monitor.resolve_server_names(skip_lobbies, ptb_only=ptb_only, modded_only=modded_only) if skip_lobbies else []
+            # Add user to waitlist with queue-mode preferences
+            skip_lobbies = server_monitor.get_joinable_lobby_ids(ptb_only=ptb_only, modded_only=modded_only, newplayer_only=newplayer_only) if skip_current_lobbies else []
+            skip_lobby_names = server_monitor.resolve_server_names(skip_lobbies, ptb_only=ptb_only, modded_only=modded_only, newplayer_only=newplayer_only) if skip_lobbies else []
             server_monitor.add_next_game_waiter(
                 user_id,
                 channel_id,
@@ -899,11 +909,12 @@ class Command(BaseCommand):
                 ptb_only=ptb_only,
                 skip_lobbies=skip_lobbies,
                 lobby_only=lobby_only,
-                modded_only=modded_only
+                modded_only=modded_only,
+                newplayer_only=newplayer_only
             )
 
             # Immediately check if there are any matching servers
-            matching_servers = server_monitor.find_matching_servers_for_notification(ptb_only=ptb_only, modded_only=modded_only)
+            matching_servers = server_monitor.find_matching_servers_for_notification(ptb_only=ptb_only, modded_only=modded_only, newplayer_only=newplayer_only)
 
             if matching_servers:
                 # Immediately notify the user
@@ -911,7 +922,8 @@ class Command(BaseCommand):
                     user_id,
                     matching_servers,
                     ptb_only=ptb_only,
-                    modded_only=modded_only
+                    modded_only=modded_only,
+                    newplayer_only=newplayer_only
                 )
                 if notified:
                     # User was notified, no need for extra confirmation message
@@ -981,6 +993,13 @@ class Command(BaseCommand):
                     inline=False
                 )
 
+            if newplayer_only:
+                embed.add_field(
+                    name="🌱 New Player Mode",
+                    value="You'll only be notified about new-player servers",
+                    inline=False
+                )
+
             if lobby_only:
                 embed.add_field(
                     name="🎯 Lobby Mode",
@@ -988,12 +1007,14 @@ class Command(BaseCommand):
                     inline=False
                 )
 
-            # Show current server status (filtered by PTB if needed)
+            # Show current server status (filtered by queue mode if needed)
             servers_to_check = server_monitor.cached_servers
             if ptb_only:
                 servers_to_check = [s for s in servers_to_check if s.get('is_test_branch', False)]
             if modded_only:
                 servers_to_check = [s for s in servers_to_check if s.get('is_modded', False)]
+            if newplayer_only:
+                servers_to_check = [s for s in servers_to_check if s.get('is_new_player', False)]
 
             debrief_count = len([s for s in servers_to_check if s.get('status') == 'debrief'])
             joinable_lobbies = []

@@ -954,22 +954,23 @@ class ServerMonitor:
         if not self.next_game_waiters or not trigger_servers:
             return
         
-        # Group waiters by channel and queue mode (PTB / modded)
+        # Group waiters by channel and queue mode (PTB / modded / new-player)
         waiters_by_channel_and_mode = {}
         for waiter_key, waiter_info in self.next_game_waiters.items():
             user_id = waiter_key[0]
             channel_id = waiter_info['channel_id']
             ptb_only = waiter_info.get('ptb_only', False)
             modded_only = waiter_info.get('modded_only', False)
-            key = (channel_id, ptb_only, modded_only)
+            newplayer_only = waiter_info.get('newplayer_only', False)
+            key = (channel_id, ptb_only, modded_only, newplayer_only)
             if key not in waiters_by_channel_and_mode:
                 waiters_by_channel_and_mode[key] = []
             waiters_by_channel_and_mode[key].append((waiter_key, user_id, waiter_info))
 
         # Notify all waiters, grouped by channel and queue mode
         waiters_to_remove = set()
-        for (channel_id, ptb_only, modded_only), waiters in waiters_by_channel_and_mode.items():
-            base_servers = [s for s in trigger_servers if self._server_matches_mode(s, ptb_only, modded_only)]
+        for (channel_id, ptb_only, modded_only, newplayer_only), waiters in waiters_by_channel_and_mode.items():
+            base_servers = [s for s in trigger_servers if self._server_matches_mode(s, ptb_only, modded_only, newplayer_only)]
             if not base_servers:
                 continue  # No servers match this mode, skip this group
 
@@ -993,7 +994,7 @@ class ServerMonitor:
             if not eligible_waiters or not aggregated_servers:
                 continue  # No one to notify after applying skip filters
 
-            notification_embed = self._build_next_game_notification_embed(aggregated_servers, ptb_only=ptb_only, modded_only=modded_only)
+            notification_embed = self._build_next_game_notification_embed(aggregated_servers, ptb_only=ptb_only, modded_only=modded_only, newplayer_only=newplayer_only)
             if not notification_embed:
                 continue  # No matching servers for this group
 
@@ -1008,7 +1009,8 @@ class ServerMonitor:
                     for waiter_key, user_id, waiter_info in eligible_waiters:
                         ptb_text = " (PTB only)" if ptb_only else ""
                         modded_text = " (modded only)" if modded_only else ""
-                        logger.info(f"Notified {waiter_info['username']} (ID: {user_id}) about next game{ptb_text}{modded_text}")
+                        newplayer_text = " (new-player only)" if newplayer_only else ""
+                        logger.info(f"Notified {waiter_info['username']} (ID: {user_id}) about next game{ptb_text}{modded_text}{newplayer_text}")
                         waiters_to_remove.add(waiter_key)
                 else:
                     # Channel not found, try DM for each eligible user
@@ -1018,7 +1020,8 @@ class ServerMonitor:
                             await user.send(embed=notification_embed)
                             ptb_text = " (PTB only)" if ptb_only else ""
                             modded_text = " (modded only)" if modded_only else ""
-                            logger.info(f"Notified {waiter_info['username']} (ID: {user_id}) via DM about next game{ptb_text}{modded_text}")
+                            newplayer_text = " (new-player only)" if newplayer_only else ""
+                            logger.info(f"Notified {waiter_info['username']} (ID: {user_id}) via DM about next game{ptb_text}{modded_text}{newplayer_text}")
                             waiters_to_remove.add(waiter_key)
                         except Exception as dm_error:
                             logger.error(f"Failed to notify user {user_id} via DM: {dm_error}")
@@ -1037,7 +1040,7 @@ class ServerMonitor:
         if waiters_to_remove:
             logger.info(f"Removed {len(waiters_to_remove)} next game waitlist entries after notification")
     
-    def get_joinable_lobby_ids(self, ptb_only: bool = False, modded_only: bool = False) -> List[str]:
+    def get_joinable_lobby_ids(self, ptb_only: bool = False, modded_only: bool = False, newplayer_only: bool = False) -> List[str]:
         """Return identities of current joinable lobbies (3+ players, not full)."""
         lobby_ids = set()
         for server in self.cached_servers:
@@ -1047,7 +1050,7 @@ class ServerMonitor:
             capacity = server.get('map_capacity', 8)
             if players < 3 or players >= capacity:
                 continue
-            if not self._server_matches_mode(server, ptb_only, modded_only):
+            if not self._server_matches_mode(server, ptb_only, modded_only, newplayer_only):
                 continue
             lobby_ids.add(self._server_identity(server))
         return list(lobby_ids)
@@ -1084,7 +1087,7 @@ class ServerMonitor:
         waiter_info['skip_lobbies'] = list(skip_ids)
         return filtered
 
-    def resolve_server_names(self, server_ids: List[str], ptb_only: bool = False, modded_only: bool = False) -> List[str]:
+    def resolve_server_names(self, server_ids: List[str], ptb_only: bool = False, modded_only: bool = False, newplayer_only: bool = False) -> List[str]:
         """Best-effort resolve server identities to human-friendly names."""
         id_set = set(server_ids or [])
         if not id_set:
@@ -1092,7 +1095,7 @@ class ServerMonitor:
 
         names = []
         for server in self.cached_servers:
-            if not self._server_matches_mode(server, ptb_only, modded_only):
+            if not self._server_matches_mode(server, ptb_only, modded_only, newplayer_only):
                 continue
 
             server_id = self._server_identity(server)
@@ -1106,56 +1109,59 @@ class ServerMonitor:
 
         return names
 
-    def _next_game_waiter_key(self, user_id: int, ptb_only: bool, modded_only: bool = False) -> Tuple[int, bool, bool]:
+    def _next_game_waiter_key(self, user_id: int, ptb_only: bool, modded_only: bool = False, newplayer_only: bool = False) -> Tuple[int, bool, bool, bool]:
         """Build the waitlist key for a user and queue mode."""
-        return (user_id, ptb_only, modded_only)
+        return (user_id, ptb_only, modded_only, newplayer_only)
 
-    def get_next_game_waiter(self, user_id: int, ptb_only: bool = False, modded_only: bool = False) -> Optional[Dict]:
+    def get_next_game_waiter(self, user_id: int, ptb_only: bool = False, modded_only: bool = False, newplayer_only: bool = False) -> Optional[Dict]:
         """Return waitlist info for a specific queue mode."""
-        return self.next_game_waiters.get(self._next_game_waiter_key(user_id, ptb_only, modded_only))
+        return self.next_game_waiters.get(self._next_game_waiter_key(user_id, ptb_only, modded_only, newplayer_only))
 
-    def is_user_waiting_for_next_game(self, user_id: int, ptb_only: Optional[bool] = None, modded_only: bool = False) -> bool:
+    def is_user_waiting_for_next_game(self, user_id: int, ptb_only: Optional[bool] = None, modded_only: bool = False, newplayer_only: bool = False) -> bool:
         """
         Check whether a user is already queued.
         If ptb_only is None, checks any queue mode for that user.
         """
         if ptb_only is None:
             return any(key[0] == user_id for key in self.next_game_waiters.keys())
-        return self._next_game_waiter_key(user_id, ptb_only, modded_only) in self.next_game_waiters
+        return self._next_game_waiter_key(user_id, ptb_only, modded_only, newplayer_only) in self.next_game_waiters
 
-    def add_next_game_waiter(self, user_id: int, channel_id: int, username: str, ptb_only: bool = False, skip_lobbies: Optional[List[str]] = None, lobby_only: bool = False, modded_only: bool = False):
+    def add_next_game_waiter(self, user_id: int, channel_id: int, username: str, ptb_only: bool = False, skip_lobbies: Optional[List[str]] = None, lobby_only: bool = False, modded_only: bool = False, newplayer_only: bool = False):
         """Add a user to the next game waitlist"""
-        waiter_key = self._next_game_waiter_key(user_id, ptb_only, modded_only)
+        waiter_key = self._next_game_waiter_key(user_id, ptb_only, modded_only, newplayer_only)
         self.next_game_waiters[waiter_key] = {
             'channel_id': channel_id,
             'timestamp': datetime.now(timezone.utc),
             'username': username,
             'ptb_only': ptb_only,
             'modded_only': modded_only,
+            'newplayer_only': newplayer_only,
             'skip_lobbies': skip_lobbies or [],
             'lobby_only': lobby_only
         }
         ptb_text = " (PTB only)" if ptb_only else ""
         modded_text = " (modded only)" if modded_only else ""
+        newplayer_text = " (new-player only)" if newplayer_only else ""
         lobby_text = " (lobby only)" if lobby_only else ""
         skip_text = " with skip" if skip_lobbies else ""
-        logger.info(f"Added {username} (ID: {user_id}) to next game waitlist{ptb_text}{modded_text}{lobby_text}{skip_text}")
+        logger.info(f"Added {username} (ID: {user_id}) to next game waitlist{ptb_text}{modded_text}{newplayer_text}{lobby_text}{skip_text}")
     
-    def remove_next_game_waiter(self, user_id: int, ptb_only: Optional[bool] = None, modded_only: bool = False) -> bool:
+    def remove_next_game_waiter(self, user_id: int, ptb_only: Optional[bool] = None, modded_only: bool = False, newplayer_only: bool = False) -> bool:
         """
         Remove a user from the next game waitlist.
         If ptb_only is None, remove user from all queue modes; otherwise
-        remove exactly the (ptb_only, modded_only) queue entry.
+        remove exactly the (ptb_only, modded_only, newplayer_only) entry.
         Returns True if at least one waitlist entry was removed.
         """
         if ptb_only is not None:
-            waiter_key = self._next_game_waiter_key(user_id, ptb_only, modded_only)
+            waiter_key = self._next_game_waiter_key(user_id, ptb_only, modded_only, newplayer_only)
             if waiter_key in self.next_game_waiters:
                 username = self.next_game_waiters[waiter_key]['username']
                 del self.next_game_waiters[waiter_key]
                 ptb_text = " (PTB only)" if ptb_only else ""
                 modded_text = " (modded only)" if modded_only else ""
-                logger.info(f"Removed {username} (ID: {user_id}) from next game waitlist{ptb_text}{modded_text}")
+                newplayer_text = " (new-player only)" if newplayer_only else ""
+                logger.info(f"Removed {username} (ID: {user_id}) from next game waitlist{ptb_text}{modded_text}{newplayer_text}")
                 return True
             return False
 
@@ -1174,21 +1180,24 @@ class ServerMonitor:
         """Get the number of unique users waiting for next game notifications."""
         return len({key[0] for key in self.next_game_waiters.keys()})
     
-    def _server_matches_mode(self, server: Dict, ptb_only: bool, modded_only: bool) -> bool:
+    def _server_matches_mode(self, server: Dict, ptb_only: bool, modded_only: bool, newplayer_only: bool = False) -> bool:
         """Whether a server passes the active narrowing filters for a waiter."""
         if ptb_only and not server.get('is_test_branch', False):
             return False
         if modded_only and not server.get('is_modded', False):
             return False
+        if newplayer_only and not server.get('is_new_player', False):
+            return False
         return True
 
-    def find_matching_servers_for_notification(self, ptb_only: bool = False, modded_only: bool = False) -> List[Dict]:
+    def find_matching_servers_for_notification(self, ptb_only: bool = False, modded_only: bool = False, newplayer_only: bool = False) -> List[Dict]:
         """
         Find servers that match the notification criteria:
         - Lobby servers with 3+ players but less than max capacity
         - Servers in debrief status
         - If ptb_only=True, only PTB (test branch) servers
         - If modded_only=True, only servers running mods (non-empty modList)
+        - If newplayer_only=True, only servers tagged for new players
         Returns list of matching servers.
         """
         trigger_servers = []
@@ -1199,25 +1208,25 @@ class ServerMonitor:
                 players = server.get('players', 0)
                 capacity = server.get('map_capacity', 8)
                 if players >= 3 and players < capacity:
-                    if self._server_matches_mode(server, ptb_only, modded_only):
+                    if self._server_matches_mode(server, ptb_only, modded_only, newplayer_only):
                         trigger_servers.append(server)
 
         # Check for servers in debrief
         for server in self.cached_servers:
             if server.get('status') == 'debrief':
-                if self._server_matches_mode(server, ptb_only, modded_only):
+                if self._server_matches_mode(server, ptb_only, modded_only, newplayer_only):
                     if server not in trigger_servers:
                         trigger_servers.append(server)
 
         # Also check recent debrief transitions
         for _server_id, server in self.recent_debrief_transitions.items():
-            if self._server_matches_mode(server, ptb_only, modded_only):
+            if self._server_matches_mode(server, ptb_only, modded_only, newplayer_only):
                 if server not in trigger_servers:
                     trigger_servers.append(server)
 
         return trigger_servers
 
-    def _build_next_game_notification_embed(self, trigger_servers: List[Dict], ptb_only: bool = False, modded_only: bool = False) -> Optional[discord.Embed]:
+    def _build_next_game_notification_embed(self, trigger_servers: List[Dict], ptb_only: bool = False, modded_only: bool = False, newplayer_only: bool = False) -> Optional[discord.Embed]:
         """Build an embed for next game alerts."""
         if not trigger_servers:
             return None
@@ -1232,8 +1241,10 @@ class ServerMonitor:
             tags.append("PTB")
         if modded_only:
             tags.append("Modded")
+        if newplayer_only:
+            tags.append("New Player")
         prefix = f"[{' · '.join(tags)}] " if tags else ""
-        emoji = "🧪" if ptb_only else ("🛠️" if modded_only else "🚀")
+        emoji = "🧪" if ptb_only else ("🛠️" if modded_only else ("🌱" if newplayer_only else "🚀"))
         title = f"{emoji} {prefix}Game Ready!"
         kind = " ".join(tags).lower()
         description = (
@@ -1276,12 +1287,12 @@ class ServerMonitor:
         embed.set_footer(text="Use !listservers or !openlobbies to see all servers")
         return embed
     
-    async def notify_single_user_immediately(self, user_id: int, trigger_servers: List[Dict], ptb_only: bool = False, modded_only: bool = False) -> bool:
+    async def notify_single_user_immediately(self, user_id: int, trigger_servers: List[Dict], ptb_only: bool = False, modded_only: bool = False, newplayer_only: bool = False) -> bool:
         """
         Notify a single user immediately about available games for a specific queue mode.
         Returns True if notification was sent, False otherwise.
         """
-        waiter_key = self._next_game_waiter_key(user_id, ptb_only, modded_only)
+        waiter_key = self._next_game_waiter_key(user_id, ptb_only, modded_only, newplayer_only)
         if waiter_key not in self.next_game_waiters or not trigger_servers:
             return False
 
@@ -1289,9 +1300,10 @@ class ServerMonitor:
         channel_id = waiter_info['channel_id']
         ptb_only = waiter_info.get('ptb_only', False)
         modded_only = waiter_info.get('modded_only', False)
+        newplayer_only = waiter_info.get('newplayer_only', False)
 
-        # Filter servers by queue mode (PTB / modded) if needed
-        trigger_servers = [s for s in trigger_servers if self._server_matches_mode(s, ptb_only, modded_only)]
+        # Filter servers by queue mode if needed
+        trigger_servers = [s for s in trigger_servers if self._server_matches_mode(s, ptb_only, modded_only, newplayer_only)]
         if not trigger_servers:
             return False
 
@@ -1299,8 +1311,8 @@ class ServerMonitor:
         trigger_servers = self._filter_servers_for_waiter(trigger_servers, waiter_info)
         if not trigger_servers:
             return False
-        
-        notification_embed = self._build_next_game_notification_embed(trigger_servers, ptb_only=ptb_only, modded_only=modded_only)
+
+        notification_embed = self._build_next_game_notification_embed(trigger_servers, ptb_only=ptb_only, modded_only=modded_only, newplayer_only=newplayer_only)
         if not notification_embed:
             return False
 
