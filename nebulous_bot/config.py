@@ -96,8 +96,16 @@ class Config:
     EMBED_COLOR_NO_SERVERS = 0xff0000  # Red
     
     # Version Information
-    VERSION = "2.4.1"
+    VERSION = "2.5.0"
     CHANGELOG = [
+        {
+            "version": "2.5.0",
+            "date": "2026-07-07",
+            "changes": [
+                "Internal restructuring for reliability — no visible changes; all commands work exactly as before",
+                "!help now groups commands by category"
+            ]
+        },
         {
             "version": "2.4.1",
             "date": "2026-07-06",

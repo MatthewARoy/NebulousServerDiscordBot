@@ -4,7 +4,22 @@ The bot reads its own changelog from `nebulous_bot/config.py` (`Config.CHANGELOG
 to power the in-Discord `!version` command, so that file is the source of truth
 for current and recent releases. This document mirrors it for readers on GitHub.
 
-## 2.4.1 — 2026-07-06
+## 2.5.0 — 2026-07-07
+
+- Internal restructuring for reliability — no visible changes; all commands
+  work exactly as before.
+- `!help` now groups commands by category.
+
+(Maintainer notes: review item #23 — runbot.py's ~1,900 lines of inline
+command closures split into six cogs under `nebulous_bot/cogs/`
+(setup, stats, servers, admin, formation, nextgame), one commit each.
+Cogs read shared state via `bot.server_monitor` / `bot.formatter` /
+`bot.deployment_time`, set by `on_ready`; the eager `formation_optimizer`
+import stays on the boot path via a module-scope import of
+`cogs.formation` in runbot.py (the 2.3.4 lesson). The !listservers and
+!nextgame argument parsers are now pure functions with unit tests. The
+command inventory — names, aliases, permissions, cooldowns — was verified
+identical to 2.4.1 by registering all cogs and diffing the metadata.)
 
 - Games in progress now survive bot restarts and are tracked to completion
   (statistics accuracy fix).
