@@ -95,11 +95,15 @@ Cross-cutting details that take multi-file reading to discover:
 
 ## Hard constraints and conventions
 
-- **Memory budget**: matplotlib + numpy add ~80–120 MiB RSS and are lazily
-  imported inside `graph_generator.py` for exactly this reason. Never add
-  heavy imports at module scope on the runbot import path; follow the lazy
-  pattern. (Known violation: runbot's top-level `formation_optimizer`
-  import — see review item #12.)
+- **Heavy imports are EAGER on purpose**: runbot imports
+  `formation_optimizer` (→ numpy + matplotlib, ~100+ MiB RSS) at module
+  scope so the cost lands at boot, before the event loop exists. Lazy-loading
+  it to save memory was tried in 2.3.4 and caused a production incident: the
+  deferred import runs for minutes on the 1/8-OCPU VM while holding the GIL,
+  starving the event loop (all commands hang, gateway resets). See review
+  item #12. The RAM budget still matters — don't add NEW heavy dependencies —
+  but don't move existing heavy imports off the boot path either. The
+  Dockerfile pre-builds the matplotlib font cache for the same reason.
 - **Version bumps are user-facing**: `Config.VERSION` + `Config.CHANGELOG`
   (in `nebulous_bot/config.py`) power the `!version` command and are the
   source of truth; root `CHANGELOG.md` intentionally mirrors them for

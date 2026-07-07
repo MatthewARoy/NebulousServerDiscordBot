@@ -56,13 +56,18 @@ loop in `.claude/skills/verify/SKILL.md`.
 
 ## P2 — Bugs / operational risks
 
-12. **`runbot.py:24` defeats the lazy-matplotlib memory win.** It imports
-    `formation_optimizer` at module top; `formation_optimizer.py` imports
-    `numpy` and `matplotlib` eagerly, so the ~80–120 MiB RSS that
-    `graph_generator.py` carefully avoids (see its module docstring, and the
-    2.3.2 maintainer notes in `CHANGELOG.md`) is loaded at bot start anyway —
-    on the 503 MiB VM this matters. **Fix:** move the
-    `from formation_optimizer import ...` into the `!formation` handler body.
+12. ~~**`runbot.py:24` defeats the lazy-matplotlib memory win.**~~
+    **REVERTED in 2.3.5 — the eager import was load-bearing.** The lazy
+    import shipped in 2.3.4 and moved the numpy+matplotlib import (plus
+    first-run font-cache build) from boot time into the first
+    `!graph`/`!formation` call. On the 1/8-OCPU VM that import runs for
+    minutes holding the GIL: blocked heartbeats, gateway resets, every
+    command hung (observed in prod 2026-07-06 17:30–17:36). The import is
+    now deliberately eager again — paid at boot before the event loop
+    exists — and the Dockerfile pre-builds the matplotlib font cache into
+    the image. Idle RSS returns to the pre-2.3.4 level the bot ran at
+    stably for 8 weeks under the 350m container limit. Do not re-apply the
+    lazy import; `graph_generator.py`'s internal lazy load stays (harmless).
 13. **`!commandlogs` has no permission gate** — `runbot.py:1151`. Docstring
     says "admin/debugging only", it's `hidden=True`, but any user in any guild
     can run it and see usernames, guild names, and usage stats across all

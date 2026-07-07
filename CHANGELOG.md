@@ -4,6 +4,17 @@ The bot reads its own changelog from `nebulous_bot/config.py` (`Config.CHANGELOG
 to power the in-Discord `!version` command, so that file is the source of truth
 for current and recent releases. This document mirrors it for readers on GitHub.
 
+## 2.3.5 — 2026-07-06
+
+- Fixed the first `!graph` or `!formation` after a restart hanging the bot
+  for minutes.
+
+(Maintainer notes: reverts the 2.3.4 lazy `formation_optimizer` import — it
+moved the multi-minute numpy/matplotlib import + font-cache build into
+serving time on the fractional-CPU VM, starving the event loop. The import
+is eager again, with a code comment explaining why, and the Dockerfile now
+bakes the matplotlib font cache into the image. Review item #12 updated.)
+
 ## 2.3.4 — 2026-07-06
 
 - Faster and lighter: the bot now polls Steam once per update cycle and uses

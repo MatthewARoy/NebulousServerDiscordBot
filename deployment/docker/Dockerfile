@@ -48,6 +48,11 @@ RUN chmod +x /app/start-server.sh
 # Switch to non-root user
 USER botuser
 
+# Pre-build the matplotlib font cache into the image. Without this, the
+# first matplotlib import in a fresh container regenerates it at runtime,
+# which takes minutes on the production VM's fractional CPU.
+RUN python -c "import matplotlib.pyplot"
+
 # Collect static files
 RUN python manage.py collectstatic --noinput || true
 

@@ -96,8 +96,15 @@ class Config:
     EMBED_COLOR_NO_SERVERS = 0xff0000  # Red
     
     # Version Information
-    VERSION = "2.3.4"
+    VERSION = "2.3.5"
     CHANGELOG = [
+        {
+            "version": "2.3.5",
+            "date": "2026-07-06",
+            "changes": [
+                "Fixed the first !graph or !formation after a restart hanging the bot for minutes"
+            ]
+        },
         {
             "version": "2.3.4",
             "date": "2026-07-06",

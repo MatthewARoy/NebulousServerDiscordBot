@@ -22,10 +22,16 @@ from nebulous_bot.server_formatter import ServerFormatter
 from nebulous_bot.models import BotStatus
 from nebulous_bot.command_logging import setup_command_metrics
 
-# NOTE: formation_optimizer is imported lazily inside the !formation command.
-# Importing it here would pull numpy + matplotlib (~80-120 MiB RSS) into the
-# bot at startup, which the 503 MiB production VM cannot afford. Same policy
-# as graph_generator.py — keep heavy imports off the startup path.
+# DELIBERATELY EAGER: this import pulls numpy + matplotlib (~100+ MiB RSS)
+# at startup, BEFORE the event loop exists. Do NOT make it lazy to save
+# memory — v2.3.4 tried exactly that, and the deferred import ran for
+# minutes on the 1/8-OCPU VM at first !graph/!formation, starving the event
+# loop (blocked heartbeats, gateway resets, every command hung). Paying the
+# cost at boot, when nobody is connected, is the stable configuration.
+from formation_optimizer import (
+    optimize_fleet_file,
+    create_formation_animation,
+)
 
 logger = logging.getLogger('nebulous_bot')
 
@@ -1342,13 +1348,6 @@ class Command(BaseCommand):
             Example: !formation 350 -symmetrical -skip  (symmetrical, skip images)
             Example: !formation 350 -arcs  (keep firing arcs clear)
             """
-            # Heavy import (numpy + matplotlib) deferred to first use — see
-            # note at top of file.
-            from formation_optimizer import (
-                optimize_fleet_file,
-                create_formation_animation,
-            )
-
             # Parse arguments
             skip_images = False
             planar = False
