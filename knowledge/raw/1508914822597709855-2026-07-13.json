@@ -1,0 +1,2084 @@
+{
+  "channel_id": "1508914822597709855",
+  "channel_name": "Fleet Select and Fleet Building Experience",
+  "guild_id": "409638848302153728",
+  "exported_at": "2026-07-14T06:04:44.579131+00:00",
+  "message_count": 178,
+  "messages": [
+    {
+      "id": "1508914822597709855",
+      "author_id": "116735132324462599",
+      "author_name": "Davaned",
+      "timestamp": "2026-05-26T19:28:47.989000+00:00",
+      "content": "There's some room for improvement on the Neb experience. I'd be curious to hear people's thoughts on what they think would be a big improvement\n\nA few examples:\n- searchable metadata tags to fleets (missiles, caps) \n- making fleets searchable by hulls.\n- easy renaming/duplicating/versioning of fleets\n- sorting fleets by last modified/used/created date\n- in-game editable fleet/missile descriptions and a fleetbuilding notes\n\nHere is a (poor) mockup of what some of that could look like, but I'd be interested to hear people's thoughts.",
+      "reply_to_id": null,
+      "reactions": [
+        {
+          "emoji": "this",
+          "count": 35
+        },
+        {
+          "emoji": "rating_excellent",
+          "count": 18
+        }
+      ],
+      "attachments": 1,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1508914822597709855"
+    },
+    {
+      "id": "1509075552747913326",
+      "author_id": "910821461260898345",
+      "author_name": "crumbs of a fractured meta",
+      "timestamp": "2026-05-27T06:07:29.043000+00:00",
+      "content": "itd be nice to be able to make and delete tags on top of the ones i would assume are included with the game/mod",
+      "reply_to_id": null,
+      "reactions": [
+        {
+          "emoji": "👍",
+          "count": 8
+        }
+      ],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1509075552747913326"
+    },
+    {
+      "id": "1509077388527538237",
+      "author_id": "116735132324462599",
+      "author_name": "Davaned",
+      "timestamp": "2026-05-27T06:14:46.727000+00:00",
+      "content": "I have caps, frontline, skirmish, and backline as included tags that have buttons, but you can set custom ones that are searchable.",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1509077388527538237"
+    },
+    {
+      "id": "1509210091226796115",
+      "author_id": "701978162590122014",
+      "author_name": "ambientlamp",
+      "timestamp": "2026-05-27T15:02:05.516000+00:00",
+      "content": "Just wanna say you're the goat Davened <3 you've been adding so much QoL to Neb!",
+      "reply_to_id": null,
+      "reactions": [
+        {
+          "emoji": "💯",
+          "count": 6
+        },
+        {
+          "emoji": "❤️",
+          "count": 5
+        }
+      ],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1509210091226796115"
+    },
+    {
+      "id": "1509239936811798709",
+      "author_id": "1051474489034145842",
+      "author_name": "TaistyCookie",
+      "timestamp": "2026-05-27T17:00:41.258000+00:00",
+      "content": "^",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1509239936811798709"
+    },
+    {
+      "id": "1509255952715747468",
+      "author_id": "1245118490629902338",
+      "author_name": "LimeAxolotl",
+      "timestamp": "2026-05-27T18:04:19.747000+00:00",
+      "content": "Folders for missile templates, with the tagging system (CC killer, support missile, ACM, AMM, ect as the tags)\n\nTags for ship templates \n\n Give craft templates the the same folders and tags system that the missiles would be getting according to the part about this, and when a craft template with loadouts that contain missiles that aren't in the fleet is added to the fleet, add the missiles then add the template (currently it adds the template and the missing missiles at the same time or it adds the template first then the missiles, so when the loadouts in the added craft check if the missiles are there, they aren't, but then after that check happens, the missing missiles are loaded, however they will be missing from the loadouts, because they weren't there when the template was loaded, meaning if for example, you have a template with a loadout of say, 4 SSM1s, and a loadout of 4 SGM1s, and have only the SSM1s in the fleets missile editor already, when you load the template, it adds the SSM1s, but the loadout that had them won't have SSM1s in it, but the other loadout will have the SGM1s in it due to those already being present in the missile editor when the template was loaded)\n\nA black bar below the bottommost craft in the carried spacecraft part of the ship stats panel so the words \"development build\" don't partially cover the number of loadout counts of the bottommost loadout (that and having a bit of empty space below it would just make reading it generally easier even without the \"development build\" part)",
+      "reply_to_id": null,
+      "reactions": [
+        {
+          "emoji": "this",
+          "count": 2
+        }
+      ],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1509255952715747468"
+    },
+    {
+      "id": "1509272349529084055",
+      "author_id": "116735132324462599",
+      "author_name": "Davaned",
+      "timestamp": "2026-05-27T19:09:29.052000+00:00",
+      "content": "I had some trouble following this tbh, could you structure this a bit more or provide an mspaint level mockup of what you mean?",
+      "reply_to_id": "1509255952715747468",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1509272349529084055"
+    },
+    {
+      "id": "1509273408054104156",
+      "author_id": "116735132324462599",
+      "author_name": "Davaned",
+      "timestamp": "2026-05-27T19:13:41.424000+00:00",
+      "content": "I thought of an additional crossover once I get this up and running.\nMatch History mod could optionally read in your fleet tags and provide stats (you play caps 45% of the time, your average backline damage is 40k, etc)",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1509273408054104156"
+    },
+    {
+      "id": "1509275053253197855",
+      "author_id": "343823737897877515",
+      "author_name": "thecrystalwoods",
+      "timestamp": "2026-05-27T19:20:13.670000+00:00",
+      "content": "i think lime is wanting changes that would be much harder to implment, but are long requested",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1509275053253197855"
+    },
+    {
+      "id": "1509275129631473864",
+      "author_id": "343823737897877515",
+      "author_name": "thecrystalwoods",
+      "timestamp": "2026-05-27T19:20:31.880000+00:00",
+      "content": "but in a similar vein",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1509275129631473864"
+    },
+    {
+      "id": "1509297375771103353",
+      "author_id": "1245118490629902338",
+      "author_name": "LimeAxolotl",
+      "timestamp": "2026-05-27T20:48:55.773000+00:00",
+      "content": "So, for missile and craft templates, having the ability to make folders for them like what is currently possible for fleets and ship templates would be nice.\n\n Having searchable metadata tags for ship templates, missile templates, and craft templates (like what you mentioned for for fleets) would be nice. \n\n\nHave craft templates load missiles before loading the template,\n\n By loading the missiles first then the craft template, this fixes the issue of loading craft templates resulting in the loadouts missing missiles that were added by loading the template. \n (currently, if you want to add a craft template that has missiles in its loadout, you need to load the template and add the missiles to the loadouts again, or load the template, then delete the added craft and load the template again)\n\nIf you have enough craft variants with enough loadouts in your carrier, even with everything in the ship stats panel collapsed except for the craft section, the number after the bottommost craft loadout is partially covered by the words \"development build\". Adding a bit of empty space under the last loadout would fix that, and make it easier to read.",
+      "reply_to_id": "1509272349529084055",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1509297375771103353"
+    },
+    {
+      "id": "1509297501448962089",
+      "author_id": "1245118490629902338",
+      "author_name": "LimeAxolotl",
+      "timestamp": "2026-05-27T20:49:25.737000+00:00",
+      "content": "If this doesn't clarify everything, tell me what needs clarification and I'll see what I can do with google slides for a diagram",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1509297501448962089"
+    },
+    {
+      "id": "1509301889852768588",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-05-27T21:06:52.014000+00:00",
+      "content": "These all seem like stuff that requires access to the base game's code to accomplish",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1509301889852768588"
+    },
+    {
+      "id": "1509303518987813085",
+      "author_id": "1245118490629902338",
+      "author_name": "LimeAxolotl",
+      "timestamp": "2026-05-27T21:13:20.430000+00:00",
+      "content": "I mean, the examples up at the top of this post also would likely require that, as the addition of searchable metadata tags to ship, missile, and craft templates would be pretty similar to adding searchable metadata tags to fleets, so I assumed this was for suggestions for quality of life changes to the base game",
+      "reply_to_id": "1509301889852768588",
+      "reactions": [
+        {
+          "emoji": "👍",
+          "count": 1
+        }
+      ],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1509303518987813085"
+    },
+    {
+      "id": "1509343977487208540",
+      "author_id": "910821461260898345",
+      "author_name": "crumbs of a fractured meta",
+      "timestamp": "2026-05-27T23:54:06.488000+00:00",
+      "content": "using harmony and ILSpy, the games code is easily readable and somewhat modifiable\ni wont pretend to be an expert on harmony but i can read the games code fairly easily",
+      "reply_to_id": "1509301889852768588",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1509343977487208540"
+    },
+    {
+      "id": "1509351727806025809",
+      "author_id": "343823737897877515",
+      "author_name": "thecrystalwoods",
+      "timestamp": "2026-05-28T00:24:54.308000+00:00",
+      "content": "i think larc is trying to say that it would require something significantly more intensive than a steam workshop mod",
+      "reply_to_id": "1509343977487208540",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1509351727806025809"
+    },
+    {
+      "id": "1509352815846494281",
+      "author_id": "910821461260898345",
+      "author_name": "crumbs of a fractured meta",
+      "timestamp": "2026-05-28T00:29:13.717000+00:00",
+      "content": "it wouldnt be easy, but i dont think its impossible",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1509352815846494281"
+    },
+    {
+      "id": "1509355998056550470",
+      "author_id": "116735132324462599",
+      "author_name": "Davaned",
+      "timestamp": "2026-05-28T00:41:52.415000+00:00",
+      "content": "Question: What default tags make sense?\nThere are some default describers: I have frontline, caps, skirmish, backline as fleet roles\n\nI'm also thinking of automatically assigning tags if fleets meet certain criteria. Some options:\n- missile (auto if over 500 pts of munitions in a fleet)\n- rails (auto if md/rail mounts)\n- cv (auto if cv hull in fleet if it's something cringe you'll deal)\nAutoapplying things like caps gets a little sus with sprinterballs etc, I'd only add in a button that goes through fleets and applies selected tags based on criteria \n\nBut overall, if you could add a few basic broadly applicable tags, what would they be?",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1509355998056550470"
+    },
+    {
+      "id": "1509356478572527737",
+      "author_id": "343823737897877515",
+      "author_name": "thecrystalwoods",
+      "timestamp": "2026-05-28T00:43:46.979000+00:00",
+      "content": "caps can be done if they're running 6+ sprinters outside of formation",
+      "reply_to_id": "1509355998056550470",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1509356478572527737"
+    },
+    {
+      "id": "1509356591688712232",
+      "author_id": "343823737897877515",
+      "author_name": "thecrystalwoods",
+      "timestamp": "2026-05-28T00:44:13.948000+00:00",
+      "content": "intel if Intel center",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1509356591688712232"
+    },
+    {
+      "id": "1509357591241691296",
+      "author_id": "1488602778027819178",
+      "author_name": "DasWatchking",
+      "timestamp": "2026-05-28T00:48:12.260000+00:00",
+      "content": "Frontline, Blob (or skirmish mabye as an alternative word for this so CLs aren't just lumped into frontline?), Caps, Artillery, Ambush, DIRECT, YUB, CV\nHonestly those'd probably be the only tags I'd use when finding a fleet\nAlso, I'd favor manually assigned tags instead of trying to auto-generate them (or an option to toggle between manual and automatic tagging)",
+      "reply_to_id": "1509355998056550470",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1509357591241691296"
+    },
+    {
+      "id": "1509370100808024135",
+      "author_id": "214369622302916608",
+      "author_name": "SecretMink",
+      "timestamp": "2026-05-28T01:37:54.773000+00:00",
+      "content": "it would be cool to have an option to sort by game version, if that can be pulled from the fleet file itself or extrapolated from the last date modified and a internal table of balance changes",
+      "reply_to_id": null,
+      "reactions": [
+        {
+          "emoji": "woem",
+          "count": 1
+        }
+      ],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1509370100808024135"
+    },
+    {
+      "id": "1509376757176729600",
+      "author_id": "1245118490629902338",
+      "author_name": "LimeAxolotl",
+      "timestamp": "2026-05-28T02:04:21.775000+00:00",
+      "content": "These seem pretty good, although I'd suggest for the autogenerated tags, excluding BF/BF-EL missiles from the count for the total amount of points invested in missiles so a pure ASF escort carrier with a SAMfrig, or John ACM doesn't get assigned the missile tag",
+      "reply_to_id": "1509357591241691296",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1509376757176729600"
+    },
+    {
+      "id": "1509383553216024777",
+      "author_id": "116735132324462599",
+      "author_name": "Davaned",
+      "timestamp": "2026-05-28T02:31:22.077000+00:00",
+      "content": "Within this is a question of where should I step back from auto labeling fleets and let users drive them.\nAuto labeling is intended as a convenience/onboarding rather than enforcing convention.\nA few broad clear indisputable labels are better than full edge case ones.",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1509383553216024777"
+    },
+    {
+      "id": "1509421869596672111",
+      "author_id": "343823737897877515",
+      "author_name": "thecrystalwoods",
+      "timestamp": "2026-05-28T05:03:37.414000+00:00",
+      "content": "i think the ability to autogen and then allow users to remove them with a single click, and make it user configureable would be good",
+      "reply_to_id": "1509383553216024777",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1509421869596672111"
+    },
+    {
+      "id": "1509577003227942912",
+      "author_id": "1245118490629902338",
+      "author_name": "LimeAxolotl",
+      "timestamp": "2026-05-28T15:20:04.154000+00:00",
+      "content": "Yeah, this would be a good compromise between autogenerated and user selected",
+      "reply_to_id": "1509421869596672111",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1509577003227942912"
+    },
+    {
+      "id": "1512614379500343396",
+      "author_id": "116735132324462599",
+      "author_name": "Davaned",
+      "timestamp": "2026-06-06T00:29:31.089000+00:00",
+      "content": "I should have a little time this weekend to work on this (and maybe even play the game a little), so other general feedback before then is good. I'll put a few open questions here for folks to give opinions on:",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1512614379500343396"
+    },
+    {
+      "id": "1512614524174471320",
+      "author_id": "116735132324462599",
+      "author_name": "Davaned",
+      "timestamp": "2026-06-06T00:30:05.582000+00:00",
+      "content": "**Search/sort behavior:** should it ignore folders and just give you an absolute list?\nFor example if I sort by most recently modified, I can list out top to bottom the most recent fleets I worked on. But nebulous search now is built around finding matches inside of folders. \nShould sort keep folders 👍 or transform into a flat list 👎?",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1512614524174471320"
+    },
+    {
+      "id": "1512614944007524465",
+      "author_id": "116735132324462599",
+      "author_name": "Davaned",
+      "timestamp": "2026-06-06T00:31:45.678000+00:00",
+      "content": "**Liner hull reroll/defaults:**\nI'm adding a little bit of the mod into shipbuilding to let you set tags, so I thought I'd maybe address a common annoyance. Should I toss in the ability to generate a \"correct\" (back thrusters etc) liner format as part of drydock?",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1512614944007524465"
+    },
+    {
+      "id": "1512615886610239498",
+      "author_id": "116735132324462599",
+      "author_name": "Davaned",
+      "timestamp": "2026-06-06T00:35:30.412000+00:00",
+      "content": "**Fleet modification**: Do people want more menu options to rename/copy/versioning of fleets? I'm not sure if the versioning is really useful for most players, and copy is mostly resave",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1512615886610239498"
+    },
+    {
+      "id": "1512620143593914561",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-06T00:52:25.356000+00:00",
+      "content": "I'll take whatever you give us ngl. I have no reference for how much work any of this is or how achievable it is.",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1512620143593914561"
+    },
+    {
+      "id": "1512633505853603910",
+      "author_id": "1245118490629902338",
+      "author_name": "LimeAxolotl",
+      "timestamp": "2026-06-06T01:45:31.167000+00:00",
+      "content": "I think for search, if it's possible, having a toggle for ignoring folders would be a good solution to this, so people can decide per search if they do or don't want to do that.",
+      "reply_to_id": "1512614524174471320",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1512633505853603910"
+    },
+    {
+      "id": "1512633572551295138",
+      "author_id": "1245118490629902338",
+      "author_name": "LimeAxolotl",
+      "timestamp": "2026-06-06T01:45:47.069000+00:00",
+      "content": "Although if that's too complicated, I'd just go with ignoring folders",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1512633572551295138"
+    },
+    {
+      "id": "1513054208516030495",
+      "author_id": "116735132324462599",
+      "author_name": "Davaned",
+      "timestamp": "2026-06-07T05:37:14.498000+00:00",
+      "content": "Autotags are very much a work in progress, I might release a beta soon though. The ship hull search is so nice, so great just selecting what I'm looking for",
+      "reply_to_id": null,
+      "reactions": [
+        {
+          "emoji": "👀",
+          "count": 4
+        },
+        {
+          "emoji": "woem",
+          "count": 1
+        }
+      ],
+      "attachments": 1,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1513054208516030495"
+    },
+    {
+      "id": "1513055038690562098",
+      "author_id": "1488602778027819178",
+      "author_name": "DasWatchking",
+      "timestamp": "2026-06-07T05:40:32.427000+00:00",
+      "content": "I'm curious--does the hull search throw any errors when you have faction mods loaded? Or does it automatically pull from the list of .hull prefabs your game currently has loaded? or how does that work? I know its meant for vanilla stuff but it could be quite nice for hunting down modded fleets",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1513055038690562098"
+    },
+    {
+      "id": "1513608956478619690",
+      "author_id": "116735132324462599",
+      "author_name": "Davaned",
+      "timestamp": "2026-06-08T18:21:36.719000+00:00",
+      "content": "I'm not supporting mods directly right now beyond identifying when its modded fleets. I do support filtering for modded fleets vs vanilla, but not going to add all the hulls etc.",
+      "reply_to_id": "1513055038690562098",
+      "reactions": [
+        {
+          "emoji": "👍",
+          "count": 1
+        }
+      ],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1513608956478619690"
+    },
+    {
+      "id": "1513609903594279084",
+      "author_id": "464542842451394560",
+      "author_name": "𝔣𝔩𝔶𝔫𝔫",
+      "timestamp": "2026-06-08T18:25:22.529000+00:00",
+      "content": "Haven't quite read this full thread, and this idea doesn't fit your angle of \"adding tools to make it easier\" but:\n\nHaving a shipbuilding tutorial that allows players to make choices, e.g. helping them build a support fleet, a missile fleet, and a frontline fleet for each faction. \ne.g. guide-through for making TF Oak, TF Hemlock, TF Maple... with info/pointers on what makes each one good, what its role is, etc\n\nObviously a tutorial is more developer-centric, but a community tutorial/tool would really help in bringing in an retaining new players. right now the community tutorial is effectively \"join discord and post in <#948127452721463337> \" anyway..",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1513609903594279084"
+    },
+    {
+      "id": "1513618350968668190",
+      "author_id": "116735132324462599",
+      "author_name": "Davaned",
+      "timestamp": "2026-06-08T18:58:56.540000+00:00",
+      "content": "Yeah, also explaining/walking through serious concepts like rstacks and damage splitting, ammo counts, softkill suites, power cringing, etc. Would probably need to be a separate mod. Should really be an ingame thing, but if its not planning on being worked on I might consider it. If the community created really detailed \"lesson plans\" I might just make a tutorial engine that the community could upload them to (eg popups, highlighting components, scripted ship builds). Maybe an automated fleet review.\nNot in my immediate plan, so it'd be more if people showed real signs of building out these I'd more make to spec some support for it, rather than driving it myself.",
+      "reply_to_id": "1513609903594279084",
+      "reactions": [
+        {
+          "emoji": "💯",
+          "count": 1
+        }
+      ],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1513618350968668190"
+    },
+    {
+      "id": "1513620580899881151",
+      "author_id": "464542842451394560",
+      "author_name": "𝔣𝔩𝔶𝔫𝔫",
+      "timestamp": "2026-06-08T19:07:48.197000+00:00",
+      "content": "Making a tutorial engine would be fantastic. There's enough passionate people in the community that would contribute. I wonder if Lys could be convinced even, especially given the similar nature of campaign editor",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1513620580899881151"
+    },
+    {
+      "id": "1513620807769915432",
+      "author_id": "464542842451394560",
+      "author_name": "𝔣𝔩𝔶𝔫𝔫",
+      "timestamp": "2026-06-08T19:08:42.287000+00:00",
+      "content": "Granted, campaign editor already *is* a tutorial engine of sorts, just not for fleet building specifically",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1513620807769915432"
+    },
+    {
+      "id": "1513792500945522749",
+      "author_id": "910821461260898345",
+      "author_name": "crumbs of a fractured meta",
+      "timestamp": "2026-06-09T06:30:57.130000+00:00",
+      "content": "i can probably make it if you dont want to\ntotally up to you though",
+      "reply_to_id": "1513608956478619690",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1513792500945522749"
+    },
+    {
+      "id": "1513792697498992721",
+      "author_id": "116735132324462599",
+      "author_name": "Davaned",
+      "timestamp": "2026-06-09T06:31:43.992000+00:00",
+      "content": "it'd massively clutter the ui if it displays all the modded hulls imo",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1513792697498992721"
+    },
+    {
+      "id": "1513793508694167602",
+      "author_id": "910821461260898345",
+      "author_name": "crumbs of a fractured meta",
+      "timestamp": "2026-06-09T06:34:57.396000+00:00",
+      "content": "idk, categories?",
+      "reply_to_id": "1513792697498992721",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1513793508694167602"
+    },
+    {
+      "id": "1513793560275718174",
+      "author_id": "910821461260898345",
+      "author_name": "crumbs of a fractured meta",
+      "timestamp": "2026-06-09T06:35:09.694000+00:00",
+      "content": "for my own personal unity projects dropdowns r built in to unity",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1513793560275718174"
+    },
+    {
+      "id": "1513793672087470240",
+      "author_id": "910821461260898345",
+      "author_name": "crumbs of a fractured meta",
+      "timestamp": "2026-06-09T06:35:36.352000+00:00",
+      "content": "and are easy enough to use",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1513793672087470240"
+    },
+    {
+      "id": "1513798110265085952",
+      "author_id": "116735132324462599",
+      "author_name": "Davaned",
+      "timestamp": "2026-06-09T06:53:14.496000+00:00",
+      "content": "Yeah I'm not prioritizing custom supporting all of the mod hulls/faction. You can easily tag fleets for different mod factions for now, and in the future I might support them.",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1513798110265085952"
+    },
+    {
+      "id": "1513798800601255976",
+      "author_id": "910821461260898345",
+      "author_name": "crumbs of a fractured meta",
+      "timestamp": "2026-06-09T06:55:59.085000+00:00",
+      "content": "fair enough",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1513798800601255976"
+    },
+    {
+      "id": "1513798822760026227",
+      "author_id": "116735132324462599",
+      "author_name": "Davaned",
+      "timestamp": "2026-06-09T06:56:04.368000+00:00",
+      "content": "Btw folks I just made it live here: https://steamcommunity.com/sharedfiles/filedetails/?id=3741341111\n\nThis a beta version\nAll of the sort/filter/lookup is tested and ready along with base tagging/favoriting.\nAutotag is still a WIP and will need a polish pass. It does touch your fleet descriptions so there is some risk, but I've applied it to my own fleets without issue. \nThe UI will have some minor updates, please report any bugs.",
+      "reply_to_id": null,
+      "reactions": [
+        {
+          "emoji": "👀",
+          "count": 2
+        }
+      ],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1513798822760026227"
+    },
+    {
+      "id": "1513819943164969031",
+      "author_id": "116735132324462599",
+      "author_name": "Davaned",
+      "timestamp": "2026-06-09T08:19:59.865000+00:00",
+      "content": "Please note that autotag support every role but skirmish, as all of your CL fleets will obviously already be tagged with Favorite",
+      "reply_to_id": null,
+      "reactions": [
+        {
+          "emoji": "😂",
+          "count": 3
+        }
+      ],
+      "attachments": 1,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1513819943164969031"
+    },
+    {
+      "id": "1515355504941994106",
+      "author_id": "495654253113901088",
+      "author_name": "wit3356",
+      "timestamp": "2026-06-13T14:01:46.322000+00:00",
+      "content": "Would it be possible to add 3k to 16k filters in 3k intervals?",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1515355504941994106"
+    },
+    {
+      "id": "1515373759757029559",
+      "author_id": "116735132324462599",
+      "author_name": "Davaned",
+      "timestamp": "2026-06-13T15:14:18.609000+00:00",
+      "content": "you can use the autotag function filter to add those manually, but I could add a point slider with 1k/3k/6k/9k/12k",
+      "reply_to_id": null,
+      "reactions": [
+        {
+          "emoji": "❤️",
+          "count": 2
+        },
+        {
+          "emoji": "woem",
+          "count": 1
+        }
+      ],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1515373759757029559"
+    },
+    {
+      "id": "1515911949597278299",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-15T02:52:53.066000+00:00",
+      "content": "How would you go about creating an auto-tag condition for blobs?",
+      "reply_to_id": "1515373759757029559",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1515911949597278299"
+    },
+    {
+      "id": "1515912169722740877",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-15T02:53:45.548000+00:00",
+      "content": "like. The opposite of the caps one, 4+ FFL in formation",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1515912169722740877"
+    },
+    {
+      "id": "1515912841495052380",
+      "author_id": "116735132324462599",
+      "author_name": "Davaned",
+      "timestamp": "2026-06-15T02:56:25.711000+00:00",
+      "content": "uhhhhh, probably `blob => hull:FFL and ships >= 6 and not caps`\nI didn't think to add a custom formation detector",
+      "reply_to_id": "1515911949597278299",
+      "reactions": [
+        {
+          "emoji": "👍",
+          "count": 1
+        }
+      ],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1515912841495052380"
+    },
+    {
+      "id": "1515913410657783829",
+      "author_id": "116735132324462599",
+      "author_name": "Davaned",
+      "timestamp": "2026-06-15T02:58:41.410000+00:00",
+      "content": "The not caps will make it use the hardcoded caps formation check i added in, i can move that into a custom rule",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1515913410657783829"
+    },
+    {
+      "id": "1515913726018981888",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-15T02:59:56.598000+00:00",
+      "content": "Ah neat",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1515913726018981888"
+    },
+    {
+      "id": "1515913987525578802",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-15T03:00:58.946000+00:00",
+      "content": "Would\n `blob => (hull:FFL or hull:FF) and ships >= 4 and not caps`\nwork?",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1515913987525578802"
+    },
+    {
+      "id": "1515914032203173939",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-15T03:01:09.598000+00:00",
+      "content": "I kinda want it to ID half-blob caps too",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1515914032203173939"
+    },
+    {
+      "id": "1515914704592310323",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-15T03:03:49.908000+00:00",
+      "content": "",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 1,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1515914704592310323"
+    },
+    {
+      "id": "1515914709310640160",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-15T03:03:51.033000+00:00",
+      "content": "hmmm",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1515914709310640160"
+    },
+    {
+      "id": "1515915166129066085",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-15T03:05:39.947000+00:00",
+      "content": "Weird that its grabbing a 4LN fleet there because it has 2 shuttles 🤔",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1515915166129066085"
+    },
+    {
+      "id": "1515915302775291945",
+      "author_id": "116735132324462599",
+      "author_name": "Davaned",
+      "timestamp": "2026-06-15T03:06:12.526000+00:00",
+      "content": "Yeah that command is reading contains at least one of those hulls, has more than 4 ships in the fleet, and is not tagged as caps",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1515915302775291945"
+    },
+    {
+      "id": "1515915511467212920",
+      "author_id": "116735132324462599",
+      "author_name": "Davaned",
+      "timestamp": "2026-06-15T03:07:02.282000+00:00",
+      "content": "if u really want `blob => (hull:FFL or hull:FF) and ships >= 6 and not caps and not hull:BB and not hull:CL and not hull:CC` or whatever",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1515915511467212920"
+    },
+    {
+      "id": "1515915578089406595",
+      "author_id": "116735132324462599",
+      "author_name": "Davaned",
+      "timestamp": "2026-06-15T03:07:18.166000+00:00",
+      "content": "but i'm not quite set up for that level of custom, i'll update it eventually",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1515915578089406595"
+    },
+    {
+      "id": "1515915832461365259",
+      "author_id": "116735132324462599",
+      "author_name": "Davaned",
+      "timestamp": "2026-06-15T03:08:18.813000+00:00",
+      "content": "might be easier to pull up the 10 or so fleets you have and manually tag. I'll need to add a more detailed setup and guide lol, I added the custom as an afterthought",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1515915832461365259"
+    },
+    {
+      "id": "1515915865374331062",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-15T03:08:26.660000+00:00",
+      "content": "Can't tag for number of hulls of that ship type then?",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1515915865374331062"
+    },
+    {
+      "id": "1515916002817347666",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-15T03:08:59.429000+00:00",
+      "content": "Ah yeah the caps tag would tag the same fleet",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1515916002817347666"
+    },
+    {
+      "id": "1515916093120581875",
+      "author_id": "116735132324462599",
+      "author_name": "Davaned",
+      "timestamp": "2026-06-15T03:09:20.959000+00:00",
+      "content": "mmm i'd need to go back and check, I could add some more logic support in a future patch",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1515916093120581875"
+    },
+    {
+      "id": "1515916180370493540",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-15T03:09:41.761000+00:00",
+      "content": "Oh wait I could add a 3000 pts rule to rule the test fleets out?",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1515916180370493540"
+    },
+    {
+      "id": "1515916471627157604",
+      "author_id": "116735132324462599",
+      "author_name": "Davaned",
+      "timestamp": "2026-06-15T03:10:51.202000+00:00",
+      "content": "yeah i was going to add a slider as well but should be able",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1515916471627157604"
+    },
+    {
+      "id": "1515916532704870482",
+      "author_id": "116735132324462599",
+      "author_name": "Davaned",
+      "timestamp": "2026-06-15T03:11:05.764000+00:00",
+      "content": "i have some changes on my local, can't remember what i pushed yet lol",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1515916532704870482"
+    },
+    {
+      "id": "1515916661293580428",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-15T03:11:36.422000+00:00",
+      "content": "There's a slider in the search section but I didn't think that would apply to the tag creation",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1515916661293580428"
+    },
+    {
+      "id": "1517051930562658505",
+      "author_id": "116735132324462599",
+      "author_name": "Davaned",
+      "timestamp": "2026-06-18T06:22:45.708000+00:00",
+      "content": "Random thought from watching a match just now re: this, but if folks want to create a list of basic fleetbuilding checks I can add them to as a helper tool to Drydock\nthings like pd ammo amounts, using juryrigged with mds, not reinforcing nose, using analysis annex, or whatever lol. lot lower effort than a tutorial and still helpful based on some ships I've seen",
+      "reply_to_id": "1513609903594279084",
+      "reactions": [
+        {
+          "emoji": "👍",
+          "count": 1
+        },
+        {
+          "emoji": "🤔",
+          "count": 1
+        },
+        {
+          "emoji": "woem",
+          "count": 1
+        }
+      ],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517051930562658505"
+    },
+    {
+      "id": "1517149956555935864",
+      "author_id": "214369622302916608",
+      "author_name": "SecretMink",
+      "timestamp": "2026-06-18T12:52:16.926000+00:00",
+      "content": "Beamstone without FPAs",
+      "reply_to_id": null,
+      "reactions": [
+        {
+          "emoji": "👆",
+          "count": 3
+        }
+      ],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517149956555935864"
+    },
+    {
+      "id": "1517228692248465539",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-18T18:05:08.978000+00:00",
+      "content": "RCC => ANS using RCC => ANS guns do not benefit, use ammo elevators to buff guns",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517228692248465539"
+    },
+    {
+      "id": "1517228846909489182",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-18T18:05:45.852000+00:00",
+      "content": "No secondary antenna on BB => BB must have secondary antenna => the built in antenna dies incredibly frequently, mounts 6/7/10/11 are recommended to mount a replacement.",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517228846909489182"
+    },
+    {
+      "id": "1517235772883992737",
+      "author_id": "116735132324462599",
+      "author_name": "Davaned",
+      "timestamp": "2026-06-18T18:33:17.133000+00:00",
+      "content": "If folks put together a clear list of 40 or so traps/reqs I'll look into per compartment fleetbuilding scanning and alerting.\nLet's keep format as \n\nSituation => Rule => Reason\n\nExample:\nANS Mk600 Beam Cannon and Mk610 Beam Turret => Requires 2+ Focused Particle Accelerator => Beams deal many small ticks of damage and FPAs are needed to boost the damage above the threshold required to break reinforced components",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517235772883992737"
+    },
+    {
+      "id": "1517236185750044722",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-18T18:34:55.568000+00:00",
+      "content": "Mm. Magazine/CIC in the center stack of a CL => Present in comps 1-4 => most incoming damage to CLs ends up there, relocate critical components to the nose or rear where they are safer",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517236185750044722"
+    },
+    {
+      "id": "1517236340356550979",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-18T18:35:32.429000+00:00",
+      "content": "Ship with large compartments (including ANS carriers) => Ship with non-large compartments/magazines in the large compartments => non-magazine compartments do not scale with compartment size and are therefore fragile. Use large compartment specific equipment intended to be placed in these slots.",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517236340356550979"
+    },
+    {
+      "id": "1517236382114775190",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-18T18:35:42.385000+00:00",
+      "content": "Small drives in big drive slot => same as above",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517236382114775190"
+    },
+    {
+      "id": "1517236878506590228",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-18T18:37:40.734000+00:00",
+      "content": "Carrier with repair station => Do not add repair stations to carrier hulls => carriers come with a repair station built into the hull",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517236878506590228"
+    },
+    {
+      "id": "1517237349061361716",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-18T18:39:32.923000+00:00",
+      "content": "Using the Strobe correlator => do not use the strobe correlator => this module is currently useless",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517237349061361716"
+    },
+    {
+      "id": "1517237418292412578",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-18T18:39:49.429000+00:00",
+      "content": "Using the signature scrambler => do not use the signature Scrambler => this module is currently useless",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517237418292412578"
+    },
+    {
+      "id": "1517237553084760115",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-18T18:40:21.566000+00:00",
+      "content": "Using more than two ARR => Radars do not benefit from more than one ARR => This radar has already been buffed to the noise floor, further ARRs will have no effect",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517237553084760115"
+    },
+    {
+      "id": "1517237845805240451",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-18T18:41:31.356000+00:00",
+      "content": "Power drive in a liner => don't use power drive on a Frontline hull=> This will significantly affect the liner's ability to maneuver and aim.",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517237845805240451"
+    },
+    {
+      "id": "1517238118615351447",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-18T18:42:36.399000+00:00",
+      "content": "CLN with anything that is not a container launcher or bank hangar in it's big slots => Do not use CLN for things other than it is intended => what you are doing is bad and has made god very unhappy. The purpose of this backline hull is to bring specialized equipment that OSP otherwise struggles to bring; container missiles en mass and craft en mass. To do otherwise is a waste, use a hull more fitting for what you are trying to do.",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517238118615351447"
+    },
+    {
+      "id": "1517238395200340070",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-18T18:43:42.342000+00:00",
+      "content": "ANS ship with no RPF despite eligible guns => bring RPF => ANS light guns are balanced around their access to RPF; without this round they will be at significant disadvantage against OSP light ships, and unable to perform the tasks handed to them as a dual purpose turret.",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517238395200340070"
+    },
+    {
+      "id": "1517238481716383744",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-18T18:44:02.969000+00:00",
+      "content": "450 ship with no HE => 450 ships must bring 450 HE => 450 HE is useful for engaging broadside capitals/and Liners as well as anything smaller.",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517238481716383744"
+    },
+    {
+      "id": "1517238534447173675",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-18T18:44:15.541000+00:00",
+      "content": "450 ship with no AP => 450 ships must bring 450 AP => 450 AP is useful for engaging bow-on capitals and punching through stacks of reinforced components",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517238534447173675"
+    },
+    {
+      "id": "1517238946382221423",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-18T18:45:53.754000+00:00",
+      "content": "Less than 3 restores on an Ocello/Axford, 6 on a battleship, 2 on a CL, 6 on a Liner => These hulls should have x restores or greater. Exceptions for rail gun/mass driver ships => restores are necessary to maintain combat power throughout the match",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517238946382221423"
+    },
+    {
+      "id": "1517239128595497040",
+      "author_id": "1245118490629902338",
+      "author_name": "LimeAxolotl",
+      "timestamp": "2026-06-18T18:46:37.197000+00:00",
+      "content": "Railguns on a BB",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517239128595497040"
+    },
+    {
+      "id": "1517239284959154470",
+      "author_id": "1245118490629902338",
+      "author_name": "LimeAxolotl",
+      "timestamp": "2026-06-18T18:47:14.477000+00:00",
+      "content": "BBs have a significant hull debuff to rails, consider bringing a rail CH or rail DDs",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517239284959154470"
+    },
+    {
+      "id": "1517239443390468216",
+      "author_id": "1245118490629902338",
+      "author_name": "LimeAxolotl",
+      "timestamp": "2026-06-18T18:47:52.250000+00:00",
+      "content": "Guns in backpack mounts on ANS hulls",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517239443390468216"
+    },
+    {
+      "id": "1517239625167540325",
+      "author_id": "1245118490629902338",
+      "author_name": "LimeAxolotl",
+      "timestamp": "2026-06-18T18:48:35.589000+00:00",
+      "content": "Broad siding makes you an easier target than bowtanking, while reducing the effects of armor angling",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517239625167540325"
+    },
+    {
+      "id": "1517239777387348199",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-18T18:49:11.881000+00:00",
+      "content": "Ship without chaff =>  chaff on ship => ships rely on chaff for defense against cruise missiles",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517239777387348199"
+    },
+    {
+      "id": "1517240132439380159",
+      "author_id": "116735132324462599",
+      "author_name": "Davaned",
+      "timestamp": "2026-06-18T18:50:36.532000+00:00",
+      "content": "Thanks. Try to keep each line clearly contained with all three pieces (situation, rule, reason) so that I'm not hunting around. \nThe reason is important bc some stuff is self-evident if you know the game, but the main benefactors of this would be people that might not know obvious stuff\nBe pretty explicit too",
+      "reply_to_id": null,
+      "reactions": [
+        {
+          "emoji": "👍",
+          "count": 1
+        }
+      ],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517240132439380159"
+    },
+    {
+      "id": "1517241470678073539",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-18T18:55:55.593000+00:00",
+      "content": "Flares present on ship => Ships with a coms jammer should not carry flares => the only use of flares as a decoy is against CMD/WAKE, as they have no effect on validators. Without a coms jammer, the flares will not be useful.",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517241470678073539"
+    },
+    {
+      "id": "1517246411136307310",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-18T19:15:33.490000+00:00",
+      "content": "OSP 250 Ship with no Bombshell => Bring bombshell => OSP needs bombshell to fire on craft, missiles, and groups of light ships under jamming.",
+      "reply_to_id": "1517238395200340070",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517246411136307310"
+    },
+    {
+      "id": "1517246825008988371",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-18T19:17:12.165000+00:00",
+      "content": "OSP ship with no Grapeshot despite eligible guns => bring Grapeshot => OSP light guns are balanced around their access to Grapeshot; without this round they will be at significant disadvantage against ANS light ships, and unable to perform the tasks handed to them as a dual purpose turret.",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517246825008988371"
+    },
+    {
+      "id": "1517247478569893988",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-18T19:19:47.986000+00:00",
+      "content": "Both plasma and 100mm weapons present on ship => use 100mm HE-HC => 100mm HE-HC cannot pen ANS without the use of plasma, but once targets have been armor stripped, it allows OSP to deliver massive damage.",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517247478569893988"
+    },
+    {
+      "id": "1517248326964346920",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-18T19:23:10.259000+00:00",
+      "content": "Using the Supplementary Radio Amplifier => Do not use on ship without CR70/CR75 antenna => The SRA allows a ship's command missiles to punch deeper into defensive coms jamming, making them harder to softkill.",
+      "reply_to_id": "1517237418292412578",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517248326964346920"
+    },
+    {
+      "id": "1517248843618451528",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-18T19:25:13.439000+00:00",
+      "content": "Small Reactor Booster => only use this module in small module slots =>  if present in a larger slot, use the micro reactor instead",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517248843618451528"
+    },
+    {
+      "id": "1517249723839545497",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-18T19:28:43.300000+00:00",
+      "content": "Mount Gyros => Don't use on ships other than Beam Axford or Solomon => Use this module to buff the Beam Turret",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517249723839545497"
+    },
+    {
+      "id": "1517250160533442641",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-18T19:30:27.416000+00:00",
+      "content": "Damage Control Central => If fewer than 7 DC Teams and rapid teams, Don't use DC buff compartments => As a buff compartment, this compartment does nothing on its own and only becomes worth using when you have x number of teams",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517250160533442641"
+    },
+    {
+      "id": "1517250259544440882",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-18T19:30:51.022000+00:00",
+      "content": "Small Workshop => If fewer than 7 DC Teams and rapid teams, Don't use DC buff compartments => As a buff compartment, this compartment does nothing on its own and only becomes worth using when you have x number of teams",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517250259544440882"
+    },
+    {
+      "id": "1517251201241055304",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-18T19:34:35.540000+00:00",
+      "content": "RDC/DCX => Capitals without Reinforced Damage Control/DCX => Capitals require RDC/DCX to survive and recover from strikes",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517251201241055304"
+    },
+    {
+      "id": "1517251822920794202",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-18T19:37:03.760000+00:00",
+      "content": "Light assets with reinforced CIC/Damage control => Don't use reinforced damage control or CICs on light ships => These ships do not have enough damage reduction to keep these reinforced components alive under light gunfire or missile strikes.",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517251822920794202"
+    },
+    {
+      "id": "1517252349243166912",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-18T19:39:09.245000+00:00",
+      "content": "Sprinter without Aux Steering => Sprinters should have an Aux steering => Aux steering allows sprinters to survive under fire to capture points, albeit without offensive capability",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517252349243166912"
+    },
+    {
+      "id": "1517252776386760724",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-18T19:40:51.084000+00:00",
+      "content": "Keystone with Aux Steering => Keystones should not have aux steerings with only a single CIC => The Keystone does not benefit you when becoming a cringe capper more than it would staying combat capable with a 2nd CIC",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517252776386760724"
+    },
+    {
+      "id": "1517253354663841932",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-18T19:43:08.956000+00:00",
+      "content": "Reinforced Drives => Reinforced Drives on Capitals => The only benefit these drives bring over other drives is requiring large caliber HE to kill. The ship would benefit more not being hit in the first place",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517253354663841932"
+    },
+    {
+      "id": "1517253736458621010",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-18T19:44:39.983000+00:00",
+      "content": "Acceleration Drives => Capital ships require an acceleration drive (Raider, Yard/7700) => These ships accelerate slowly and struggle to reach top speed, change directions, or dodge fire without one.",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517253736458621010"
+    },
+    {
+      "id": "1517255272438038819",
+      "author_id": "1328057641259241515",
+      "author_name": "TrainTrack",
+      "timestamp": "2026-06-18T19:50:46.189000+00:00",
+      "content": "Aux in keystone is fine for tank",
+      "reply_to_id": "1517252776386760724",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517255272438038819"
+    },
+    {
+      "id": "1517255496413745242",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-18T19:51:39.589000+00:00",
+      "content": "If you already have 2 BCICs sure",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517255496413745242"
+    },
+    {
+      "id": "1517255537270722662",
+      "author_id": "1328057641259241515",
+      "author_name": "TrainTrack",
+      "timestamp": "2026-06-18T19:51:49.330000+00:00",
+      "content": "BCIC is more points no?",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517255537270722662"
+    },
+    {
+      "id": "1517255538595860610",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-18T19:51:49.646000+00:00",
+      "content": "Most times I see aux they don't",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517255538595860610"
+    },
+    {
+      "id": "1517255559831621712",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-18T19:51:54.709000+00:00",
+      "content": "Nope",
+      "reply_to_id": "1517255537270722662",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517255559831621712"
+    },
+    {
+      "id": "1517255624323367044",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-18T19:52:10.085000+00:00",
+      "content": "CIC's get more expensive after the 2nd one",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517255624323367044"
+    },
+    {
+      "id": "1517255626428780766",
+      "author_id": "1328057641259241515",
+      "author_name": "TrainTrack",
+      "timestamp": "2026-06-18T19:52:10.587000+00:00",
+      "content": "hmmm",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517255626428780766"
+    },
+    {
+      "id": "1517255642878840913",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-18T19:52:14.509000+00:00",
+      "content": "For the first 2 both are 10",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517255642878840913"
+    },
+    {
+      "id": "1517255665695850648",
+      "author_id": "1328057641259241515",
+      "author_name": "TrainTrack",
+      "timestamp": "2026-06-18T19:52:19.949000+00:00",
+      "content": "yeah thought it was 15",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517255665695850648"
+    },
+    {
+      "id": "1517255799976628284",
+      "author_id": "1328057641259241515",
+      "author_name": "TrainTrack",
+      "timestamp": "2026-06-18T19:52:51.964000+00:00",
+      "content": "eh less integ but I see your point",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517255799976628284"
+    },
+    {
+      "id": "1517255840346669056",
+      "author_id": "1328057641259241515",
+      "author_name": "TrainTrack",
+      "timestamp": "2026-06-18T19:53:01.589000+00:00",
+      "content": "DT is the stuff that matters anyway",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517255840346669056"
+    },
+    {
+      "id": "1517255911649972406",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-18T19:53:18.589000+00:00",
+      "content": "Compounding CIC cost => Don't use more than 2 CICs => CIC costs compound after the 2nd CIC",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517255911649972406"
+    },
+    {
+      "id": "1517256034559852704",
+      "author_id": "1328057641259241515",
+      "author_name": "TrainTrack",
+      "timestamp": "2026-06-18T19:53:47.893000+00:00",
+      "content": "Has there been any build that uses more than 2 mags",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517256034559852704"
+    },
+    {
+      "id": "1517256115862110450",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-18T19:54:07.277000+00:00",
+      "content": "Compounding Magazine cost => Don't use more than 2 Magazines => Magazine costs compound after the 2nd Magazine, and the cheapest magazine is free",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517256115862110450"
+    },
+    {
+      "id": "1517256431961772182",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-18T19:55:22.641000+00:00",
+      "content": "Single Magazine in Liners => Use 2 magazines in liners (exception for mass driver liner) => Liners have no safe spots for compartments, and thus require redundancy to function in combat",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517256431961772182"
+    },
+    {
+      "id": "1517256511741628488",
+      "author_id": "1328057641259241515",
+      "author_name": "TrainTrack",
+      "timestamp": "2026-06-18T19:55:41.662000+00:00",
+      "content": "Ship with Grazer => Don't bring Grazer => The Grazer shoots down 1 (hybrid) missile in a salvo, due to a long reload. This makes it effectively a reusable AMM with around 10x the cost. You will not use the grazer 10 times.",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517256511741628488"
+    },
+    {
+      "id": "1517257268150665419",
+      "author_id": "1328057641259241515",
+      "author_name": "TrainTrack",
+      "timestamp": "2026-06-18T19:58:42.004000+00:00",
+      "content": "idk if this is checkable but\n\n1 BMag with enough spare capacity to be RMag (or 1 RMag with enough spare capacity to be CitMag in 8x3x8 slot) => Bring the higher health/DT mag => The first magazine is free so this costs no points and is thus, free HP",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517257268150665419"
+    },
+    {
+      "id": "1517257677695221810",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-18T20:00:19.647000+00:00",
+      "content": "Gun plot center => Ship with Mk65/Mk66/Mk68/C65 require 1 gun plotting center => These guns require a gun plotting center to hit targets at range, especially small ones. Ships do not benefit in practice from more than 1 gun plotting center barring niche builds. Especially do not use more than 2.",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517257677695221810"
+    },
+    {
+      "id": "1517257877037912238",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-18T20:01:07.174000+00:00",
+      "content": "Honestly I'm just going through posts that say \"First fleet\" for a lot of these <:doge:967913870394023986>",
+      "reply_to_id": "1517256034559852704",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517257877037912238"
+    },
+    {
+      "id": "1517258338637713499",
+      "author_id": "1328057641259241515",
+      "author_name": "TrainTrack",
+      "timestamp": "2026-06-18T20:02:57.228000+00:00",
+      "content": "Don't MD and Rail benefit decently from GPC?",
+      "reply_to_id": "1517257677695221810",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517258338637713499"
+    },
+    {
+      "id": "1517258478723272914",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-18T20:03:30.627000+00:00",
+      "content": "Shows how much I use them",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517258478723272914"
+    },
+    {
+      "id": "1517258523694727373",
+      "author_id": "671513584366256170",
+      "author_name": "tenmei",
+      "timestamp": "2026-06-18T20:03:41.349000+00:00",
+      "content": "it sort of works on cr70 <:maribelstare:1437655391985995827>",
+      "reply_to_id": "1517248326964346920",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517258523694727373"
+    },
+    {
+      "id": "1517258597220749403",
+      "author_id": "1328057641259241515",
+      "author_name": "TrainTrack",
+      "timestamp": "2026-06-18T20:03:58.879000+00:00",
+      "content": "GPC isn't necessary for them though",
+      "reply_to_id": "1517258478723272914",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517258597220749403"
+    },
+    {
+      "id": "1517258660110143519",
+      "author_id": "1328057641259241515",
+      "author_name": "TrainTrack",
+      "timestamp": "2026-06-18T20:04:13.873000+00:00",
+      "content": "it just increases hit rate",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517258660110143519"
+    },
+    {
+      "id": "1517258955200659557",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-18T20:05:24.228000+00:00",
+      "content": "Using Reinforced Thruster Nozzles => do not use the reinforced thruster nozzles => This module is currently useless",
+      "reply_to_id": "1517237349061361716",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517258955200659557"
+    },
+    {
+      "id": "1517259023546585199",
+      "author_id": "1328057641259241515",
+      "author_name": "TrainTrack",
+      "timestamp": "2026-06-18T20:05:40.523000+00:00",
+      "content": "Small Reactor Booster in 3x3x3 => Use an FR3300 Micro Reactor (ANS and CC) or Light Civilian Reactor (OSP) => This will provide more power for the same point cost.",
+      "reply_to_id": "1517257877037912238",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517259023546585199"
+    },
+    {
+      "id": "1517259149371642078",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-18T20:06:10.522000+00:00",
+      "content": "Thats worded better than the one I had",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517259149371642078"
+    },
+    {
+      "id": "1517259824235151562",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-18T20:08:51.422000+00:00",
+      "content": "Bullseye FCR => Beam keystones and battleships require Bullseye FCR to damage targets => Beams require a certain amount of time hitting the same spot to drill through the armor; a ship without a lock cannot provide a low enough track error to provide this",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517259824235151562"
+    },
+    {
+      "id": "1517259889980870816",
+      "author_id": "671513584366256170",
+      "author_name": "tenmei",
+      "timestamp": "2026-06-18T20:09:07.097000+00:00",
+      "content": "Citadel CIC => Hull with CitCIC => Citadel CIC is very cost inefficient, similar survivability can be attained at a cheaper price point with two Reinforced CIC",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517259889980870816"
+    },
+    {
+      "id": "1517260276511146245",
+      "author_id": "1328057641259241515",
+      "author_name": "TrainTrack",
+      "timestamp": "2026-06-18T20:10:39.253000+00:00",
+      "content": "Fire Suppression System on hull that is not BB => Do not use the FSS => Frontline ships gain more from buff modules for their weapons (Ammunition Elevators, Rapid-Cycle Cradle, Energy Regulators). If you are using this on a ship that is not frontline, this is useless, as it mainly helps to counter rails. The BB is the exception to this rule, because it has enough module slots to fit 6 Ammunition Elevators (after which there is very little point adding more of them) and still have room for more modules.",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517260276511146245"
+    },
+    {
+      "id": "1517260433969516628",
+      "author_id": "1328057641259241515",
+      "author_name": "TrainTrack",
+      "timestamp": "2026-06-18T20:11:16.794000+00:00",
+      "content": "You may have misunderstood the formatting, the 'Rule' section should be smth like 'Do not use the CitCIC' instead of 'Hull with CIC'",
+      "reply_to_id": "1517259889980870816",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517260433969516628"
+    },
+    {
+      "id": "1517260674370109653",
+      "author_id": "1328057641259241515",
+      "author_name": "TrainTrack",
+      "timestamp": "2026-06-18T20:12:14.110000+00:00",
+      "content": "Buff mod with weapon that it does not buff is already a fledit warning right?",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517260674370109653"
+    },
+    {
+      "id": "1517261118580592831",
+      "author_id": "671513584366256170",
+      "author_name": "tenmei",
+      "timestamp": "2026-06-18T20:14:00.018000+00:00",
+      "content": "yeah pretty sure",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517261118580592831"
+    },
+    {
+      "id": "1517261887367155743",
+      "author_id": "1328057641259241515",
+      "author_name": "TrainTrack",
+      "timestamp": "2026-06-18T20:17:03.311000+00:00",
+      "content": "Mount Gyros on hull that is not the Solomon and without the Mk610 Beam Turret => Do not use the Mount Gyros => Turn rate is very negligible for every weapon except the turreted beam, you will be better off with another module (usually a weapon buffin one). BB can afford the mount gyros because it has a lot of module slots.",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517261887367155743"
+    },
+    {
+      "id": "1517262532937781439",
+      "author_id": "671513584366256170",
+      "author_name": "tenmei",
+      "timestamp": "2026-06-18T20:19:37.227000+00:00",
+      "content": "Weapon buffs for multiple weapon classes on hulls that are smaller than a CH => Ships should be specialized => Ships that try to do multiple things at once are typically bad at all of them\n-# (i think this is mostly an ans issue, but i also want the rule to not trigger for viable 3kbb, milk, hemlock type fleets)",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517262532937781439"
+    },
+    {
+      "id": "1517267536373088429",
+      "author_id": "1245118490629902338",
+      "author_name": "LimeAxolotl",
+      "timestamp": "2026-06-18T20:39:30.139000+00:00",
+      "content": "Exception here, 1 grazer plus auroras. The grazer FCR has more range than the grazer itself(the FCR has over 3000m of range), and it helps against jamming supported missiles, due to being EO",
+      "reply_to_id": "1517256511741628488",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517267536373088429"
+    },
+    {
+      "id": "1517267972119466125",
+      "author_id": "116735132324462599",
+      "author_name": "Davaned",
+      "timestamp": "2026-06-18T20:41:14.029000+00:00",
+      "content": "Without a comms jammer*\nThese are fantastic, keep them up",
+      "reply_to_id": "1517241470678073539",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517267972119466125"
+    },
+    {
+      "id": "1517268607459922162",
+      "author_id": "116735132324462599",
+      "author_name": "Davaned",
+      "timestamp": "2026-06-18T20:43:45.506000+00:00",
+      "content": "Any ship => if spare compartments and no magazines, it should have a reinforced mag => reinforced mags are free hp and dt split\n\nAny ship => if single bulk mag and the ammo would fit in a reinforced mag, should be a reinforced mag  => reinforced mags are free hp and dt split",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517268607459922162"
+    },
+    {
+      "id": "1517275673172119696",
+      "author_id": "671513584366256170",
+      "author_name": "tenmei",
+      "timestamp": "2026-06-18T21:11:50.103000+00:00",
+      "content": "wait does this actually work",
+      "reply_to_id": "1517267536373088429",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517275673172119696"
+    },
+    {
+      "id": "1517291447324377178",
+      "author_id": "1245118490629902338",
+      "author_name": "LimeAxolotl",
+      "timestamp": "2026-06-18T22:14:30.954000+00:00",
+      "content": "Yeah",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517291447324377178"
+    },
+    {
+      "id": "1517294985936900107",
+      "author_id": "1245118490629902338",
+      "author_name": "LimeAxolotl",
+      "timestamp": "2026-06-18T22:28:34.625000+00:00",
+      "content": "If you want to test it yourself, make a CC with no radar, and put a grazer plus 3 auroras on it, and fire a few torps at it from outside of 3km(no Warheads on the torps so if they hit they don't kill the PDTs) and then repeat without the grazer. As long as the grazer is in ark, the auroras will start to fire at 3km",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517294985936900107"
+    },
+    {
+      "id": "1517310754410332412",
+      "author_id": "343823737897877515",
+      "author_name": "thecrystalwoods",
+      "timestamp": "2026-06-18T23:31:14.122000+00:00",
+      "content": "this actually has a bug related to set point",
+      "reply_to_id": "1517294985936900107",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517310754410332412"
+    },
+    {
+      "id": "1517310922493001772",
+      "author_id": "1245118490629902338",
+      "author_name": "LimeAxolotl",
+      "timestamp": "2026-06-18T23:31:54.196000+00:00",
+      "content": "Oh, really?",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517310922493001772"
+    },
+    {
+      "id": "1517310950460493915",
+      "author_id": "343823737897877515",
+      "author_name": "thecrystalwoods",
+      "timestamp": "2026-06-18T23:32:00.864000+00:00",
+      "content": "yeah",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517310950460493915"
+    },
+    {
+      "id": "1517311488367399117",
+      "author_id": "1245118490629902338",
+      "author_name": "LimeAxolotl",
+      "timestamp": "2026-06-18T23:34:09.111000+00:00",
+      "content": "It that bug like drive swapping on tugs where it exists, but there's no plans to fix it?",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517311488367399117"
+    },
+    {
+      "id": "1517312470895562793",
+      "author_id": "343823737897877515",
+      "author_name": "thecrystalwoods",
+      "timestamp": "2026-06-18T23:38:03.364000+00:00",
+      "content": "i think lys just missed it because it's an insane edge case",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517312470895562793"
+    },
+    {
+      "id": "1517313191338840205",
+      "author_id": "1245118490629902338",
+      "author_name": "LimeAxolotl",
+      "timestamp": "2026-06-18T23:40:55.131000+00:00",
+      "content": "Eh, that or she's aware of it but it's not a priority, or something else",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517313191338840205"
+    },
+    {
+      "id": "1517313335736008735",
+      "author_id": "1245118490629902338",
+      "author_name": "LimeAxolotl",
+      "timestamp": "2026-06-18T23:41:29.558000+00:00",
+      "content": "But unless it gets removed, 1 grazer per aurora CC is a pretty good combination",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517313335736008735"
+    },
+    {
+      "id": "1517313514258038835",
+      "author_id": "343823737897877515",
+      "author_name": "thecrystalwoods",
+      "timestamp": "2026-06-18T23:42:12.121000+00:00",
+      "content": "unless you set point",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517313514258038835"
+    },
+    {
+      "id": "1517361748636860547",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-19T02:53:52.093000+00:00",
+      "content": "RL-18 Shuttle => Rocket Shuttles should use both mounts for RL-18 => the combined rate of fire from both mounts is required to pen a defender",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517361748636860547"
+    },
+    {
+      "id": "1517401139535155302",
+      "author_id": "1328057641259241515",
+      "author_name": "TrainTrack",
+      "timestamp": "2026-06-19T05:30:23.615000+00:00",
+      "content": "Turreted weapons in BB shoulder (I can't remember Mount numbers) => Don't use turreted weapons in those mounts => The BB shoulder mounts have bad arcs and as such aren't great for PD/Blankets/Mk61s/Mk62s.",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517401139535155302"
+    },
+    {
+      "id": "1517401433459134574",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-19T05:31:33.692000+00:00",
+      "content": "FCRs see through them, its an odd choice but its fine enough",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517401433459134574"
+    },
+    {
+      "id": "1517419462301716481",
+      "author_id": "116735132324462599",
+      "author_name": "Davaned",
+      "timestamp": "2026-06-19T06:43:12.103000+00:00",
+      "content": "vaguely, this stuff",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 1,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517419462301716481"
+    },
+    {
+      "id": "1517419853680607252",
+      "author_id": "1245118490629902338",
+      "author_name": "LimeAxolotl",
+      "timestamp": "2026-06-19T06:44:45.415000+00:00",
+      "content": "This is a sad sad CL",
+      "reply_to_id": "1517419462301716481",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517419853680607252"
+    },
+    {
+      "id": "1517420003807330407",
+      "author_id": "116735132324462599",
+      "author_name": "Davaned",
+      "timestamp": "2026-06-19T06:45:21.208000+00:00",
+      "content": "the other 2 had guns at least",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 1,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517420003807330407"
+    },
+    {
+      "id": "1517420715328933978",
+      "author_id": "1245118490629902338",
+      "author_name": "LimeAxolotl",
+      "timestamp": "2026-06-19T06:48:10.848000+00:00",
+      "content": "Still a sad CL, but less sad",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517420715328933978"
+    },
+    {
+      "id": "1517421240153800846",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-19T06:50:15.976000+00:00",
+      "content": "How do you even rule for that",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517421240153800846"
+    },
+    {
+      "id": "1517421245614915717",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-19T06:50:17.278000+00:00",
+      "content": "like",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517421245614915717"
+    },
+    {
+      "id": "1517421251189014609",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-19T06:50:18.607000+00:00",
+      "content": "????",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517421251189014609"
+    },
+    {
+      "id": "1517423779024736326",
+      "author_id": "1328057641259241515",
+      "author_name": "TrainTrack",
+      "timestamp": "2026-06-19T07:00:21.290000+00:00",
+      "content": "CL of less than 1k points",
+      "reply_to_id": "1517421240153800846",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517423779024736326"
+    },
+    {
+      "id": "1517423890274582529",
+      "author_id": "1328057641259241515",
+      "author_name": "TrainTrack",
+      "timestamp": "2026-06-19T07:00:47.814000+00:00",
+      "content": "CL with 1-4 Mk64s",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517423890274582529"
+    },
+    {
+      "id": "1517437688729305089",
+      "author_id": "1351590878682021891",
+      "author_name": "F-14 Tomcat | She/her | Cyndar System",
+      "timestamp": "2026-06-19T07:55:37.622000+00:00",
+      "content": "Hey, here‘s a silly request\n\nGet a feedback thread in the actual mods forum! :3",
+      "reply_to_id": null,
+      "reactions": [
+        {
+          "emoji": "❤️",
+          "count": 1
+        },
+        {
+          "emoji": "this",
+          "count": 1
+        },
+        {
+          "emoji": "🙏",
+          "count": 1
+        }
+      ],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517437688729305089"
+    },
+    {
+      "id": "1517438734302445709",
+      "author_id": "910821461260898345",
+      "author_name": "crumbs of a fractured meta",
+      "timestamp": "2026-06-19T07:59:46.906000+00:00",
+      "content": "yo <@188237620189462528> where mod dev role\nthis is a mod on the workshop under the name 'Drydock - Fleet Management' afaik",
+      "reply_to_id": "1508914822597709855",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517438734302445709"
+    },
+    {
+      "id": "1517459019990564955",
+      "author_id": "671513584366256170",
+      "author_name": "tenmei",
+      "timestamp": "2026-06-19T09:20:23.391000+00:00",
+      "content": "unless it's broadside",
+      "reply_to_id": "1517401139535155302",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517459019990564955"
+    },
+    {
+      "id": "1517459022742290457",
+      "author_id": "671513584366256170",
+      "author_name": "tenmei",
+      "timestamp": "2026-06-19T09:20:24.047000+00:00",
+      "content": "c:",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1517459022742290457"
+    },
+    {
+      "id": "1526369926947016834",
+      "author_id": "116735132324462599",
+      "author_name": "Davaned",
+      "timestamp": "2026-07-13T23:29:09.166000+00:00",
+      "content": "^ I'm looking into doing more here for the new player shipbuilding experience.\n\nIn the meantime, if folks have additional clearly defined requests to add to the autotag mechanic let me know.\nI'm probably going to add a SAH one for when there is more than 300 points of SAH missiles in the fleet, but it gets kinda complicated with expensive s3h missiles having sah backups.\nI'm aware of requests for more modded fleet support. It's lower on my list but I'll get to it",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1526369926947016834"
+    },
+    {
+      "id": "1526382479366164480",
+      "author_id": "214369622302916608",
+      "author_name": "SecretMink",
+      "timestamp": "2026-07-14T00:19:01.896000+00:00",
+      "content": "Can you check if the missile is SAH backup vs primary? If not just consider the individual costs of the missiles and if its under 10 assume its SAH primary",
+      "reply_to_id": "1526369926947016834",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1508914822597709855/1526382479366164480"
+    }
+  ]
+}

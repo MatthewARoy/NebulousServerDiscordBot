@@ -1,0 +1,115 @@
+# Controlled tag vocabulary for knowledge/entries/.
+# Curation must draw tags from this file; add new tags here (with a
+# description) in the same commit that first uses them.
+
+[[tag]]
+name = "ans"
+description = "Alliance faction-specific advice"
+
+[[tag]]
+name = "osp"
+description = "OSP faction-specific advice"
+
+[[tag]]
+name = "guns"
+description = "Ballistic gun armament"
+
+[[tag]]
+name = "beams"
+description = "Beam weapons (Mk600 cannon, Mk610 turret)"
+
+[[tag]]
+name = "railguns"
+description = "Railguns and mass drivers"
+
+[[tag]]
+name = "missiles"
+description = "Missile armament and container launchers"
+
+[[tag]]
+name = "craft"
+description = "Carried spacecraft and their loadouts"
+
+[[tag]]
+name = "point-defense"
+description = "PD weapons and anti-missile defense"
+
+[[tag]]
+name = "ammunition"
+description = "Ammo type selection (HE, AP, RPF, Grapeshot, ...)"
+
+[[tag]]
+name = "magazines"
+description = "Magazine choice, count, and placement"
+
+[[tag]]
+name = "modules"
+description = "Module slot choices and buff modules"
+
+[[tag]]
+name = "compartments"
+description = "Compartment layout and placement"
+
+[[tag]]
+name = "drives"
+description = "Drive selection"
+
+[[tag]]
+name = "mounts"
+description = "Mount arcs and placement"
+
+[[tag]]
+name = "restores"
+description = "Restore counts"
+
+[[tag]]
+name = "damage-control"
+description = "DC teams, DC compartments, survivability"
+
+[[tag]]
+name = "cic"
+description = "CIC choice and redundancy"
+
+[[tag]]
+name = "radar"
+description = "Radar and sensor fitting"
+
+[[tag]]
+name = "fire-control"
+description = "Fire-control radars and gun plotting"
+
+[[tag]]
+name = "comms"
+description = "Antennas and communications"
+
+[[tag]]
+name = "jamming"
+description = "Offensive/defensive electronic warfare"
+
+[[tag]]
+name = "softkill"
+description = "Chaff, flares, and decoys"
+
+[[tag]]
+name = "power"
+description = "Reactors and power budget"
+
+[[tag]]
+name = "capital-ships"
+description = "Capital-ship fitting"
+
+[[tag]]
+name = "light-ships"
+description = "Frigates, corvettes, and other light hulls"
+
+[[tag]]
+name = "liners"
+description = "OSP Liner hulls"
+
+[[tag]]
+name = "carriers"
+description = "Carrier hulls"
+
+[[tag]]
+name = "battleship"
+description = "Battleship-specific advice"

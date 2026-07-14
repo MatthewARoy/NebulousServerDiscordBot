@@ -1,0 +1,473 @@
+# Curated from "Fleet Select and Fleet Building Experience"
+# (thread 1508914822597709855, raw dump knowledge/raw/1508914822597709855-2026-07-13.json).
+# Open questions from this curation pass: knowledge/QUESTIONS.md.
+
+[[entry]]
+id = "fb-001"
+situation = "Fitting the ANS Mk600 Beam Cannon or Mk610 Beam Turret"
+rule = "Take at least 2 Focused Particle Accelerators with ANS beam weapons"
+reason = "Beams deal many small ticks of damage; FPAs boost each tick above the threshold required to break reinforced components"
+tags = ["beams", "modules", "ans"]
+author = "Davaned"
+source_url = "https://discord.com/channels/409638848302153728/1508914822597709855/1517235772883992737"
+curated = 2026-07-13
+
+[[entry]]
+id = "fb-002"
+situation = "ANS ship fitted with a Rapid-Cycle Cradle"
+rule = "Don't use the Rapid-Cycle Cradle on ANS ships — use Ammunition Elevators to buff guns instead"
+reason = "ANS guns do not benefit from the RCC"
+tags = ["guns", "modules", "ans"]
+author = "Larc"
+source_url = "https://discord.com/channels/409638848302153728/1508914822597709855/1517228692248465539"
+curated = 2026-07-13
+
+[[entry]]
+id = "fb-003"
+situation = "Battleship relying on its built-in antenna"
+rule = "Battleships must mount a secondary antenna (mounts 6/7/10/11 recommended)"
+reason = "The built-in antenna dies incredibly frequently"
+tags = ["battleship", "comms", "mounts"]
+author = "Larc"
+source_url = "https://discord.com/channels/409638848302153728/1508914822597709855/1517228846909489182"
+curated = 2026-07-13
+
+[[entry]]
+id = "fb-004"
+situation = "Magazine or CIC placed in the center stack (compartments 1-4) of a CL"
+rule = "Keep magazines and CICs out of a CL's center stack — relocate critical components to the nose or rear"
+reason = "Most incoming damage to CLs ends up in the center stack; the nose and rear are safer"
+tags = ["compartments", "magazines", "cic"]
+author = "Larc"
+source_url = "https://discord.com/channels/409638848302153728/1508914822597709855/1517236185750044722"
+curated = 2026-07-13
+
+[[entry]]
+id = "fb-005"
+situation = "Ship with large compartments (including ANS carriers)"
+rule = "Fill large compartment slots only with large-compartment-specific equipment"
+reason = "Non-large compartments and magazines do not scale with compartment size and are fragile there"
+tags = ["compartments", "carriers"]
+author = "Larc"
+source_url = "https://discord.com/channels/409638848302153728/1508914822597709855/1517236340356550979"
+curated = 2026-07-13
+
+[[entry]]
+id = "fb-006"
+situation = "Small drive fitted in a big drive slot"
+rule = "Use correctly sized drives for large drive slots"
+reason = "Undersized drives do not scale with the slot and are fragile there, same as undersized compartments"
+tags = ["drives"]
+author = "Larc"
+source_url = "https://discord.com/channels/409638848302153728/1508914822597709855/1517236382114775190"
+curated = 2026-07-13
+
+[[entry]]
+id = "fb-007"
+situation = "Adding compartments to a carrier hull"
+rule = "Don't add repair stations to carrier hulls"
+reason = "Carriers come with a repair station built into the hull"
+tags = ["carriers", "compartments"]
+author = "Larc"
+source_url = "https://discord.com/channels/409638848302153728/1508914822597709855/1517236878506590228"
+curated = 2026-07-13
+
+[[entry]]
+id = "fb-008"
+situation = "Considering the Strobe Correlator"
+rule = "Don't use the Strobe Correlator"
+reason = "This module is currently useless"
+tags = ["modules", "radar"]
+author = "Larc"
+source_url = "https://discord.com/channels/409638848302153728/1508914822597709855/1517237349061361716"
+curated = 2026-07-13
+
+[[entry]]
+id = "fb-009"
+situation = "Considering the Signature Scrambler"
+rule = "Don't use the Signature Scrambler"
+reason = "This module is currently useless"
+tags = ["modules", "jamming"]
+author = "Larc"
+source_url = "https://discord.com/channels/409638848302153728/1508914822597709855/1517237418292412578"
+curated = 2026-07-13
+
+[[entry]]
+id = "fb-010"
+situation = "Stacking ARRs on a radar"
+rule = "Don't mount more than one ARR"
+reason = "The radar is already buffed to the noise floor; further ARRs have no effect"
+tags = ["radar", "modules"]
+author = "Larc"
+source_url = "https://discord.com/channels/409638848302153728/1508914822597709855/1517237553084760115"
+curated = 2026-07-13
+
+[[entry]]
+id = "fb-011"
+situation = "Choosing a drive for a frontline Liner hull"
+rule = "Don't use a power drive on a Liner"
+reason = "It significantly hurts the Liner's ability to maneuver and aim"
+tags = ["drives", "liners", "osp"]
+author = "Larc"
+source_url = "https://discord.com/channels/409638848302153728/1508914822597709855/1517237845805240451"
+curated = 2026-07-13
+
+[[entry]]
+id = "fb-012"
+situation = "Outfitting a CLN's big slots"
+rule = "Use the CLN only for container launchers and bank hangars in its big slots"
+reason = "This backline hull exists to bring what OSP otherwise struggles to field — container missiles and craft en masse. Anything else wastes it; use a hull that fits what you are trying to do"
+tags = ["osp", "compartments", "missiles", "craft"]
+author = "Larc"
+source_url = "https://discord.com/channels/409638848302153728/1508914822597709855/1517238118615351447"
+curated = 2026-07-13
+
+[[entry]]
+id = "fb-013"
+situation = "ANS ship with RPF-eligible guns"
+rule = "Bring RPF"
+reason = "ANS light guns are balanced around access to RPF; without it they are at a significant disadvantage against OSP light ships and cannot perform their dual-purpose role"
+tags = ["ans", "guns", "ammunition"]
+author = "Larc"
+source_url = "https://discord.com/channels/409638848302153728/1508914822597709855/1517238395200340070"
+curated = 2026-07-13
+
+[[entry]]
+id = "fb-014"
+situation = "Ship with 450mm guns and no HE loaded"
+rule = "450 ships must bring 450 HE"
+reason = "450 HE is useful for engaging broadside capitals and Liners as well as anything smaller"
+tags = ["guns", "ammunition"]
+author = "Larc"
+source_url = "https://discord.com/channels/409638848302153728/1508914822597709855/1517238481716383744"
+curated = 2026-07-13
+
+[[entry]]
+id = "fb-015"
+situation = "Ship with 450mm guns and no AP loaded"
+rule = "450 ships must bring 450 AP"
+reason = "450 AP is useful for engaging bow-on capitals and punching through stacks of reinforced components"
+tags = ["guns", "ammunition"]
+author = "Larc"
+source_url = "https://discord.com/channels/409638848302153728/1508914822597709855/1517238534447173675"
+curated = 2026-07-13
+
+[[entry]]
+id = "fb-016"
+situation = "Setting restore counts per hull"
+rule = "Bring at least 3 restores on an Ocello/Axford, 6 on a battleship, 2 on a CL, 6 on a Liner (exceptions for railgun/mass-driver ships)"
+reason = "Restores are necessary to maintain combat power throughout the match"
+tags = ["restores", "capital-ships", "damage-control"]
+author = "Larc"
+source_url = "https://discord.com/channels/409638848302153728/1508914822597709855/1517238946382221423"
+curated = 2026-07-13
+
+[[entry]]
+id = "fb-017"
+situation = "Putting railguns on a battleship"
+rule = "Don't rail a BB — bring a rail CH or rail DDs instead"
+reason = "BBs have a significant hull debuff to rails"
+tags = ["railguns", "battleship"]
+author = "LimeAxolotl"
+source_url = "https://discord.com/channels/409638848302153728/1508914822597709855/1517239128595497040"
+curated = 2026-07-13
+
+[[entry]]
+id = "fb-018"
+situation = "Guns in backpack mounts on ANS hulls"
+rule = "Avoid guns in ANS backpack mounts"
+reason = "Firing them requires broadsiding, which makes you an easier target than bowtanking while reducing the effect of armor angling"
+tags = ["mounts", "guns", "ans"]
+author = "LimeAxolotl"
+source_url = "https://discord.com/channels/409638848302153728/1508914822597709855/1517239443390468216"
+curated = 2026-07-13
+
+[[entry]]
+id = "fb-019"
+situation = "Ship without chaff"
+rule = "Put chaff on every ship"
+reason = "Ships rely on chaff for defense against cruise missiles"
+tags = ["softkill", "point-defense"]
+author = "Larc"
+source_url = "https://discord.com/channels/409638848302153728/1508914822597709855/1517239777387348199"
+curated = 2026-07-13
+
+[[entry]]
+id = "fb-020"
+situation = "Deciding whether to fit flares"
+rule = "Don't carry flares on a ship without a comms jammer"
+reason = "Flares only decoy CMD/WAKE guidance and have no effect on validators, so they only pay off when your comms jammer forces missiles off command guidance"
+tags = ["softkill", "jamming"]
+author = "Larc"
+source_url = "https://discord.com/channels/409638848302153728/1508914822597709855/1517241470678073539"
+curated = 2026-07-13
+
+[[entry]]
+id = "fb-021"
+situation = "OSP ship with 250mm guns and no Bombshell"
+rule = "Bring Bombshell"
+reason = "OSP needs Bombshell to fire on craft, missiles, and groups of light ships under jamming"
+tags = ["osp", "guns", "ammunition"]
+author = "Larc"
+source_url = "https://discord.com/channels/409638848302153728/1508914822597709855/1517246411136307310"
+curated = 2026-07-13
+
+[[entry]]
+id = "fb-022"
+situation = "OSP ship with Grapeshot-eligible guns"
+rule = "Bring Grapeshot"
+reason = "OSP light guns are balanced around access to Grapeshot; without it they are at a significant disadvantage against ANS light ships and cannot perform their dual-purpose role"
+tags = ["osp", "guns", "ammunition"]
+author = "Larc"
+source_url = "https://discord.com/channels/409638848302153728/1508914822597709855/1517246825008988371"
+curated = 2026-07-13
+
+[[entry]]
+id = "fb-023"
+situation = "Ship carrying both plasma and 100mm weapons"
+rule = "Load 100mm HE-HC"
+reason = "100mm HE-HC cannot pen ANS armor on its own, but once plasma has stripped the armor it delivers massive damage"
+tags = ["osp", "guns", "ammunition"]
+author = "Larc"
+source_url = "https://discord.com/channels/409638848302153728/1508914822597709855/1517247478569893988"
+curated = 2026-07-13
+
+[[entry]]
+id = "fb-024"
+situation = "Fitting a Supplementary Radio Amplifier"
+rule = "Only use the SRA on ships with a CR70/CR75 antenna"
+reason = "The SRA lets a ship's command missiles punch deeper into defensive comms jamming, making them harder to softkill"
+tags = ["comms", "missiles", "modules"]
+author = "Larc"
+source_url = "https://discord.com/channels/409638848302153728/1508914822597709855/1517248326964346920"
+curated = 2026-07-13
+
+[[entry]]
+id = "fb-025"
+situation = "Small Reactor Booster placed in a 3x3x3 slot"
+rule = "Use an FR3300 Micro Reactor (ANS and CC) or Light Civilian Reactor (OSP) instead"
+reason = "They provide more power for the same point cost; the Small Reactor Booster only belongs in small module slots"
+tags = ["power", "modules"]
+author = "TrainTrack"
+source_url = "https://discord.com/channels/409638848302153728/1508914822597709855/1517259023546585199"
+curated = 2026-07-13
+
+[[entry]]
+id = "fb-026"
+situation = "Mount Gyros on a hull that is not the Solomon and lacks the Mk610 Beam Turret"
+rule = "Don't use Mount Gyros except to buff a turreted beam"
+reason = "Turn rate is negligible for every weapon except the turreted beam; a weapon-buff module serves better. The BB can afford Mount Gyros thanks to its abundant module slots"
+tags = ["modules", "beams", "battleship"]
+author = "TrainTrack"
+source_url = "https://discord.com/channels/409638848302153728/1508914822597709855/1517261887367155743"
+curated = 2026-07-13
+
+[[entry]]
+id = "fb-027"
+situation = "Damage Control Central or Small Workshop with fewer than 7 DC and rapid teams"
+rule = "Don't take DC buff compartments without the teams to back them"
+reason = "As buff compartments they do nothing on their own and only become worth using with enough teams"
+tags = ["damage-control", "compartments"]
+author = "Larc"
+source_url = "https://discord.com/channels/409638848302153728/1508914822597709855/1517250160533442641"
+curated = 2026-07-13
+
+[[entry]]
+id = "fb-028"
+situation = "Capital ship without Reinforced Damage Control or DCX"
+rule = "Capitals require RDC/DCX"
+reason = "Capitals need them to survive and recover from strikes"
+tags = ["damage-control", "capital-ships"]
+author = "Larc"
+source_url = "https://discord.com/channels/409638848302153728/1508914822597709855/1517251201241055304"
+curated = 2026-07-13
+
+[[entry]]
+id = "fb-029"
+situation = "Light ships fitted with reinforced CIC or reinforced damage control"
+rule = "Don't use reinforced DC or CICs on light ships"
+reason = "These hulls lack the damage reduction to keep reinforced components alive under light gunfire or missile strikes"
+tags = ["damage-control", "cic", "light-ships"]
+author = "Larc"
+source_url = "https://discord.com/channels/409638848302153728/1508914822597709855/1517251822920794202"
+curated = 2026-07-13
+
+[[entry]]
+id = "fb-030"
+situation = "Fitting out a Sprinter"
+rule = "Sprinters should have Aux Steering"
+reason = "Aux Steering lets Sprinters survive under fire to capture points, albeit without offensive capability"
+tags = ["light-ships", "modules"]
+author = "Larc"
+source_url = "https://discord.com/channels/409638848302153728/1508914822597709855/1517252349243166912"
+curated = 2026-07-13
+
+[[entry]]
+id = "fb-031"
+situation = "Keystone with Aux Steering and only a single CIC"
+rule = "Prefer a second CIC over Aux Steering on a Keystone"
+reason = "The Keystone benefits more from staying combat-capable with a second CIC than from becoming a capper"
+tags = ["modules", "cic"]
+author = "Larc"
+source_url = "https://discord.com/channels/409638848302153728/1508914822597709855/1517252776386760724"
+curated = 2026-07-13
+
+[[entry]]
+id = "fb-032"
+situation = "Considering reinforced drives on a capital"
+rule = "Skip reinforced drives"
+reason = "Their only benefit is requiring large-caliber HE to kill; the ship benefits more from not being hit in the first place"
+tags = ["drives", "capital-ships"]
+author = "Larc"
+source_url = "https://discord.com/channels/409638848302153728/1508914822597709855/1517253354663841932"
+curated = 2026-07-13
+
+[[entry]]
+id = "fb-033"
+situation = "Capital ships (Raider, Yard/7700) without an acceleration drive"
+rule = "Capitals require an acceleration drive"
+reason = "These ships accelerate slowly and struggle to reach top speed, change directions, or dodge fire without one"
+tags = ["drives", "capital-ships"]
+author = "Larc"
+source_url = "https://discord.com/channels/409638848302153728/1508914822597709855/1517253736458621010"
+curated = 2026-07-13
+
+[[entry]]
+id = "fb-034"
+situation = "Adding CIC redundancy"
+rule = "Don't use more than 2 CICs"
+reason = "CIC costs compound after the second one"
+tags = ["cic"]
+author = "Larc"
+source_url = "https://discord.com/channels/409638848302153728/1508914822597709855/1517255911649972406"
+curated = 2026-07-13
+
+[[entry]]
+id = "fb-035"
+situation = "Adding magazine redundancy"
+rule = "Don't use more than 2 magazines"
+reason = "Magazine costs compound after the second one, and the cheapest magazine is free"
+tags = ["magazines"]
+author = "Larc"
+source_url = "https://discord.com/channels/409638848302153728/1508914822597709855/1517256115862110450"
+curated = 2026-07-13
+
+[[entry]]
+id = "fb-036"
+situation = "Liner with a single magazine"
+rule = "Use 2 magazines in Liners (exception for the mass-driver Liner)"
+reason = "Liners have no safe spots for compartments and need redundancy to keep functioning in combat"
+tags = ["magazines", "liners", "osp"]
+author = "Larc"
+source_url = "https://discord.com/channels/409638848302153728/1508914822597709855/1517256431961772182"
+curated = 2026-07-13
+
+[[entry]]
+id = "fb-037"
+situation = "Considering the Grazer for point defense"
+rule = "Don't bring the Grazer"
+reason = "Its long reload means it downs about one (hybrid) missile per salvo — effectively a reusable AMM at around 10x the cost you will never amortize. (Community-noted exception: a single Grazer paired with Auroras as an electro-optical fire-control assist)"
+tags = ["point-defense"]
+author = "TrainTrack"
+source_url = "https://discord.com/channels/409638848302153728/1508914822597709855/1517256511741628488"
+curated = 2026-07-13
+
+[[entry]]
+id = "fb-038"
+situation = "Ship with spare compartment space and no magazine"
+rule = "Add a reinforced magazine even if you don't need the ammo storage"
+reason = "The first magazine is free — reinforced mags are free HP and damage-threshold split"
+tags = ["magazines", "compartments"]
+author = "Davaned"
+source_url = "https://discord.com/channels/409638848302153728/1508914822597709855/1517268607459922162"
+curated = 2026-07-13
+
+[[entry]]
+id = "fb-039"
+situation = "Single bulk magazine whose ammo would fit in a reinforced mag, or a reinforced mag that would fit a citadel mag in an 8x3x8 slot"
+rule = "Upgrade to the highest-durability magazine that still holds your ammo"
+reason = "The first magazine is free, so the extra health and damage threshold cost no points"
+tags = ["magazines"]
+author = "TrainTrack"
+source_url = "https://discord.com/channels/409638848302153728/1508914822597709855/1517257268150665419"
+curated = 2026-07-13
+
+[[entry]]
+id = "fb-040"
+situation = "Ship with Mk65/Mk66/Mk68/C65 guns"
+rule = "Fit exactly one Gun Plotting Center"
+reason = "These guns require a GPC to hit targets at range, especially small ones; ships do not benefit in practice from more than one, and especially not more than two"
+tags = ["fire-control", "guns"]
+author = "Larc"
+source_url = "https://discord.com/channels/409638848302153728/1508914822597709855/1517257677695221810"
+curated = 2026-07-13
+
+[[entry]]
+id = "fb-041"
+situation = "Considering Reinforced Thruster Nozzles"
+rule = "Don't use the Reinforced Thruster Nozzles"
+reason = "This module is currently useless"
+tags = ["modules", "drives"]
+author = "Larc"
+source_url = "https://discord.com/channels/409638848302153728/1508914822597709855/1517258955200659557"
+curated = 2026-07-13
+
+[[entry]]
+id = "fb-042"
+situation = "Beam Keystone or beam battleship"
+rule = "Bring a Bullseye FCR"
+reason = "Beams must hit the same spot long enough to drill through armor; only a lock provides low enough track error for that"
+tags = ["fire-control", "beams", "battleship"]
+author = "Larc"
+source_url = "https://discord.com/channels/409638848302153728/1508914822597709855/1517259824235151562"
+curated = 2026-07-13
+
+[[entry]]
+id = "fb-043"
+situation = "Considering the Citadel CIC"
+rule = "Don't use the Citadel CIC"
+reason = "It is very cost-inefficient; two Reinforced CICs give similar survivability at a cheaper price point"
+tags = ["cic"]
+author = "tenmei"
+source_url = "https://discord.com/channels/409638848302153728/1508914822597709855/1517259889980870816"
+curated = 2026-07-13
+
+[[entry]]
+id = "fb-044"
+situation = "Fire Suppression System on a hull that is not a BB"
+rule = "Don't use the FSS except on a battleship"
+reason = "Frontline ships gain more from weapon-buff modules (Ammunition Elevators, Rapid-Cycle Cradle, Energy Regulators); the FSS mainly counters rails. The BB is the exception because it can fit 6 Ammunition Elevators and still have module slots to spare"
+tags = ["modules", "battleship", "damage-control"]
+author = "TrainTrack"
+source_url = "https://discord.com/channels/409638848302153728/1508914822597709855/1517260276511146245"
+curated = 2026-07-13
+
+[[entry]]
+id = "fb-045"
+situation = "Weapon-buff modules for multiple weapon classes on a hull smaller than a CH"
+rule = "Specialize each ship"
+reason = "Ships that try to do multiple things at once are typically bad at all of them"
+tags = ["modules"]
+author = "tenmei"
+source_url = "https://discord.com/channels/409638848302153728/1508914822597709855/1517262532937781439"
+curated = 2026-07-13
+
+[[entry]]
+id = "fb-046"
+situation = "Rocket shuttle loadout"
+rule = "Use both mounts for RL-18s on rocket shuttles"
+reason = "The combined rate of fire from both mounts is required to pen a defender"
+tags = ["craft", "missiles", "osp"]
+author = "Larc"
+source_url = "https://discord.com/channels/409638848302153728/1508914822597709855/1517361748636860547"
+curated = 2026-07-13
+
+[[entry]]
+id = "fb-047"
+situation = "Turreted weapons in the BB shoulder mounts"
+rule = "Don't put turreted weapons in the BB shoulder mounts"
+reason = "Those mounts have bad arcs, making them poor spots for PD, Blankets, Mk61s, or Mk62s"
+tags = ["mounts", "battleship", "point-defense"]
+author = "TrainTrack"
+source_url = "https://discord.com/channels/409638848302153728/1508914822597709855/1517401139535155302"
+curated = 2026-07-13
