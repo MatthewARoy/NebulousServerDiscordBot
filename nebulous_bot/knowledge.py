@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 KNOWLEDGE_DIR = Path(__file__).resolve().parent.parent / 'knowledge'
 ENTRIES_DIR = KNOWLEDGE_DIR / 'entries'
 TAGS_FILE = KNOWLEDGE_DIR / 'tags.toml'
+QUESTIONS_FILE = KNOWLEDGE_DIR / 'QUESTIONS.md'
 
 # Search scoring weights: an exact tag match is the strongest signal,
 # a word in the rule text is next, words in situation/reason weakest.
@@ -65,6 +66,38 @@ def load_tags(tags_file=None):
         logger.error("Could not read tag vocabulary %s: %s", tags_file, e)
         return {}
     return {t['name']: t.get('description', '') for t in data.get('tag', [])}
+
+
+def load_questions(questions_file=None):
+    """Parse the QUESTIONS.md checklist into structured items.
+
+    Returns dicts with `title` (the bold lead-in), `text` (the whole item
+    as plain text), `entry_ids` (every entry id mentioned), `links`
+    (Discord URLs), and `resolved` (checkbox state). QUESTIONS.md stays
+    the single source of truth; exports derive their flags from here.
+    """
+    path = Path(questions_file) if questions_file else QUESTIONS_FILE
+    try:
+        text = path.read_text(encoding='utf-8')
+    except OSError as e:
+        logger.error("Could not read questions file %s: %s", path, e)
+        return []
+    items = []
+    boxes = list(re.finditer(r'^- \[(.)\] ', text, re.MULTILINE))
+    for i, box in enumerate(boxes):
+        end = boxes[i + 1].start() if i + 1 < len(boxes) else len(text)
+        body = text[box.end():end].split('\n#')[0].strip()
+        title_match = re.match(r'\*\*(.+?)\*\*', body, re.DOTALL)
+        plain = re.sub(r'\[([^\]]*)\]\([^)]*\)', r'\1', body)
+        plain = re.sub(r'\s+', ' ', plain.replace('**', '').replace('`', '')).strip()
+        items.append({
+            'title': ' '.join(title_match.group(1).split()) if title_match else '',
+            'text': plain,
+            'entry_ids': sorted(set(re.findall(r'\b[a-z]{2,3}-\d{3}\b', body))),
+            'links': re.findall(r'\((https://discord\.com/[^)]+)\)', body),
+            'resolved': box.group(1).lower() == 'x',
+        })
+    return items
 
 
 def score_entry(query_tokens, entry):

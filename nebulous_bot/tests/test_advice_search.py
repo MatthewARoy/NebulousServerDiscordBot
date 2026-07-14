@@ -77,6 +77,39 @@ def test_load_entries_missing_dir_is_empty(tmp_path):
     assert knowledge.load_entries(tmp_path / 'nope') == []
 
 
+def test_load_questions_parses_checklist(tmp_path):
+    qfile = tmp_path / 'QUESTIONS.md'
+    qfile.write_text(
+        '# Open curation questions\n\n'
+        'Preamble text.\n\n'
+        '## Section\n\n'
+        '- [ ] **ARR threshold** — fb-010 says one thing, the\n'
+        '  [source](https://discord.com/channels/1/2/3) another. Also fb-011.\n'
+        '- [x] **Resolved item** — `code` was fixed.\n',
+        encoding='utf-8')
+    items = knowledge.load_questions(qfile)
+    assert len(items) == 2
+    first, second = items
+    assert first['title'] == 'ARR threshold'
+    assert first['entry_ids'] == ['fb-010', 'fb-011']
+    assert first['links'] == ['https://discord.com/channels/1/2/3']
+    assert 'source' in first['text'] and '[' not in first['text']
+    assert not first['resolved']
+    assert second['resolved']
+    assert 'code was fixed' in second['text']
+
+
+def test_load_questions_missing_file_is_empty(tmp_path):
+    assert knowledge.load_questions(tmp_path / 'nope.md') == []
+
+
+def test_real_questions_reference_real_entries():
+    ids = {e['id'] for e in knowledge.load_entries()}
+    for q in knowledge.load_questions():
+        unknown = set(q['entry_ids']) - ids
+        assert not unknown, f"QUESTIONS.md references unknown entries: {sorted(unknown)}"
+
+
 def test_load_entries_skips_bad_file_keeps_good(tmp_path):
     (tmp_path / 'good.toml').write_text(
         '[[entry]]\nid = "g-001"\nrule = "works"\n', encoding='utf-8')
