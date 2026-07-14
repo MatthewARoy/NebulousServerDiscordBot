@@ -21,6 +21,7 @@ from nebulous_bot.cogs.stats import StatsCog
 from nebulous_bot.cogs.servers import ServersCog
 from nebulous_bot.cogs.admin import AdminCog
 from nebulous_bot.cogs.nextgame import NextGameCog
+from nebulous_bot.cogs.advice import AdviceCog
 
 # DELIBERATELY EAGER: cogs.formation imports formation_optimizer (numpy +
 # matplotlib, ~100+ MiB RSS) at module scope, so importing it HERE — at
@@ -229,6 +230,7 @@ class Command(BaseCommand):
                 await bot.add_cog(AdminCog(bot))
                 await bot.add_cog(FormationCog(bot))
                 await bot.add_cog(NextGameCog(bot))
+                await bot.add_cog(AdviceCog(bot))
 
                 await bot.start(Config.DISCORD_TOKEN)
             except KeyboardInterrupt:
