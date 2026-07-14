@@ -96,8 +96,16 @@ class Config:
     EMBED_COLOR_NO_SERVERS = 0xff0000  # Red
     
     # Version Information
-    VERSION = "2.5.0"
+    VERSION = "2.6.0"
     CHANGELOG = [
+        {
+            "version": "2.6.0",
+            "date": "2026-07-13",
+            "changes": [
+                "New !advice command — search curated fleet-building tips from the community (try !advice point defense)",
+                "!advice tags lists the searchable topics; every tip credits its author with a link to the original message"
+            ]
+        },
         {
             "version": "2.5.0",
             "date": "2026-07-07",

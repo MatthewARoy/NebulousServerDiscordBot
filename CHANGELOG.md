@@ -4,6 +4,27 @@ The bot reads its own changelog from `nebulous_bot/config.py` (`Config.CHANGELOG
 to power the in-Discord `!version` command, so that file is the source of truth
 for current and recent releases. This document mirrors it for readers on GitHub.
 
+## 2.6.0 — 2026-07-13
+
+- New `!advice` command — search curated fleet-building tips from the
+  community (try `!advice point defense`).
+- `!advice tags` lists the searchable topics; every tip credits its author
+  with a link to the original message.
+
+(Maintainer notes: first release of the community knowledge base —
+`knowledge/entries/*.toml` is the canonical curated corpus (47 entries from
+the fleet-building tips thread), loaded at boot by `cogs/advice.py` via the
+pure-stdlib `nebulous_bot/knowledge.py`. Pipeline: `scripts/export_thread.py`
+dumps any channel/thread over REST, the `curate-advice` skill structures it,
+`scripts/export_knowledge.py` generates `advice.json` (for the in-game
+shipbuilding mod) and wiki-ready Markdown. Schema is CI-enforced by
+`test_knowledge_entries.py`; open curation questions live in
+`knowledge/QUESTIONS.md`. Design spec:
+`docs/superpowers/specs/2026-07-13-community-knowledge-base-design.md`.
+Deploy note: verified `knowledge/` ships automatically — the deploy rsync
+copies everything not explicitly excluded and the Dockerfile does
+`COPY . .`.)
+
 ## 2.5.0 — 2026-07-07
 
 - Internal restructuring for reliability — no visible changes; all commands
