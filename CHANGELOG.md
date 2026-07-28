@@ -4,6 +4,19 @@ The bot reads its own changelog from `nebulous_bot/config.py` (`Config.CHANGELOG
 to power the in-Discord `!version` command, so that file is the source of truth
 for current and recent releases. This document mirrors it for readers on GitHub.
 
+## 2.6.1 — 2026-07-28
+
+- Fixed `!serverstats` showing wrong per-server numbers — game counts,
+  player-hours, and last-game times now cover each server's full history.
+- Servers no longer appear more than once in the `!serverstats` list.
+
+(Maintainer notes: `GameSession` rows were grouped by `(server_id,
+server_name)`, but `server_id` is the per-process Steam session steamid —
+every server restart opened a fresh bucket, scattering ~20k recorded games
+across thousands of stale rows. Now grouped by `server_name` only, with the
+per-server player-hours N+1 loop folded into a
+`Sum(players_at_start * duration_seconds)` annotation on the same query.)
+
 ## 2.6.0 — 2026-07-13
 
 - New `!advice` command — search curated fleet-building tips from the

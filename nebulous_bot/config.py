@@ -96,8 +96,16 @@ class Config:
     EMBED_COLOR_NO_SERVERS = 0xff0000  # Red
     
     # Version Information
-    VERSION = "2.6.0"
+    VERSION = "2.6.1"
     CHANGELOG = [
+        {
+            "version": "2.6.1",
+            "date": "2026-07-28",
+            "changes": [
+                "Fixed !serverstats showing wrong per-server numbers — game counts, player-hours, and last-game times now cover each server's full history",
+                "Servers no longer appear more than once in the !serverstats list"
+            ]
+        },
         {
             "version": "2.6.0",
             "date": "2026-07-13",
