@@ -223,12 +223,14 @@ if [[ "$BUILD_ON_VM" =~ ^[Yy]$ ]]; then
     rsync -avz --exclude '__pycache__' \
                --exclude '*.pyc' \
                --exclude '.git' \
+               --exclude '/.claude/worktrees' \
                --exclude '.venv' \
                --exclude 'venv' \
                --exclude 'db.sqlite3' \
                --exclude 'db.*.sqlite3' \
                --exclude 'staging' \
                --exclude '*.log' \
+               --exclude '*.log.*' \
                --exclude 'node_modules' \
                --exclude '.env' \
                --exclude 'ORACLE_CONNECT.md' \

@@ -57,6 +57,9 @@ Thumbs.db
 .git/
 .gitignore
 
+# Claude Code
+.claude/
+
 # Documentation
 README.md
 docs/
