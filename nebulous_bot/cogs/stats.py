@@ -274,25 +274,23 @@ class StatsCog(commands.Cog, name='Statistics'):
             return
 
         from nebulous_bot.models import GameSession
-        from django.db.models import Count, Avg, Max
+        from django.db.models import Count, Avg, Max, Sum, F
         from asgiref.sync import sync_to_async
 
         @sync_to_async
         def get_server_stats():
-            stats = list(GameSession.objects.filter(is_valid_game=True).values('server_id', 'server_name').annotate(
+            # Group by server_name, not server_id: server_id is the Steam
+            # session steamid, which changes on every server-process restart
+            # and fragments one server's history across many rows.
+            stats = list(GameSession.objects.filter(is_valid_game=True).values('server_name').annotate(
                 total_games=Count('id'),
                 avg_players=Avg('players_at_start'),
-                last_game=Max('game_start')
+                last_game=Max('game_start'),
+                player_seconds=Sum(F('players_at_start') * F('duration_seconds'))
             ).order_by('-total_games')[:limit])
 
-            # Calculate player-hours for each server
             for stat in stats:
-                games = GameSession.objects.filter(
-                    server_id=stat['server_id'],
-                    is_valid_game=True,
-                    duration_seconds__isnull=False
-                )
-                stat['player_hours'] = sum(g.players_at_start * g.duration_seconds / 3600 for g in games)
+                stat['player_hours'] = (stat['player_seconds'] or 0) / 3600
 
             return stats
 
