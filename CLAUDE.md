@@ -45,10 +45,21 @@ SSH config not in the repo.
 ## Architecture
 
 `python manage.py runbot` is the only production entry point
-(`nebulous_bot/management/commands/runbot.py`, ~1,900 lines). It defines
-**every Discord command inline inside `Command.handle()`** as closures over
-`server_monitor` / `formatter` nonlocals — there are no cogs. To find a
-command, grep runbot.py for `@bot.command(name='...')`.
+(`nebulous_bot/management/commands/runbot.py`, ~250 lines since the 2.5.0
+cog split — maintainer notes in CHANGELOG.md 2.5.0). It builds the bot,
+defines the gateway event handlers (`on_ready`, `on_guild_join`,
+`on_command_error`), and registers the cogs (`bot.add_cog` in `run_bot()`,
+before connecting to the gateway). **Commands live in seven cogs** under
+`nebulous_bot/cogs/`: setup, stats, servers, admin, formation, nextgame,
+plus advice (added 2.6.0). To find a command, grep `nebulous_bot/cogs/`
+for `@commands.command(name='...')`.
+
+Cogs read the shared runtime objects off the bot instance —
+`bot.server_monitor`, `bot.formatter`, `bot.deployment_time`. runbot
+initializes these to `None` and `on_ready` fills them in, so cog commands
+keep their None-guards ("monitoring not initialized yet"). The eager
+`formation_optimizer` import (see Hard constraints) survives the split via
+a module-scope import of `cogs.formation` in runbot.py.
 
 The runtime core is `ServerMonitor` (`server_monitor.py`), an asyncio loop
 that every 30 s (`Config.UPDATE_INTERVAL`):
@@ -87,7 +98,7 @@ Cross-cutting details that take multi-file reading to discover:
   servers) and `cached_all_servers` (everything, for `!listservers all` and
   PTB detection).
 - **Django ORM is sync; the bot is async.** Every DB touch from async code
-  goes through `sync_to_async` (see any command in runbot.py) or
+  goes through `sync_to_async` (see any cog command) or
   `run_in_executor`. Never call the ORM directly from the event loop.
 - `formation_optimizer/` is a standalone, Django-free library used by
   `!formation` (fleet XML in → compacted fleet + optional GIF out).
@@ -95,8 +106,8 @@ Cross-cutting details that take multi-file reading to discover:
 
 ## Hard constraints and conventions
 
-- **Heavy imports are EAGER on purpose**: runbot imports
-  `formation_optimizer` (→ numpy + matplotlib, ~100+ MiB RSS) at module
+- **Heavy imports are EAGER on purpose**: runbot imports `cogs.formation`
+  (→ `formation_optimizer` → numpy + matplotlib, ~100+ MiB RSS) at module
   scope so the cost lands at boot, before the event loop exists. Lazy-loading
   it to save memory was tried in 2.3.4 and caused a production incident: the
   deferred import runs for minutes on the 1/8-OCPU VM while holding the GIL,
