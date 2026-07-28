@@ -26,6 +26,7 @@ wheels/
 
 # Django
 *.log
+*.log.*
 db.sqlite3
 db.sqlite3-journal
 staticfiles/
@@ -50,6 +51,9 @@ Thumbs.db
 # Git
 .git/
 .gitignore
+
+# Claude Code
+.claude/
 
 # Documentation
 README.md
