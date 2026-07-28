@@ -25,7 +25,13 @@ wheels/
 *.egg
 
 # Django
-*.log
+# .dockerignore patterns are root-relative: plain *.log does not match files
+# in subdirectories, and *.log misses rotated logs (nebulous_bot.log.1).
+# logs/ is the runtime log dir docker-compose mounts on the VM — it must
+# never enter the build context.
+**/*.log
+**/*.log.*
+logs/
 db.sqlite3
 db.sqlite3-journal
 staticfiles/
