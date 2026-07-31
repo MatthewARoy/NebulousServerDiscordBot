@@ -1,7 +1,16 @@
 from django.contrib import admin
 from .models import (
-    BotStatus, GameSession, PlayerSnapshot
+    AdviceProposal, BotStatus, GameSession, PlayerSnapshot
 )
+
+
+@admin.register(AdviceProposal)
+class AdviceProposalAdmin(admin.ModelAdmin):
+    list_display = ('id', 'kind', 'status', 'advice_text', 'target_entry_id',
+                    'author_name', 'up_votes', 'down_votes', 'created_at')
+    list_filter = ('kind', 'status')
+    search_fields = ('advice_text', 'target_entry_id', 'author_name')
+    readonly_fields = ('created_at',)
 
 
 @admin.register(BotStatus)

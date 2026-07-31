@@ -4,6 +4,28 @@ The bot reads its own changelog from `nebulous_bot/config.py` (`Config.CHANGELOG
 to power the in-Discord `!version` command, so that file is the source of truth
 for current and recent releases. This document mirrors it for readers on GitHub.
 
+## 2.7.0 — 2026-07-30
+
+- `!advice add <tip>` — propose new advice; 5+ 👍 from the community adds it
+  to the knowledge pool, 5+ 👎 marks it incorrect.
+- `!advice remove <id>` — vote out advice that turns out to be wrong
+  (5+ 👍 removes it).
+- `!advice list` — audit the whole knowledge pool by category, including the
+  incorrect pool; `!advice pending` shows open votes.
+
+(Maintainer notes: community submissions live in the new `AdviceProposal`
+table (migration 0010) — the curated TOML corpus is baked into the Docker
+image, so anything added from Discord must live in the DB to survive a
+redeploy. Approved add-rows ARE the community entries (`ca-<pk>`), merged
+into the search corpus at runtime; approved remove-rows tombstone curated
+entries out of search without touching git. Ballots resolve in
+`on_raw_reaction_add` — threshold AND strict majority, ties stay open —
+with an `on_ready` re-tally covering votes cast while the bot was down.
+Vote-resolution logic is pure (`knowledge.resolve_votes`/`count_votes`),
+tested DB-free in `test_advice_votes.py`. Threshold is
+`ADVICE_VOTE_THRESHOLD` (env-overridable, default 5). Design spec:
+`docs/superpowers/specs/2026-07-30-advice-community-voting.md`.)
+
 ## 2.6.1 — 2026-07-28
 
 - Fixed `!serverstats` showing wrong per-server numbers — game counts,

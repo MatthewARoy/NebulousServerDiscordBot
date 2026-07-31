@@ -94,10 +94,23 @@ class Config:
     # Embed Configuration
     EMBED_COLOR = 0x00ff00  # Green
     EMBED_COLOR_NO_SERVERS = 0xff0000  # Red
-    
+
+    # Community advice voting (!advice add / !advice remove): votes needed
+    # to decide a ballot (env-overridable so a small test server can use 1).
+    ADVICE_VOTE_THRESHOLD = int(os.getenv('ADVICE_VOTE_THRESHOLD', 5))
+
     # Version Information
-    VERSION = "2.6.1"
+    VERSION = "2.7.0"
     CHANGELOG = [
+        {
+            "version": "2.7.0",
+            "date": "2026-07-30",
+            "changes": [
+                "!advice add <tip> — propose new advice; 5+ 👍 from the community adds it to the knowledge pool, 5+ 👎 marks it incorrect",
+                "!advice remove <id> — vote out advice that turns out to be wrong (5+ 👍 removes it)",
+                "!advice list — audit the whole knowledge pool by category, including the incorrect pool; !advice pending shows open votes"
+            ]
+        },
         {
             "version": "2.6.1",
             "date": "2026-07-28",

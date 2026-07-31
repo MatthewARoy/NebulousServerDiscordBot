@@ -24,7 +24,14 @@ TAG_WEIGHT = 3
 RULE_WEIGHT = 2
 BODY_WEIGHT = 1
 
+# Community-vote plumbing shared by the advice cog and the pure-logic tests.
+COMMUNITY_CATEGORY = 'community'
+COMMUNITY_ID_PREFIX = 'ca'
+UP_EMOJI = '\N{THUMBS UP SIGN}'
+DOWN_EMOJI = '\N{THUMBS DOWN SIGN}'
+
 _WORD_RE = re.compile(r'[a-z0-9]+')
+_ENTRY_ID_RE = re.compile(r'^([a-z]{2,3})-0*(\d+)$')
 
 
 def tokenize(text):
@@ -130,3 +137,64 @@ def search(entries, query, limit=3):
             scored.append((s, entry))
     scored.sort(key=lambda pair: (-pair[0], pair[1].get('id', '')))
     return [entry for _score, entry in scored[:limit]]
+
+
+def count_votes(reactions):
+    """Tally (up, down) from reaction summaries.
+
+    `reactions` is an iterable of `(emoji, count, includes_bot)` tuples —
+    the bot seeds one 👍 and one 👎 on every ballot so voters can one-click,
+    and those seeds must not count.
+    """
+    up = down = 0
+    for emoji, count, includes_bot in reactions:
+        if emoji == UP_EMOJI:
+            up = max(0, count - (1 if includes_bot else 0))
+        elif emoji == DOWN_EMOJI:
+            down = max(0, count - (1 if includes_bot else 0))
+    return up, down
+
+
+def resolve_votes(up, down, threshold=5):
+    """Decide a pending ballot: 'approved', 'rejected', or None (still open).
+
+    Either verdict needs `threshold` votes AND a strict majority, so a tie
+    stays open no matter how large it grows.
+    """
+    if down >= threshold and down > up:
+        return 'rejected'
+    if up >= threshold and up > down:
+        return 'approved'
+    return None
+
+
+def community_entry_id(pk):
+    """Stable public id for a community-approved entry ("ca-007")."""
+    return f'{COMMUNITY_ID_PREFIX}-{pk:03d}'
+
+
+def normalize_entry_id(raw):
+    """Canonicalize a user-typed entry id ("FB-3" -> "fb-003"), or None."""
+    m = _ENTRY_ID_RE.match(raw.strip().lower())
+    if not m:
+        return None
+    return f'{m.group(1)}-{int(m.group(2)):03d}'
+
+
+def community_entry(pk, rule, author, source_url=''):
+    """Shape a community-approved submission like a curated TOML entry."""
+    return {
+        'id': community_entry_id(pk),
+        'rule': rule,
+        'author': author,
+        'source_url': source_url,
+        'tags': [],
+        'category': COMMUNITY_CATEGORY,
+    }
+
+
+def active_entries(curated, community, removed_ids):
+    """The searchable corpus: curated + community, minus voted-out ids."""
+    entries = [e for e in curated if e.get('id') not in removed_ids]
+    entries.extend(e for e in community if e.get('id') not in removed_ids)
+    return entries

@@ -3,6 +3,14 @@
 Curated advice from the Nebulous: Fleet Command community Discord.
 Design: `docs/superpowers/specs/2026-07-13-community-knowledge-base-design.md`.
 
+This directory is only the **curated** corpus. Since v2.7.0 players can also
+propose advice from Discord (`!advice add`/`!advice remove`, decided by 👍/👎
+vote); those entries (`ca-*`) live in the bot's DB, not here — see
+`docs/superpowers/specs/2026-07-30-advice-community-voting.md`. A community
+entry that proves out can be promoted into `entries/` via the normal curation
+flow (a vote to remove a curated entry tombstones it in the DB without
+touching these files).
+
 - `raw/` — raw thread dumps from `scripts/export_thread.py` (committed provenance)
 - `entries/` — **canonical** curated entries, one TOML file per category
 - `tags.toml` — controlled tag vocabulary (validated by tests)

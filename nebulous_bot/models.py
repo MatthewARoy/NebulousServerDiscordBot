@@ -26,6 +26,63 @@ class GuildConfig(models.Model):
         return f"GuildConfig(guild_id={self.guild_id}, status_channel={self.status_channel_id})"
 
 
+class AdviceProposal(models.Model):
+    """
+    A community-proposed change to the advice knowledge base, decided by
+    👍/👎 voting on a bot-posted ballot embed (see cogs/advice.py).
+
+    kind='add': `advice_text` is the proposal. Approved rows ARE the
+    community entries served by !advice (public id "ca-<pk>", see
+    knowledge.community_entry_id). Rejected rows form the "incorrect" pool.
+
+    kind='remove': a vote to retract `target_entry_id`. Approval tombstones
+    the target — curated TOML entries stay in git but are filtered out of
+    search by this row; community targets additionally get their own add-row
+    status flipped to 'removed'.
+    """
+    KIND_ADD = 'add'
+    KIND_REMOVE = 'remove'
+    STATUS_PENDING = 'pending'
+    STATUS_APPROVED = 'approved'
+    STATUS_REJECTED = 'rejected'
+    STATUS_REMOVED = 'removed'   # approved add later voted out
+    STATUS_EXPIRED = 'expired'   # ballot message deleted before resolution
+
+    kind = models.CharField(max_length=10, choices=[(KIND_ADD, 'Add advice'), (KIND_REMOVE, 'Remove advice')])
+    advice_text = models.TextField(blank=True)
+    target_entry_id = models.CharField(max_length=32, blank=True)
+
+    author_id = models.BigIntegerField()
+    author_name = models.CharField(max_length=255)
+    guild_id = models.BigIntegerField()
+    channel_id = models.BigIntegerField()
+    message_id = models.BigIntegerField(unique=True)  # the ballot embed
+
+    status = models.CharField(
+        max_length=10,
+        default=STATUS_PENDING,
+        db_index=True,
+        choices=[
+            (STATUS_PENDING, 'Pending vote'),
+            (STATUS_APPROVED, 'Approved'),
+            (STATUS_REJECTED, 'Rejected'),
+            (STATUS_REMOVED, 'Removed by later vote'),
+            (STATUS_EXPIRED, 'Ballot lost'),
+        ],
+    )
+    up_votes = models.IntegerField(default=0)   # final tally, written at resolution
+    down_votes = models.IntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        what = self.target_entry_id if self.kind == self.KIND_REMOVE else self.advice_text[:40]
+        return f"AdviceProposal({self.kind} {what!r}, {self.status})"
+
+
 class BotStatus(models.Model):
     """Track bot status and metrics"""
     timestamp = models.DateTimeField(auto_now_add=True)
