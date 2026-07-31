@@ -19,9 +19,11 @@ image, so anything added from Discord must live in the DB to survive a
 redeploy. Approved add-rows ARE the community entries (`ca-<pk>`), merged
 into the search corpus at runtime; approved remove-rows tombstone curated
 entries out of search without touching git. Ballots resolve in
-`on_raw_reaction_add` — threshold AND strict majority, ties stay open —
-with an `on_ready` re-tally covering votes cast while the bot was down.
-Vote-resolution logic is pure (`knowledge.resolve_votes`/`count_votes`),
+`on_raw_reaction_add` — threshold AND strict majority, ties stay open;
+votes are tallied per user from the reactions' voter lists so 👍+👎 from
+one person cancels out — with an `on_ready` re-tally covering votes cast
+while the bot was down and delete-listeners voiding deleted ballots.
+Vote-resolution logic is pure (`knowledge.resolve_votes`/`tally_voters`),
 tested DB-free in `test_advice_votes.py`. Threshold is
 `ADVICE_VOTE_THRESHOLD` (env-overridable, default 5). Design spec:
 `docs/superpowers/specs/2026-07-30-advice-community-voting.md`.)

@@ -7,9 +7,6 @@ house pattern.
 from nebulous_bot import knowledge
 from nebulous_bot.cogs.advice import AdviceCog, validate_advice_text, ADVICE_MAX_LEN
 
-UP = knowledge.UP_EMOJI
-DOWN = knowledge.DOWN_EMOJI
-
 
 # --- resolve_votes ------------------------------------------------------
 
@@ -42,21 +39,26 @@ def test_resolve_respects_custom_threshold():
     assert knowledge.resolve_votes(1, 0, threshold=5) is None
 
 
-# --- count_votes --------------------------------------------------------
+# --- tally_voters -------------------------------------------------------
 
-def test_count_votes_discounts_bot_seed_reactions():
-    reactions = [(UP, 6, True), (DOWN, 1, True)]
-    assert knowledge.count_votes(reactions) == (5, 0)
+BOT = 999
 
 
-def test_count_votes_without_bot_seeds():
-    reactions = [(UP, 3, False), (DOWN, 2, False)]
-    assert knowledge.count_votes(reactions) == (3, 2)
+def test_tally_voters_excludes_bot_seeds():
+    assert knowledge.tally_voters([BOT, 1, 2], [BOT], exclude=(BOT,)) == (2, 0)
 
 
-def test_count_votes_ignores_other_emoji_and_missing_reactions():
-    assert knowledge.count_votes([('🔥', 12, False)]) == (0, 0)
-    assert knowledge.count_votes([]) == (0, 0)
+def test_tally_voters_dual_vote_cancels_out():
+    # User 3 reacted with both emoji: counts for neither side.
+    assert knowledge.tally_voters([1, 2, 3], [3, 4], exclude=(BOT,)) == (2, 1)
+
+
+def test_tally_voters_duplicate_ids_count_once():
+    assert knowledge.tally_voters([1, 1, 2], [], exclude=()) == (2, 0)
+
+
+def test_tally_voters_empty():
+    assert knowledge.tally_voters([], [], exclude=(BOT,)) == (0, 0)
 
 
 # --- entry ids ----------------------------------------------------------

@@ -33,7 +33,9 @@ Moderation is by community vote, not by admins.
     → added to the knowledge pool as entry `ca-<pk>`.
   - **≥ threshold 👎 and strictly more 👎 than 👍** → recorded in the
     *incorrect pool* (and the same text can't be re-proposed verbatim).
-  - Ties stay open. The bot's seed reactions don't count (`reaction.me`).
+  - Ties stay open. Votes are tallied **per user** from the reactions'
+    voter lists: the bot's seeds don't count, and one person reacting with
+    both emoji cancels out (counts for neither side).
 - `!advice remove <id>` — ballot to retract any active entry (curated or
   community). Approval tombstones it out of search and records it in the
   incorrect pool; rejection keeps it. Curated entries stay in git — the
@@ -53,12 +55,18 @@ Moderation is by community vote, not by admins.
   later, `expired` for deleted ballot messages). Approved add-rows ARE the
   community entries; no separate entries table.
 - **Resolution:** `on_raw_reaction_add` (works on uncached messages) →
-  fetch ballot → `knowledge.count_votes` → `knowledge.resolve_votes` →
-  atomic claim (`UPDATE ... WHERE status='pending'` + asyncio lock) → edit
-  the ballot embed into the outcome, update in-memory state.
+  fetch ballot + per-reaction voter lists → `knowledge.tally_voters` →
+  `knowledge.resolve_votes` → atomic claim (`UPDATE ... WHERE
+  status='pending'` + asyncio lock) → edit the ballot embed into the
+  outcome, update in-memory state. Proposal creation is serialized behind
+  its own lock (dup-check → create is race-free) and immediately re-tallies
+  once, so reactions landing before the ballot registered aren't lost.
 - **Restart safety:** pending ballots reload in `cog_load`; a one-shot
   `on_ready` re-tally catches votes cast while the bot was offline. A
-  deleted ballot message voids the proposal (`expired`).
+  deleted ballot message voids the proposal (`expired`) — enforced live by
+  `on_raw_message_delete`/`on_raw_bulk_message_delete` and at boot by the
+  sweep. Open ballots are capped at 25 (`MAX_OPEN_BALLOTS`) so pending
+  state can't grow without bound.
 - **Search:** `knowledge.active_entries` merges curated + community minus
   removed ids. Community entries have no tags/situation/reason; their
   `source_url` is the ballot jump link (provenance + who voted).

@@ -139,20 +139,17 @@ def search(entries, query, limit=3):
     return [entry for _score, entry in scored[:limit]]
 
 
-def count_votes(reactions):
-    """Tally (up, down) from reaction summaries.
+def tally_voters(up_ids, down_ids, exclude=()):
+    """Per-user tally of (up, down) from the two reactions' voter id sets.
 
-    `reactions` is an iterable of `(emoji, count, includes_bot)` tuples —
-    the bot seeds one 👍 and one 👎 on every ballot so voters can one-click,
-    and those seeds must not count.
+    One person, one vote: an id present in both sets cancels itself out and
+    counts for neither side. Ids in `exclude` (the bot's own seed reactions)
+    never count.
     """
-    up = down = 0
-    for emoji, count, includes_bot in reactions:
-        if emoji == UP_EMOJI:
-            up = max(0, count - (1 if includes_bot else 0))
-        elif emoji == DOWN_EMOJI:
-            down = max(0, count - (1 if includes_bot else 0))
-    return up, down
+    up = set(up_ids) - set(exclude)
+    down = set(down_ids) - set(exclude)
+    both = up & down
+    return len(up - both), len(down - both)
 
 
 def resolve_votes(up, down, threshold=5):

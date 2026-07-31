@@ -30,8 +30,13 @@ _DESC_LIMIT = 4096   # Discord embed description cap
 LIST_PAGE_SIZE = 15
 ADVICE_MIN_LEN = 10
 ADVICE_MAX_LEN = 300
+MAX_OPEN_BALLOTS = 25  # bounds self.pending; deleting a ballot message voids it
 
 _BALLOT_COLOR = 0xf1c40f  # amber: vote in progress
+_BALLOT_FOOTER = (
+    "One vote per person — reacting with both 👍 and 👎 cancels your vote, "
+    "and the bot's own reactions don't count."
+)
 
 
 def _truncate(text, limit):
@@ -154,6 +159,7 @@ class AdviceCog(commands.Cog, name='Advice'):
         self.removed_ids = set() # entry ids voted out of the pool
         self.pending = {}        # ballot message_id -> proposal row dict
         self._resolve_lock = asyncio.Lock()
+        self._propose_lock = asyncio.Lock()  # serializes dup-check -> create
         self._reconciled = False
 
     async def cog_load(self):
@@ -287,48 +293,59 @@ class AdviceCog(commands.Cog, name='Advice'):
             await ctx.send(f"❌ {error}")
             return
 
-        lowered = cleaned.lower()
-        for entry in self._corpus():
-            if entry.get('rule', '').lower() == lowered:
-                await ctx.send(f"❌ That advice is already in the pool as `{entry['id']}`.")
+        # The lock serializes duplicate-check -> create, so two simultaneous
+        # proposals of the same text can't both pass the checks.
+        async with self._propose_lock:
+            if len(self.pending) >= MAX_OPEN_BALLOTS:
+                await ctx.send(
+                    f"❌ There are already {len(self.pending)} open votes — settle some first "
+                    "(`!advice pending`). Deleting a ballot message cancels its vote."
+                )
                 return
-        for row in self.pending.values():
-            if row['kind'] == 'add' and row['advice_text'].lower() == lowered:
-                url = _jump_url(row['guild_id'], row['channel_id'], row['message_id'])
-                await ctx.send(f"❌ That advice is already [up for a vote]({url}).")
+            lowered = cleaned.lower()
+            for entry in self._corpus():
+                if entry.get('rule', '').lower() == lowered:
+                    await ctx.send(f"❌ That advice is already in the pool as `{entry['id']}`.")
+                    return
+            for row in self.pending.values():
+                if row['kind'] == 'add' and row['advice_text'].lower() == lowered:
+                    url = _jump_url(row['guild_id'], row['channel_id'], row['message_id'])
+                    await ctx.send(f"❌ That advice is already [up for a vote]({url}).")
+                    return
+            if await _db(_find_prior_verdict, cleaned):
+                await ctx.send(
+                    "❌ That exact advice was previously voted incorrect "
+                    "(see `!advice list incorrect`). Reword it if you think the vote got it wrong."
+                )
                 return
-        if await _db(_find_prior_verdict, cleaned):
-            await ctx.send(
-                "❌ That exact advice was previously voted incorrect "
-                "(see `!advice list incorrect`). Reword it if you think the vote got it wrong."
-            )
-            return
 
-        embed = discord.Embed(
-            title="🗳️ New advice proposed — vote!",
-            description=f"> {cleaned}",
-            color=_BALLOT_COLOR,
-        )
-        embed.add_field(name="Proposed by", value=ctx.author.mention, inline=False)
-        related = knowledge.search(self._corpus(), cleaned, limit=1)
-        if related:
-            r = related[0]
-            embed.add_field(
-                name="Possibly related existing advice",
-                value=_truncate(f"`{r['id']}` {r['rule']}", _FIELD_LIMIT),
-                inline=False,
+            embed = discord.Embed(
+                title="🗳️ New advice proposed — vote!",
+                description=f"> {cleaned}",
+                color=_BALLOT_COLOR,
             )
-        embed.add_field(name="How it works", value=self._ballot_rules_text(), inline=False)
-        embed.set_footer(text="One vote per person — the bot's own reactions don't count.")
-        message = await ctx.send(embed=embed)
+            embed.add_field(name="Proposed by", value=ctx.author.mention, inline=False)
+            related = knowledge.search(self._corpus(), cleaned, limit=1)
+            if related:
+                r = related[0]
+                embed.add_field(
+                    name="Possibly related existing advice",
+                    value=_truncate(f"`{r['id']}` {r['rule']}", _FIELD_LIMIT),
+                    inline=False,
+                )
+            embed.add_field(name="How it works", value=self._ballot_rules_text(), inline=False)
+            embed.set_footer(text=_BALLOT_FOOTER)
+            message = await ctx.send(embed=embed)
 
-        row = await _db(lambda: _create_proposal(
-            kind='add', advice_text=cleaned,
-            author_id=ctx.author.id, author_name=ctx.author.display_name,
-            guild_id=ctx.guild.id, channel_id=ctx.channel.id, message_id=message.id,
-        ))
-        self.pending[message.id] = row
+            row = await _db(lambda: _create_proposal(
+                kind='add', advice_text=cleaned,
+                author_id=ctx.author.id, author_name=ctx.author.display_name,
+                guild_id=ctx.guild.id, channel_id=ctx.channel.id, message_id=message.id,
+            ))
+            self.pending[message.id] = row
         await self._seed_reactions(message)
+        # Catch reactions that landed before the ballot was registered above.
+        await self._tally(message.id)
 
     @advice.command(name='remove')
     @commands.guild_only()
@@ -346,41 +363,51 @@ class AdviceCog(commands.Cog, name='Advice'):
                 "Ids are shown by `!advice list`."
             )
             return
-        entry = next((e for e in self._corpus() if e['id'] == norm), None)
-        if entry is None:
-            await ctx.send(f"❌ No entry `{norm}` in the knowledge pool — check `!advice list`.")
-            return
-        for row in self.pending.values():
-            if row['kind'] == 'remove' and row['target_entry_id'] == norm:
-                url = _jump_url(row['guild_id'], row['channel_id'], row['message_id'])
-                await ctx.send(f"❌ Removing `{norm}` is already [up for a vote]({url}).")
+        async with self._propose_lock:
+            if len(self.pending) >= MAX_OPEN_BALLOTS:
+                await ctx.send(
+                    f"❌ There are already {len(self.pending)} open votes — settle some first "
+                    "(`!advice pending`). Deleting a ballot message cancels its vote."
+                )
                 return
+            entry = next((e for e in self._corpus() if e['id'] == norm), None)
+            if entry is None:
+                await ctx.send(f"❌ No entry `{norm}` in the knowledge pool — check `!advice list`.")
+                return
+            for row in self.pending.values():
+                if row['kind'] == 'remove' and row['target_entry_id'] == norm:
+                    url = _jump_url(row['guild_id'], row['channel_id'], row['message_id'])
+                    await ctx.send(f"❌ Removing `{norm}` is already [up for a vote]({url}).")
+                    return
 
-        t = Config.ADVICE_VOTE_THRESHOLD
-        embed = discord.Embed(
-            title=f"🗳️ Removal proposed: {norm} — vote!",
-            description=f"> {entry['rule']}\n— *{entry.get('author', 'unknown')}*",
-            color=_BALLOT_COLOR,
-        )
-        embed.add_field(name="Proposed by", value=ctx.author.mention, inline=False)
-        embed.add_field(
-            name="How it works",
-            value=(
-                f"**{t}+ 👍** (more 👍 than 👎) → removed and recorded as incorrect.\n"
-                f"**{t}+ 👎** (more 👎 than 👍) → the advice stays."
-            ),
-            inline=False,
-        )
-        embed.set_footer(text="One vote per person — the bot's own reactions don't count.")
-        message = await ctx.send(embed=embed)
+            t = Config.ADVICE_VOTE_THRESHOLD
+            embed = discord.Embed(
+                title=f"🗳️ Removal proposed: {norm} — vote!",
+                description=_truncate(
+                    f"> {entry['rule']}\n— *{entry.get('author', 'unknown')}*", _DESC_LIMIT),
+                color=_BALLOT_COLOR,
+            )
+            embed.add_field(name="Proposed by", value=ctx.author.mention, inline=False)
+            embed.add_field(
+                name="How it works",
+                value=(
+                    f"**{t}+ 👍** (more 👍 than 👎) → removed and recorded as incorrect.\n"
+                    f"**{t}+ 👎** (more 👎 than 👍) → the advice stays."
+                ),
+                inline=False,
+            )
+            embed.set_footer(text=_BALLOT_FOOTER)
+            message = await ctx.send(embed=embed)
 
-        row = await _db(lambda: _create_proposal(
-            kind='remove', target_entry_id=norm,
-            author_id=ctx.author.id, author_name=ctx.author.display_name,
-            guild_id=ctx.guild.id, channel_id=ctx.channel.id, message_id=message.id,
-        ))
-        self.pending[message.id] = row
+            row = await _db(lambda: _create_proposal(
+                kind='remove', target_entry_id=norm,
+                author_id=ctx.author.id, author_name=ctx.author.display_name,
+                guild_id=ctx.guild.id, channel_id=ctx.channel.id, message_id=message.id,
+            ))
+            self.pending[message.id] = row
         await self._seed_reactions(message)
+        # Catch reactions that landed before the ballot was registered above.
+        await self._tally(message.id)
 
     async def _seed_reactions(self, message):
         try:
@@ -526,6 +553,20 @@ class AdviceCog(commands.Cog, name='Advice'):
             logger.exception("Advice ballot tally failed for message %s", payload.message_id)
 
     @commands.Cog.listener()
+    async def on_raw_message_delete(self, payload):
+        """Deleting a ballot message cancels its vote."""
+        row = self.pending.get(payload.message_id)
+        if row is not None:
+            await self._expire(row)
+
+    @commands.Cog.listener()
+    async def on_raw_bulk_message_delete(self, payload):
+        for message_id in payload.message_ids:
+            row = self.pending.get(message_id)
+            if row is not None:
+                await self._expire(row)
+
+    @commands.Cog.listener()
     async def on_ready(self):
         """Re-tally ballots once per boot — votes cast while the bot was
         offline arrive as no event, so pending ballots are checked here."""
@@ -558,9 +599,16 @@ class AdviceCog(commands.Cog, name='Advice'):
             logger.warning("Could not fetch ballot %s: %s", message_id, e)
             return
 
-        up, down = knowledge.count_votes(
-            (str(r.emoji), r.count, r.me) for r in message.reactions
-        )
+        # Per-user tally: fetch the actual voter lists so one person reacting
+        # with both emoji cancels out instead of counting twice.
+        up_ids, down_ids = [], []
+        for reaction in message.reactions:
+            emoji = str(reaction.emoji)
+            if emoji == knowledge.UP_EMOJI:
+                up_ids = [u.id async for u in reaction.users()]
+            elif emoji == knowledge.DOWN_EMOJI:
+                down_ids = [u.id async for u in reaction.users()]
+        up, down = knowledge.tally_voters(up_ids, down_ids, exclude=(self.bot.user.id,))
         verdict = knowledge.resolve_votes(up, down, Config.ADVICE_VOTE_THRESHOLD)
         if verdict is None:
             return
