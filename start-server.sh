@@ -121,14 +121,22 @@ gunicorn nebulous_project.wsgi:application \
     --error-logfile - \
     --daemon
 
-# Wait for gunicorn to fully start and listen on port 8000
+# Wait for gunicorn to fully start and listen on port 8000.
+# The slim image has no pgrep/curl, so poll the health endpoint with the
+# stdlib (same probe as the Dockerfile HEALTHCHECK).
 echo "⏳ Waiting for web server to be ready..."
-sleep 3
-# Check if gunicorn process is running
-if pgrep -f "gunicorn.*8000" > /dev/null; then
+WEB_READY=0
+for _ in 1 2 3 4 5 6 7 8 9 10; do
+  if python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/', timeout=2).read()" 2>/dev/null; then
+    WEB_READY=1
+    break
+  fi
+  sleep 1
+done
+if [ "$WEB_READY" -eq 1 ]; then
   echo "✅ Web server is running"
 else
-  echo "⚠️  Warning: Web server process not found, but continuing..."
+  echo "⚠️  Warning: Web server did not respond on /health/, but continuing..."
 fi
 
 # Start the Discord bot (this runs in foreground)
