@@ -72,6 +72,7 @@ embed within ~30 seconds.
 In your Discord server:
 
 ```
+!help
 !status
 !listservers
 !openlobbies

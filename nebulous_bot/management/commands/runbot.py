@@ -17,6 +17,7 @@ from nebulous_bot.config import Config
 from nebulous_bot.server_monitor import ServerMonitor
 from nebulous_bot.server_formatter import ServerFormatter
 from nebulous_bot.command_logging import setup_command_metrics
+from nebulous_bot.help_command import NebulousHelpCommand
 from nebulous_bot.retention import run_retention_loop
 from nebulous_bot.cogs.setup import SetupCog
 from nebulous_bot.cogs.stats import StatsCog
@@ -61,7 +62,11 @@ class Command(BaseCommand):
         intents = discord.Intents.default()
         intents.message_content = True
 
-        bot = commands.Bot(command_prefix=Config.COMMAND_PREFIX, intents=intents)
+        bot = commands.Bot(
+            command_prefix=Config.COMMAND_PREFIX,
+            intents=intents,
+            help_command=NebulousHelpCommand(),
+        )
         setup_command_metrics(bot)
 
         # Shared runtime state the cogs read via the bot object. These stay
@@ -160,7 +165,7 @@ class Command(BaseCommand):
                     "`!setstatuschannel #some-channel`\n"
                     "Or run `!setstatuschannel` (no argument) in the channel you want me to use.\n\n"
                     "Other commands work in any channel right away: `!listservers`, `!openlobbies`, "
-                    "`!stats`, `!nextgame`, `!graph`, `!formation`. Run `!status` for the full list."
+                    "`!stats`, `!nextgame`, `!graph`, `!formation`. Run `!help` for the full command menu."
                 ),
                 color=Config.EMBED_COLOR,
             )

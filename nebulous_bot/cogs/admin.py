@@ -172,8 +172,9 @@ class AdminCog(commands.Cog, name='Admin'):
         )
 
         embed.add_field(
-            name="🔥 Commands",
+            name="🔥 Popular Commands",
             value=(
+                "`!help` - Full command menu\n"
                 "`!listservers` - List all servers\n"
                 "`!openlobbies` - Show available servers\n"
                 "`!stats` - View game statistics\n"
@@ -183,8 +184,7 @@ class AdminCog(commands.Cog, name='Admin'):
                 "`!nextgame` - Get notified when a game is ready (options: `ptb`, `modded`, `newplayer`, `lobby`, `--skip`)\n"
                 "`!formation` - Optimize fleet formation file\n"
                 "`!refresh` - Force update\n"
-                "`!version` - Show version and changelog\n"
-                "`!status` - This message"
+                "`!version` - Show version and changelog"
             ),
             inline=False
         )
@@ -233,7 +233,7 @@ class AdminCog(commands.Cog, name='Admin'):
             inline=False
         )
 
-        embed.set_footer(text="Use !status to see bot information and commands")
+        embed.set_footer(text="Use !help for the command menu • !status for bot information")
         await ctx.send(embed=embed)
 
     @commands.command(name='commandlogs', aliases=['cmdlogs', 'logs'], hidden=True)

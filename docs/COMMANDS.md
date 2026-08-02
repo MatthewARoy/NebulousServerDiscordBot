@@ -1,7 +1,25 @@
 # Commands
 
 All commands use the `!` prefix. Most are usable in DMs as well as guilds.
-Run `!status` to see a summary in Discord.
+Run `!help` to see the same reference in Discord.
+
+## Help
+
+### `!help [command|category]` — alias `!commands`
+The in-Discord command menu, grouped by category:
+
+- `!help` — every command you can run, one line each, grouped by category
+  (Servers, Statistics, Next Game, Formation, Advice, Setup, Admin).
+- `!help <command>` — summary, usage, examples, aliases and cooldown, e.g.
+  `!help nextgame`. Also accepts the prefix (`!help !nextgame`).
+- `!help <category>` — every command in one group, e.g. `!help servers`.
+  Category names are matched case- and space-insensitively (`next game`,
+  `nextgame`, `Next Game`).
+
+The pages are generated from each command's docstring
+(`nebulous_bot/help_command.py`), so a command's `Usage:`/`Examples:` lines
+are what users see — there is no separate help table to keep in sync.
+Commands you lack permission for (and hidden ones) are left out.
 
 ## Server discovery
 

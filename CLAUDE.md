@@ -54,6 +54,14 @@ before connecting to the gateway). **Commands live in seven cogs** under
 plus advice (added 2.6.0). To find a command, grep `nebulous_bot/cogs/`
 for `@commands.command(name='...')`.
 
+`!help` is a custom `HelpCommand` (`nebulous_bot/help_command.py`, wired up
+in the `commands.Bot(...)` constructor) that renders category-grouped
+embeds **from the command docstrings themselves**. Keep the existing
+docstring conventions in new commands — a summary line, then `Usage:` /
+`Examples:` lines and `- !cmd ... - what it does` bullets — and the help
+page writes itself; add the cog to `CATEGORY_META` for its emoji and
+position (an unlisted cog still renders, just last with a default emoji).
+
 Cogs read the shared runtime objects off the bot instance —
 `bot.server_monitor`, `bot.formatter`, `bot.deployment_time`. runbot
 initializes these to `None` and `on_ready` fills them in, so cog commands
