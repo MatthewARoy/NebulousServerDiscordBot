@@ -96,8 +96,17 @@ class Config:
     EMBED_COLOR_NO_SERVERS = 0xff0000  # Red
     
     # Version Information
-    VERSION = "2.6.1"
+    VERSION = "2.7.0"
     CHANGELOG = [
+        {
+            "version": "2.7.0",
+            "date": "2026-08-02",
+            "changes": [
+                "!help is now a proper menu — commands grouped by category, each with usage, examples, aliases and cooldowns",
+                "!help <command> and !help <category> both work (try !help nextgame or !help servers), and a typo suggests the closest match",
+                "Maintenance commands are no longer listed in !help for anyone but the bot owner"
+            ]
+        },
         {
             "version": "2.6.1",
             "date": "2026-07-28",

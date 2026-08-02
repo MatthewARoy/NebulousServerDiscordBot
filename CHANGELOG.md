@@ -4,6 +4,36 @@ The bot reads its own changelog from `nebulous_bot/config.py` (`Config.CHANGELOG
 to power the in-Discord `!version` command, so that file is the source of truth
 for current and recent releases. This document mirrors it for readers on GitHub.
 
+## 2.7.0 — 2026-08-02
+
+- `!help` is now a proper menu — commands grouped by category, each with
+  usage, examples, aliases and cooldowns.
+- `!help <command>` and `!help <category>` both work (try `!help nextgame`
+  or `!help servers`), and a typo suggests the closest match.
+- Maintenance commands are no longer listed in `!help` for anyone but the
+  bot owner.
+
+(Maintainer notes: replaces discord.py's `DefaultHelpCommand` with
+`nebulous_bot/help_command.py` (`NebulousHelpCommand`), wired in the
+`commands.Bot(...)` constructor in `runbot.py`. Pages are generated from the
+command docstrings — `parse_help_sections` reads the existing `Usage:` /
+`Examples:` / `- !cmd ... - note` conventions, so new commands get help for
+free; category emoji and ordering come from `CATEGORY_META`, and an
+unlisted cog still renders (last, default emoji). Visibility: hidden
+commands are revealed only when `is_owner()` passes, resolved per
+invocation in `prepare_help_command` (discord.py hands each invocation its
+own `HelpCommand.copy()`, so this is not shared state) and fail-closed if
+the owner lookup errors. `send_command_help` now refuses hidden commands
+with the same "not found" embed a bogus name gets, and typo suggestions are
+drawn from `filter_commands` output only — previously `!help commandlogs`
+rendered the owner-only log dump's full help page to anyone who guessed the
+name. `!restartmonitor` and `!debugmonitor` gained `hidden=True`; that is a
+help-visibility flag only, their `has_permissions(administrator=True)`
+checks are unchanged. Docstring parsing and embed chunking are pure
+module-scope helpers covered by `nebulous_bot/tests/test_help_formatting.py`
+— including gateway-free Bot tests with a stubbed `is_owner` for the
+visibility rules.)
+
 ## 2.6.1 — 2026-07-28
 
 - Fixed `!serverstats` showing wrong per-server numbers — game counts,

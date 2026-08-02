@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import difflib
 import inspect
+import logging
 import re
 from dataclasses import dataclass, field
 from typing import Iterable, List, Optional, Sequence
@@ -28,6 +29,11 @@ import discord
 from discord.ext import commands
 
 from nebulous_bot.config import Config
+
+logger = logging.getLogger('nebulous_bot')
+
+# Marks a hidden (bot-owner-only) command in the views only the owner sees.
+OWNER_ONLY_MARKER = '🔒'
 
 # Display order and decoration for the cogs, most player-facing first.
 # Cogs missing from here still render — they sort to the end with the
@@ -294,7 +300,10 @@ class NebulousHelpCommand(commands.HelpCommand):
         return embed
 
     def _overview_line(self, command: commands.Command) -> str:
-        return f'`{self.prefix}{command.name}` — {truncate(command.short_doc or "No description")}'
+        # Hidden commands only reach here for the bot owner (see
+        # prepare_help_command) — flag them so they read as owner-only.
+        lock = f' {OWNER_ONLY_MARKER}' if command.hidden else ''
+        return f'`{self.prefix}{command.name}` — {truncate(command.short_doc or "No description")}{lock}'
 
     def _resolve_category(self, query: str) -> Optional[commands.Cog]:
         """Find a cog by name, ignoring case and spaces ('nextgame' → 'Next Game')."""
@@ -304,19 +313,48 @@ class NebulousHelpCommand(commands.HelpCommand):
                 return cog
         return None
 
-    def _suggestions(self, query: str) -> List[str]:
+    async def _suggestions(self, query: str) -> List[str]:
+        """Close matches for a typo — only over commands the asker may see."""
         names = set()
-        for command in self.context.bot.walk_commands():
+        for command in await self.filter_commands(self.context.bot.commands):
             names.add(command.name)
             names.update(command.aliases)
         names.update(self.context.bot.cogs)
         return difflib.get_close_matches(query.lower(), sorted(names), n=3, cutoff=0.55)
+
+    async def _is_visible(self, command: commands.Command) -> bool:
+        """Whether this asker is allowed to see `command` exists at all.
+
+        Delegates to filter_commands so one rule covers every view: hidden
+        commands need show_hidden (owner-only, set in prepare_help_command)
+        and every command's own checks must pass for the asker.
+        """
+        return bool(await self.filter_commands([command]))
 
     async def _visible_commands(self, command_iter: Iterable[commands.Command]) -> List[commands.Command]:
         filtered = await self.filter_commands(command_iter, sort=True)
         return [command for command in filtered if not self._is_help_command(command)]
 
     # -- dispatch --------------------------------------------------------
+
+    async def prepare_help_command(self, ctx, command: Optional[str] = None, /):
+        """Decide, per invocation, whether hidden commands may be revealed.
+
+        `!commandlogs` is `hidden=True` + `@is_owner()` because it dumps
+        cross-guild usage data; only the bot owner should learn it exists.
+        discord.py hands each invocation its own copy of the help command
+        (`HelpCommand.copy()`), so setting `show_hidden` here is per-asker,
+        not global state.
+        """
+        await super().prepare_help_command(ctx, command)
+        self.show_hidden = await self._is_bot_owner(ctx)
+
+    async def _is_bot_owner(self, ctx) -> bool:
+        try:
+            return await ctx.bot.is_owner(ctx.author)
+        except Exception as error:  # network hiccup fetching app info — fail closed
+            logger.warning(f"Could not resolve bot owner for help visibility: {error}")
+            return False
 
     async def command_callback(self, ctx, *, command: Optional[str] = None):
         """Accept `!help !stats` and case-insensitive category names."""
@@ -384,11 +422,17 @@ class NebulousHelpCommand(commands.HelpCommand):
             value = '\n'.join(lines)[:FIELD_VALUE_LIMIT]
             if len(embed.fields) >= FIELD_COUNT_LIMIT:
                 break
-            embed.add_field(name=f'{prefix}{command.name}', value=value, inline=False)
+            lock = f' {OWNER_ONLY_MARKER}' if command.hidden else ''
+            embed.add_field(name=f'{prefix}{command.name}{lock}', value=value, inline=False)
 
         await self.get_destination().send(embed=embed)
 
     async def send_command_help(self, command):
+        # `!help <hidden command>` must not confirm the command exists to
+        # someone who can't run it — answer exactly like an unknown name.
+        if not await self._is_visible(command):
+            return await self.send_error_message(await self.command_not_found(command.name))
+
         prefix = self.prefix
         sections = parse_help_sections(command.help, prefix)
         category = self._command_category(command)
@@ -417,6 +461,13 @@ class NebulousHelpCommand(commands.HelpCommand):
         if cooldown:
             embed.add_field(name='⏳ Cooldown', value=cooldown, inline=False)
 
+        if command.hidden:
+            embed.add_field(
+                name=f'{OWNER_ONLY_MARKER} Visibility',
+                value='Bot owner only — hidden from everyone else\'s command list.',
+                inline=False,
+            )
+
         embed.set_footer(text=f'{category_emoji(category)} {category} • {prefix}help for the full command list')
         await self.get_destination().send(embed=embed)
 
@@ -425,9 +476,9 @@ class NebulousHelpCommand(commands.HelpCommand):
 
     # -- errors ----------------------------------------------------------
 
-    def command_not_found(self, string: str) -> str:
+    async def command_not_found(self, string: str) -> str:
         message = f'No command or category called `{string}`.'
-        suggestions = self._suggestions(string)
+        suggestions = await self._suggestions(string)
         if suggestions:
             rendered = [
                 f'`{name}` (category)' if name in self.context.bot.cogs else f'`{self.prefix}{name}`'

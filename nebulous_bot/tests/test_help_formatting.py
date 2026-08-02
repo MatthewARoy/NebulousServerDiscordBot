@@ -1,14 +1,23 @@
-"""Tests for the !help menu formatting helpers.
+"""Tests for the !help menu formatting and visibility rules.
 
 The help embeds are generated from the cogs' own docstrings, so these
 tests feed the parser docstrings copied verbatim from the real commands —
 if someone reformats one, the help output stops matching and these fail.
-Everything here is pure string work: no bot, no gateway, no ORM.
+
+The visibility tests build a throwaway Bot in memory (no gateway, no ORM)
+with a stubbed `is_owner`, because "hidden owner commands stay hidden" is
+the kind of rule that only breaks in production otherwise.
 """
+import asyncio
+from types import SimpleNamespace
+
+import discord
 import pytest
 from discord import Embed
+from discord.ext import commands
 
 from nebulous_bot.help_command import (
+    NebulousHelpCommand,
     CATEGORY_META,
     FIELD_VALUE_LIMIT,
     add_chunked_field,
@@ -199,3 +208,113 @@ def test_categories_sort_in_declared_order_with_unknown_cogs_last():
 def test_every_known_category_has_an_emoji():
     assert all(emoji for emoji, _ in CATEGORY_META.values())
     assert category_emoji("Not A Real Cog") == "📁"
+
+
+# --- visibility: hidden owner-only commands ---------------------------------
+
+
+class _FakeChannel:
+    """Collects the embeds the help command sends."""
+
+    def __init__(self):
+        self.embeds = []
+
+    async def send(self, *, embed=None, **kwargs):
+        self.embeds.append(embed)
+
+
+def _build_bot(*, is_owner: bool):
+    """A gateway-free Bot with one public and one hidden owner-only command."""
+    bot = commands.Bot(
+        command_prefix='!',
+        intents=discord.Intents.none(),
+        help_command=NebulousHelpCommand(),
+    )
+
+    @bot.command(name='openlobbies')
+    async def open_lobbies(ctx):
+        """List servers with available player slots"""
+
+    @bot.command(name='commandlogs', aliases=['cmdlogs', 'logs'], hidden=True)
+    @commands.is_owner()
+    async def command_logs(ctx):
+        """View command usage logs (bot owner only)"""
+
+    # is_owner() would otherwise fetch application info over the network.
+    async def fake_is_owner(user):
+        return is_owner
+
+    bot.is_owner = fake_is_owner
+    return bot
+
+
+def _ask_help(*, is_owner: bool, argument=None):
+    """Run one `!help [argument]` invocation and return the embeds sent."""
+
+    async def run():
+        bot = _build_bot(is_owner=is_owner)
+        channel = _FakeChannel()
+        help_command = bot.help_command
+        ctx = SimpleNamespace(
+            bot=bot,
+            author=object(),
+            guild=None,
+            channel=channel,
+            clean_prefix='!',
+            command=None,
+            send=channel.send,
+        )
+        help_command.context = ctx
+        await help_command.command_callback(ctx, command=argument)
+        return channel.embeds
+
+    return asyncio.run(run())
+
+
+def _embed_text(embed):
+    parts = [embed.title or '', embed.description or '']
+    parts += [f'{field.name}\n{field.value}' for field in embed.fields]
+    return '\n'.join(parts)
+
+
+def test_hidden_command_is_absent_from_the_menu_for_non_owners():
+    text = '\n'.join(_embed_text(embed) for embed in _ask_help(is_owner=False))
+    assert 'openlobbies' in text
+    assert 'commandlogs' not in text
+
+
+def test_hidden_command_help_page_is_refused_for_non_owners():
+    embeds = _ask_help(is_owner=False, argument='commandlogs')
+    assert len(embeds) == 1
+    # Must not confirm the command exists — same answer as a bogus name.
+    assert embeds[0].title == '❓ Not found'
+    assert 'No command or category called `commandlogs`' in embeds[0].description
+
+
+def test_hidden_command_aliases_are_refused_for_non_owners():
+    embeds = _ask_help(is_owner=False, argument='logs')
+    assert embeds[0].title == '❓ Not found'
+
+
+def test_typo_suggestions_never_leak_a_hidden_command():
+    embeds = _ask_help(is_owner=False, argument='commandlog')
+    assert embeds[0].title == '❓ Not found'
+    assert 'commandlogs' not in embeds[0].description
+    assert 'cmdlogs' not in embeds[0].description
+
+
+def test_owner_sees_the_hidden_command_in_the_menu():
+    text = '\n'.join(_embed_text(embed) for embed in _ask_help(is_owner=True))
+    assert 'commandlogs' in text
+    assert '🔒' in text
+
+
+def test_owner_gets_the_hidden_command_help_page():
+    embeds = _ask_help(is_owner=True, argument='commandlogs')
+    assert embeds[0].title == '📁 !commandlogs'
+    assert any(field.name == '🔒 Visibility' for field in embeds[0].fields)
+
+
+def test_public_command_help_page_works_for_non_owners():
+    embeds = _ask_help(is_owner=False, argument='openlobbies')
+    assert embeds[0].title.endswith('!openlobbies')

@@ -19,7 +19,18 @@ The in-Discord command menu, grouped by category:
 The pages are generated from each command's docstring
 (`nebulous_bot/help_command.py`), so a command's `Usage:`/`Examples:` lines
 are what users see — there is no separate help table to keep in sync.
-Commands you lack permission for (and hidden ones) are left out.
+
+Visibility rules:
+
+- Commands whose checks you fail are left out (a non-admin never sees the
+  `!setstatuschannel` family).
+- Commands marked `hidden=True` — the maintenance ones, `!commandlogs`,
+  `!restartmonitor`, `!debugmonitor` — are shown **only to the bot owner**,
+  marked 🔒. For anyone else `!help commandlogs` answers exactly like an
+  unknown name, so the help menu never confirms they exist, and typo
+  suggestions never mention them. `hidden` controls help visibility only;
+  who may *run* a command is still its own check (`is_owner`,
+  `has_permissions`).
 
 ## Server discovery
 
@@ -132,6 +143,9 @@ Shows the current setup for this guild and indicates whether it's coming
 from a `!set...` command, the bootstrap config, or unset.
 
 ## Admin (operations)
+
+These are hidden from `!help` for everyone but the bot owner (see
+[Help](#help)); the permission checks below are what gate running them.
 
 ### `!restartmonitor` — alias `!restart`
 Restart the server-monitoring loop (administrator only).
