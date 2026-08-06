@@ -64,9 +64,10 @@ def test_rules_json_survives_apostrophes():
 
 
 # --- Live player counts (A2S) supersede Steam's last-heartbeat number -------
-# Steam's GetServerList `players` drifts in both directions; measured
-# 2026-08-06, one ERI server sat at Steam=4 while 8 players were connected
-# and another advertised 6 while empty. A2S_PLAYER is the real count.
+# Steam's GetServerList `players` drifts in both directions and stays wrong
+# for minutes; measured 2026-08-06, one ERI server sat at Steam=4 while 8
+# players were connected for ~7 minutes straight, another held Steam=5 while
+# emptying to 1. A2S_PLAYER is the real count.
 
 def test_live_count_supersedes_stale_steam_count():
     # Steam over-reporting (the "shows 6/8, nobody there" complaint).

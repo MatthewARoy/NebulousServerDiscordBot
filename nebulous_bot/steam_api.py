@@ -260,7 +260,14 @@ class SteamAPI:
                 
                 # Query server rules for each server (with concurrency limit)
                 import asyncio
-                semaphore = asyncio.Semaphore(3)  # Limit concurrent queries
+                # Each server now costs two A2S round-trips, so the sweep
+                # carries twice the serial work it used to. Unreachable
+                # servers are the expensive case (two 3 s UDP timeouts each);
+                # at 3-wide a handful of dead entries would exhaust the
+                # whole-sweep budget and dump every server to Steam-only
+                # data. 6-wide restores the pre-change headroom. These are
+                # idle UDP waits in the shared executor, not CPU work.
+                semaphore = asyncio.Semaphore(6)  # Limit concurrent queries
                 
                 async def get_server_with_rules(server_data, server_name, players):
                     server_address = server_data.get('addr', '')
