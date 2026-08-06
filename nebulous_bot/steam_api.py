@@ -438,6 +438,14 @@ class SteamAPI:
 
                 self._log_fallback_coverage(servers)
 
+                # Forget servers that have left Steam's list entirely, so the
+                # failure map tracks the current fleet rather than growing
+                # for the life of the process.
+                live_addresses = {sd.get('addr', '') for sd, _sn, _p in basic_servers}
+                for address in list(self._a2s_failures):
+                    if address not in live_addresses:
+                        del self._a2s_failures[address]
+
 
         except Exception as e:
             logger.error(f"Error parsing server data: {e}")

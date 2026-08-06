@@ -102,6 +102,17 @@ loop in `.claude/skills/verify/SKILL.md`.
     A user can spam them. **Fix:** `@commands.cooldown(1, 15, BucketType.channel)`
     on the fetch-triggering commands, plus a friendly cooldown message in the
     error handler (pairs with #16).
+
+    **DONE.** Cooldowns landed first, but they only bounded the rate, not the
+    concurrency: they are per-channel (`!ls`, `!openlobbies`) and per-user
+    (`!nextgame`), and the A2S limiter was a *local* semaphore per sweep, so N
+    channels or N users still meant N simultaneous full sweeps. Commands now
+    call `ServerMonitor.ensure_fresh()`, which answers from the monitoring
+    loop's cache and only sweeps when that loop has fallen behind
+    (`Config.SERVER_CACHE_MAX_AGE`). Sweeps are additionally coalesced behind a
+    process-wide lock that re-checks freshness after acquiring, so simultaneous
+    callers produce one sweep and N cache hits. The monitoring loop shares that
+    path, so periodic and command-triggered refreshes can no longer overlap.
 19. **Unbounded log file on the tiny VM.** `settings.py` uses a plain
     `FileHandler` for `nebulous_bot.log` with INFO-level logging *per cycle*
     (several lines every 30 s ≈ tens of MB/month). **Fix:**
