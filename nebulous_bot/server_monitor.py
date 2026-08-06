@@ -69,6 +69,9 @@ class ServerMonitor:
         
         # Store unfiltered servers for !listservers all command
         self.cached_all_servers = []
+        # Non-bot, non-private servers INCLUDING empty ones — the set whose
+        # state transitions and statistics we track (see passes_lifecycle_filter).
+        self.cached_lifecycle_servers = []
     
     def set_formatter(self, formatter):
         """Set the formatter instance to use for embed creation"""
@@ -268,16 +271,21 @@ class ServerMonitor:
             # derive the default-filtered view locally. Previously this was
             # two GetServerList calls + two full rules sweeps per cycle.
             all_servers = await self.steam_api.get_game_servers()
-            servers = [s for s in all_servers if self.steam_api.passes_default_filter(s)]
+            # Lifecycle set keeps empty servers; the display set drops them.
+            # Tracking must see a server through the moment it empties, or
+            # the in_game -> debrief transition is lost with it.
+            lifecycle_servers = [s for s in all_servers if self.steam_api.passes_lifecycle_filter(s)]
+            servers = [s for s in lifecycle_servers if s.get('players', 0) > 0]
 
             logger.debug(f"Received {len(all_servers)} servers from Steam API ({len(servers)} after default filter)")
 
             # Track state transitions and game start times
-            await self._track_game_start_times(servers)
+            await self._track_game_start_times(lifecycle_servers)
 
             # Servers now come with real status from server rules
             self.cached_servers = servers
             self.cached_all_servers = all_servers
+            self.cached_lifecycle_servers = lifecycle_servers
             self.last_update = datetime.now(timezone.utc)
 
             # If we already know stable version, reapply PTB flags to both caches
@@ -908,10 +916,14 @@ class ServerMonitor:
     async def _update_statistics(self):
         """Update statistics tracking with current server data"""
         try:
-            # Run statistics update in a thread pool to avoid blocking
+            # Run statistics update in a thread pool to avoid blocking.
+            # Uses the lifecycle set, not the display set: a GameSession is
+            # closed by observing the transition into debrief, which usually
+            # coincides with the server emptying out.
             import asyncio
             loop = asyncio.get_event_loop()
-            await loop.run_in_executor(None, self.statistics_service.update, self.cached_servers)
+            servers = getattr(self, 'cached_lifecycle_servers', None) or self.cached_servers
+            await loop.run_in_executor(None, self.statistics_service.update, servers)
         except Exception as e:
             logger.error(f"Error updating statistics: {e}", exc_info=True)
     

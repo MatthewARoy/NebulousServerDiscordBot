@@ -5,6 +5,7 @@ and derives the default view with passes_default_filter, so the enhanced
 dicts must preserve the raw fields (bots, players, name) that filter needs.
 Pure functions only — no Django, network, or Steam key needed.
 """
+from nebulous_bot.config import Config
 from nebulous_bot.steam_api import SteamAPI
 
 
@@ -18,10 +19,11 @@ def raw(name='Some Server', players=4, bots=0, **extra):
     return data
 
 
-def enhance(server_data, rules=None, live_player_count=None):
+def enhance(server_data, rules=None, live_player_count=None, consecutive_a2s_misses=0):
     return api._create_enhanced_server_data(
         server_data, server_data['name'], server_data['players'], rules,
         live_player_count=live_player_count,
+        consecutive_a2s_misses=consecutive_a2s_misses,
     )
 
 
@@ -109,6 +111,56 @@ def test_empty_server_with_stale_steam_count_is_filtered_out():
     # drops out of the default view instead of being advertised as joinable.
     server = enhance(raw(players=6), LIVE_RULES, live_player_count=0)
     assert api.passes_default_filter(server) is False
+
+
+# --- Lifecycle vs display filtering ----------------------------------------
+# Accurate counts made empty servers vanish from the filtered cache, and that
+# cache is what _track_game_start_times watches. A match ending means debrief
+# AND (usually) zero players in the same cycle, so filtering empties out of
+# tracking loses the transition that fires !nextgame and closes GameSessions.
+
+def test_empty_server_stays_in_the_lifecycle_set():
+    empty_debrief = enhance(raw(players=8), {'inprogress': '2'}, live_player_count=0)
+    assert empty_debrief['status'] == 'debrief'
+    # Hidden from users...
+    assert api.passes_default_filter(empty_debrief) is False
+    # ...but still tracked, so the debrief transition is observed.
+    assert api.passes_lifecycle_filter(empty_debrief) is True
+
+
+def test_lifecycle_set_still_excludes_bot_and_private_servers():
+    assert api.passes_lifecycle_filter(enhance(raw(bots=2))) is False
+    assert api.passes_lifecycle_filter(enhance(raw(name='Private Clan Server'))) is False
+
+
+# --- Servers that have stopped answering entirely ---------------------------
+
+def test_server_is_hidden_once_a2s_has_been_silent_long_enough():
+    threshold = Config.A2S_UNREACHABLE_THRESHOLD
+
+    # Ordinary packet loss changes nothing: Steam's count is kept and the
+    # server stays visible.
+    flaky = enhance(raw(players=6), consecutive_a2s_misses=threshold - 1)
+    assert flaky['is_unreachable'] is False
+    assert api.passes_default_filter(flaky) is True
+
+    # Sustained silence means the Steam entry is a ghost: a dead server must
+    # not keep rendering as a joinable lobby or triggering !nextgame.
+    dead = enhance(raw(players=6), consecutive_a2s_misses=threshold)
+    assert dead['is_unreachable'] is True
+    assert api.passes_default_filter(dead) is False
+    assert api.passes_lifecycle_filter(dead) is False
+
+
+def test_a2s_outcome_tracking_resets_on_a_successful_answer():
+    tracker = SteamAPI()
+    assert tracker._record_a2s_outcome('1.2.3.4:27015', answered=False) == 1
+    assert tracker._record_a2s_outcome('1.2.3.4:27015', answered=False) == 2
+    # One good answer clears the streak.
+    assert tracker._record_a2s_outcome('1.2.3.4:27015', answered=True) == 0
+    assert tracker._record_a2s_outcome('1.2.3.4:27015', answered=False) == 1
+    # Counts are per-server.
+    assert tracker._record_a2s_outcome('5.6.7.8:27015', answered=False) == 1
 
 
 def test_extract_live_player_count_variants():

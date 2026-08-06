@@ -111,6 +111,20 @@ class Config:
     # after their semaphore slot was already handed to the next server.
     A2S_SOCKET_TIMEOUT = 1.5
     A2S_QUERY_TIMEOUT = 7.0  # > 4 * A2S_SOCKET_TIMEOUT
+
+    # Whole-sweep backstop. Per-server results are kept individually, so
+    # exceeding this only costs Steam-fallback data for the stragglers.
+    # A measured 24-server sweep runs in ~5s.
+    A2S_SWEEP_TIMEOUT = 20.0
+
+    # Consecutive failed A2S sweeps before a server is treated as unreachable
+    # and hidden from the default view. Steam's master list keeps advertising
+    # servers that have died or moved, and those entries never answer A2S, so
+    # they would otherwise keep their last-known Steam player count forever —
+    # rendering as a green, joinable lobby and triggering !nextgame pings for
+    # a server nobody can join. One or two misses stay tolerated so ordinary
+    # packet loss changes nothing.
+    A2S_UNREACHABLE_THRESHOLD = 3  # x UPDATE_INTERVAL = 90s of total silence
     STATUS_MESSAGE_REFRESH_INTERVAL = int(os.getenv('STATUS_MESSAGE_REFRESH_INTERVAL', 86400))  # seconds - create new message daily (86400 = 24 hours)
     MAX_SERVERS_DISPLAY = 20
     

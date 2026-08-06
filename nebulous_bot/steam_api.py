@@ -15,6 +15,17 @@ class SteamAPI:
         self.session = None
         self.stable_version = None  # Set dynamically from ServerMonitor
         self._a2s_executor = None
+        # address -> consecutive sweeps with no A2S answer at all.
+        self._a2s_failures = {}
+
+    def _record_a2s_outcome(self, address: str, answered: bool) -> int:
+        """Track consecutive A2S silence per server. Returns the new count."""
+        if answered:
+            self._a2s_failures.pop(address, None)
+            return 0
+        count = self._a2s_failures.get(address, 0) + 1
+        self._a2s_failures[address] = count
+        return count
 
     def _get_a2s_executor(self) -> ThreadPoolExecutor:
         """Dedicated pool for blocking A2S queries.
@@ -102,14 +113,38 @@ class SteamAPI:
                 f"count (A2S unanswered): {', '.join(stale[:5])}"
             )
 
-    def passes_default_filter(self, server: Dict) -> bool:
-        """Default visibility filter: hide empty, bot-hosting, and private
-        servers. Applied to enhanced server dicts from get_game_servers."""
+    def passes_lifecycle_filter(self, server: Dict) -> bool:
+        """Servers whose state transitions and statistics we track.
+
+        Same as the display filter but WITHOUT the empty-server rule. An
+        empty server is exactly the one we must keep watching: a match
+        ending is a transition to debrief and, often, to zero players in
+        the same cycle. Filtering it out here would delete its entry in
+        `_track_game_start_times`, losing the in_game -> debrief
+        transition that fires !nextgame notifications and closes the
+        GameSession row.
+
+        This did not matter while player counts came from Steam, whose lag
+        kept a just-emptied server looking populated for minutes. With
+        live A2S counts it matters immediately.
+        """
         if server.get('bots', 0) > 0:
             return False
-        if server.get('players', 0) == 0:
+        if server.get('is_unreachable'):
             return False
         if self._is_private_server(server.get('name', '')):
+            return False
+        return True
+
+    def passes_default_filter(self, server: Dict) -> bool:
+        """Default visibility filter: hide empty, bot-hosting, and private
+        servers. Applied to enhanced server dicts from get_game_servers.
+
+        Display only — see passes_lifecycle_filter for tracking.
+        """
+        if not self.passes_lifecycle_filter(server):
+            return False
+        if server.get('players', 0) == 0:
             return False
         return True
     
@@ -191,7 +226,19 @@ class SteamAPI:
 
     @staticmethod
     def _extract_live_player_count(players_response) -> Optional[int]:
-        """Pull the connected-player count out of an A2S_PLAYER response."""
+        """Pull the connected-player count out of an A2S_PLAYER response.
+
+        DO NOT "fix" this to count non-empty player names. python-valve's
+        own docstring for `players()` suggests exactly that, warning that
+        `player_count` can be misleading because some servers pad the list
+        with empty-name entries — and that advice is wrong for this game.
+        Nebulous never publishes player names: every entry comes back with
+        name ''. Measured 2026-08-06, a server with 7 real players returns
+        player_count=7 and seven empty-name records. Filtering on names
+        would report 0 players for every populated server in the game.
+        The header count is the only usable signal here, and it tracks
+        reality (verified against servers emptying and filling live).
+        """
         if players_response is None:
             return None
         count = players_response.get('player_count')
@@ -335,38 +382,63 @@ class SteamAPI:
                     async with semaphore:
                         try:
                             state = await self.get_server_state(server_address) or {}
-                            return self._create_enhanced_server_data(
-                                server_data, server_name, players,
-                                state.get('rules'),
-                                live_player_count=state.get('player_count'),
-                            )
                         except Exception as e:
                             logger.debug(f"Server state query failed for {server_address}: {e}")
-                            return self._create_enhanced_server_data(server_data, server_name, players, None)
+                            state = {}
+                        answered = (
+                            state.get('rules') is not None
+                            or state.get('player_count') is not None
+                        )
+                        misses = self._record_a2s_outcome(server_address, answered)
+                        return self._create_enhanced_server_data(
+                            server_data, server_name, players,
+                            state.get('rules'),
+                            live_player_count=state.get('player_count'),
+                            consecutive_a2s_misses=misses,
+                        )
 
-                # Execute queries concurrently with timeout
-                try:
-                    tasks = [get_server_with_rules(sd, sn, p) for sd, sn, p in basic_servers]
-                    enhanced_servers = await asyncio.wait_for(
-                        asyncio.gather(*tasks, return_exceptions=True),
-                        timeout=20.0  # Whole-sweep budget for rules + player queries
+                # Execute queries concurrently under a whole-sweep budget.
+                #
+                # Per-server results are kept individually. The previous
+                # wait_for(gather(...)) was all-or-nothing: one slow server
+                # hitting the deadline discarded every completed result and
+                # rebuilt the entire list from Steam data, which also meant
+                # every status silently defaulted to 'lobby' — prematurely
+                # finalizing in-progress GameSessions and inventing
+                # transitions across the whole fleet.
+                tasks = [
+                    asyncio.ensure_future(get_server_with_rules(sd, sn, p))
+                    for sd, sn, p in basic_servers
+                ]
+                done, pending = await asyncio.wait(tasks, timeout=Config.A2S_SWEEP_TIMEOUT)
+
+                for task in pending:
+                    task.cancel()
+                if pending:
+                    # Only the stragglers fall back to Steam-only data.
+                    logger.warning(
+                        f"{len(pending)}/{len(tasks)} server queries exceeded the "
+                        f"{Config.A2S_SWEEP_TIMEOUT}s sweep budget; using Steam data for those"
                     )
+                    await asyncio.gather(*pending, return_exceptions=True)
 
-                    # Add successful results
-                    for server in enhanced_servers:
-                        if server is not None and not isinstance(server, Exception):
-                            servers.append(server)
+                for task, (server_data, server_name, players) in zip(tasks, basic_servers, strict=True):
+                    server = None
+                    if task in done and not task.cancelled():
+                        if task.exception() is None:
+                            server = task.result()
+                        else:
+                            logger.debug(f"Server query raised: {task.exception()}")
+                    if server is None:
+                        server = self._create_enhanced_server_data(
+                            server_data, server_name, players, None
+                        )
+                    if server:
+                        servers.append(server)
 
-                    self._log_fallback_coverage(servers)
+                self._log_fallback_coverage(servers)
 
-                except asyncio.TimeoutError:
-                    logger.warning("Server rules queries timed out, using basic server data")
-                    # Fallback: create servers without rules data
-                    for server_data, server_name, players in basic_servers:
-                        server = self._create_enhanced_server_data(server_data, server_name, players, None)
-                        if server:
-                            servers.append(server)
-                        
+
         except Exception as e:
             logger.error(f"Error parsing server data: {e}")
             
@@ -374,7 +446,8 @@ class SteamAPI:
     
     def _create_enhanced_server_data(self, server_data: Dict, server_name: str, players: int,
                                      rules: Optional[Dict],
-                                     live_player_count: Optional[int] = None) -> Dict:
+                                     live_player_count: Optional[int] = None,
+                                     consecutive_a2s_misses: int = 0) -> Dict:
         """Create enhanced server data using Steam API data and server rules.
 
         `live_player_count` is the A2S_PLAYER count when the server answered.
@@ -412,6 +485,10 @@ class SteamAPI:
             'gameport': server_data.get('gameport', 0),
             'players': players if live_player_count is None else live_player_count,
             'player_count_source': 'steam' if live_player_count is None else 'a2s',
+            # Steam's master list keeps advertising servers that have died or
+            # moved. They never answer A2S, so they would otherwise keep their
+            # last-known Steam count forever and render as joinable lobbies.
+            'is_unreachable': consecutive_a2s_misses >= Config.A2S_UNREACHABLE_THRESHOLD,
             'max_players': server_data.get('max_players', 0),
             'bots': server_data.get('bots', 0),
             'map': map_name,
