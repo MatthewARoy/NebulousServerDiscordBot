@@ -88,6 +88,13 @@ class Config:
     # Bot Configuration
     COMMAND_PREFIX = "!"
     UPDATE_INTERVAL = 30  # seconds - update every 30 seconds
+
+    # How old the server cache may be before a command will pay for its own
+    # Steam+A2S sweep. The monitoring loop refreshes every UPDATE_INTERVAL, so
+    # anything under this bound means the loop is keeping up and commands can
+    # answer straight from cache. Exceeding it means the loop is stalled or
+    # dead, and the command sweeps rather than showing stale data.
+    SERVER_CACHE_MAX_AGE = 45  # seconds (UPDATE_INTERVAL + margin for one sweep)
     STATUS_MESSAGE_REFRESH_INTERVAL = int(os.getenv('STATUS_MESSAGE_REFRESH_INTERVAL', 86400))  # seconds - create new message daily (86400 = 24 hours)
     MAX_SERVERS_DISPLAY = 20
     

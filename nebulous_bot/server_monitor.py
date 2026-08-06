@@ -183,7 +183,10 @@ class ServerMonitor:
                 iteration += 1
                 logger.debug(f"Monitoring loop iteration {iteration} starting...")
 
-                await self._update_server_list()
+                # Through _sweep so the periodic refresh and any command-
+                # triggered one can never run concurrently against the same
+                # thread pool and caches.
+                await self._sweep(max_age=5.0)
                 logger.debug(f"Server list updated: {len(self.cached_servers)} servers")
 
                 await self._update_status_message()
@@ -839,9 +842,66 @@ class ServerMonitor:
             return self.filter_servers(base_servers, filters)
         return base_servers
 
+    def cache_age_seconds(self) -> float:
+        """Seconds since the server cache was last refreshed (inf if never)."""
+        if not self.last_update:
+            return float('inf')
+        return (datetime.now(timezone.utc) - self.last_update).total_seconds()
+
+    def _get_sweep_lock(self) -> asyncio.Lock:
+        """Lazily-created lock serializing Steam+A2S sweeps.
+
+        Created on demand rather than in __init__ so instances built with
+        __new__ (the pure-logic tests) still work.
+        """
+        lock = getattr(self, '_sweep_lock', None)
+        if lock is None:
+            lock = asyncio.Lock()
+            self._sweep_lock = lock
+        return lock
+
+    async def _sweep(self, max_age: float) -> bool:
+        """Refresh the server cache unless it is already younger than max_age.
+
+        One sweep at a time, process-wide. Concurrent callers queue on the
+        lock and then re-check freshness, so N callers arriving together
+        produce ONE sweep and N cache hits rather than N sweeps. This matters
+        because a sweep is a Steam HTTP call plus an A2S query to every
+        server, and every one of them competes for the same small thread
+        pool (see SteamAPI). Returns True if this call did the work.
+        """
+        if self.cache_age_seconds() <= max_age:
+            return False
+        async with self._get_sweep_lock():
+            # Someone else may have refreshed while we waited for the lock.
+            if self.cache_age_seconds() <= max_age:
+                return False
+            await self._update_server_list()
+            return True
+
+    async def ensure_fresh(self) -> bool:
+        """Guarantee the cache is recent enough to answer a command from.
+
+        The monitoring loop keeps it refreshed every UPDATE_INTERVAL, so in
+        the normal case this does nothing and the command answers instantly
+        from cache. It only sweeps when the loop has fallen behind or died.
+        """
+        did_sweep = await self._sweep(Config.SERVER_CACHE_MAX_AGE)
+        if did_sweep:
+            logger.info(
+                "Command-triggered sweep: cache was stale "
+                f"({self.cache_age_seconds():.0f}s old, limit {Config.SERVER_CACHE_MAX_AGE}s) "
+                "— is the monitoring loop healthy?"
+            )
+        return did_sweep
+
     async def force_update(self):
-        """Force an immediate update of server data"""
-        await self._update_server_list()
+        """Force an immediate update of server data.
+
+        Still coalesced: back-to-back forces (several users hitting !refresh
+        at once) collapse into one sweep instead of stacking.
+        """
+        await self._sweep(max_age=5.0)
         await self._update_status_message()
         logger.info("Forced server update completed")
     

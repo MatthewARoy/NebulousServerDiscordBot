@@ -80,8 +80,9 @@ class ServersCog(commands.Cog, name='Servers'):
             await ctx.send("❌ Server monitoring not initialized yet. Please wait a moment.")
             return
 
-        # Always fetch fresh data from Steam
-        await server_monitor.force_update()
+        # Answer from the monitoring loop's cache (refreshed every 30s);
+        # only sweep if that loop has fallen behind.
+        await server_monitor.ensure_fresh()
 
         # Parse filter arguments
         filters, show_all, ptb_only = parse_listservers_filters(filter_args)
@@ -131,8 +132,8 @@ class ServersCog(commands.Cog, name='Servers'):
             await ctx.send("❌ Server monitoring not initialized yet. Please wait a moment.")
             return
 
-        # Always fetch fresh data from Steam
-        await server_monitor.force_update()
+        # Cache-first, same as !listservers.
+        await server_monitor.ensure_fresh()
 
         open_servers = server_monitor.get_open_lobbies()
         embed = formatter.create_lobby_list_embed(open_servers, server_monitor.last_update)
