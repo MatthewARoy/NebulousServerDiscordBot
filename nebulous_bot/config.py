@@ -95,6 +95,22 @@ class Config:
     # answer straight from cache. Exceeding it means the loop is stalled or
     # dead, and the command sweeps rather than showing stale data.
     SERVER_CACHE_MAX_AGE = 45  # seconds (UPDATE_INTERVAL + margin for one sweep)
+
+    # A2S queries run on SteamAPI's OWN thread pool, never the asyncio default
+    # executor. The default pool is min(32, cpu_count + 4) — six workers on the
+    # production VM (cpu_count 2) — and is shared with the statistics writer
+    # and, since aiodns isn't installed, aiohttp's DNS resolution. A sweep
+    # sized to that pool would own all of it for most of a cycle.
+    A2S_MAX_CONCURRENCY = 6
+
+    # Per-UDP-exchange timeout handed to python-valve. A full query is two
+    # exchanges (challenge + reply) and each server gets two queries, so the
+    # in-thread worst case is 4x this. Keep 4x below A2S_QUERY_TIMEOUT:
+    # asyncio.wait_for abandons the future but CANNOT cancel a running thread,
+    # so a longer socket timeout would leave orphans holding pool workers
+    # after their semaphore slot was already handed to the next server.
+    A2S_SOCKET_TIMEOUT = 1.5
+    A2S_QUERY_TIMEOUT = 7.0  # > 4 * A2S_SOCKET_TIMEOUT
     STATUS_MESSAGE_REFRESH_INTERVAL = int(os.getenv('STATUS_MESSAGE_REFRESH_INTERVAL', 86400))  # seconds - create new message daily (86400 = 24 hours)
     MAX_SERVERS_DISPLAY = 20
     

@@ -3,6 +3,7 @@ import asyncio
 import logging
 import ssl
 import certifi
+from concurrent.futures import ThreadPoolExecutor
 from typing import List, Dict, Optional
 from nebulous_bot.config import Config
 
@@ -13,12 +14,32 @@ class SteamAPI:
         self.api_key = Config.STEAM_API_KEY
         self.session = None
         self.stable_version = None  # Set dynamically from ServerMonitor
-        
+        self._a2s_executor = None
+
+    def _get_a2s_executor(self) -> ThreadPoolExecutor:
+        """Dedicated pool for blocking A2S queries.
+
+        Deliberately NOT the asyncio default executor: that one has six
+        workers on the production VM and is shared with the statistics
+        writer and aiohttp's DNS resolver. A sweep running there would
+        occupy the whole pool for most of a cycle and stall both.
+        """
+        if self._a2s_executor is None:
+            self._a2s_executor = ThreadPoolExecutor(
+                max_workers=Config.A2S_MAX_CONCURRENCY,
+                thread_name_prefix='a2s',
+            )
+        return self._a2s_executor
+
     async def close(self):
         """Close the persistent HTTP session (call on shutdown)."""
         if self.session and not self.session.closed:
             await self.session.close()
         self.session = None
+        if self._a2s_executor is not None:
+            # Don't join: a stuck UDP read would block shutdown for seconds.
+            self._a2s_executor.shutdown(wait=False)
+            self._a2s_executor = None
 
     async def get_game_servers(self) -> List[Dict]:
         """
@@ -54,6 +75,32 @@ class SteamAPI:
         except Exception as e:
             logger.error(f"Error fetching server data: {e}")
             return []
+
+    @staticmethod
+    def _log_fallback_coverage(servers: List[Dict]) -> None:
+        """Warn when live counts stop working.
+
+        If A2S egress breaks or a game update changes the query protocol,
+        every server silently reverts to Steam's stale count — exactly the
+        behaviour users complained about — and nothing else would say so at
+        production log level.
+        """
+        if not servers:
+            return
+        stale = [s['name'] for s in servers if s.get('player_count_source') == 'steam']
+        if not stale:
+            return
+        if len(stale) * 2 >= len(servers):
+            logger.warning(
+                f"{len(stale)}/{len(servers)} servers fell back to Steam's stale player "
+                f"count this cycle — live A2S counts are largely not working. "
+                f"Examples: {', '.join(stale[:5])}"
+            )
+        else:
+            logger.debug(
+                f"{len(stale)}/{len(servers)} server(s) fell back to Steam's player "
+                f"count (A2S unanswered): {', '.join(stale[:5])}"
+            )
 
     def passes_default_filter(self, server: Dict) -> bool:
         """Default visibility filter: hide empty, bot-hosting, and private
@@ -112,16 +159,25 @@ class SteamAPI:
             state = {'rules': None, 'player_count': None}
 
             # Both queries share one connection; neither failure is fatal.
-            with valve.source.a2s.ServerQuerier((host, port), timeout=3) as server:
-                try:
-                    state['player_count'] = self._extract_live_player_count(server.players())
-                except Exception as e:
-                    logger.debug(f"A2S player query failed for {server_address}: {e}")
-
+            #
+            # RULES FIRST, deliberately. Rules carry the load-bearing data —
+            # status, map, version, modList — and a missing status silently
+            # defaults to 'lobby', which advertises an in-progress match as
+            # joinable and can fire !nextgame pings. The player count is the
+            # nice-to-have. Whichever runs second is what a blown time budget
+            # costs us, so the cheap thing goes last.
+            with valve.source.a2s.ServerQuerier(
+                (host, port), timeout=Config.A2S_SOCKET_TIMEOUT
+            ) as server:
                 try:
                     state['rules'] = self._parse_rules_response(server.rules(), server_address)
                 except Exception as e:
                     logger.debug(f"A2S rules query failed for {server_address}: {e}")
+
+                try:
+                    state['player_count'] = self._extract_live_player_count(server.players())
+                except Exception as e:
+                    logger.debug(f"A2S player query failed for {server_address}: {e}")
 
             return state
 
@@ -140,7 +196,10 @@ class SteamAPI:
             return None
         count = players_response.get('player_count')
         if count is None:
-            # Some servers omit the header count but still list the players.
+            # Defensive only. python-valve decodes the player array using the
+            # header count, so with this library the two cannot disagree and
+            # a truncated response raises rather than returning a short list.
+            # Kept so a future/vendored decoder can't silently return None.
             listed = players_response.get('players')
             count = len(listed) if listed is not None else None
         if count is None:
@@ -178,10 +237,14 @@ class SteamAPI:
         budget, hence the wider timeout than the old rules-only query.
         """
         try:
-            # Run the blocking A2S query in a thread with a timeout guard
+            # Run the blocking A2S query on OUR pool (not asyncio's default
+            # executor) with a timeout guard.
+            loop = asyncio.get_running_loop()
             return await asyncio.wait_for(
-                asyncio.to_thread(self._query_server_state_sync, server_address),
-                timeout=7.0
+                loop.run_in_executor(
+                    self._get_a2s_executor(), self._query_server_state_sync, server_address
+                ),
+                timeout=Config.A2S_QUERY_TIMEOUT
             )
         except asyncio.TimeoutError:
             logger.debug(f"Server state query timed out for {server_address}")
@@ -260,14 +323,12 @@ class SteamAPI:
                 
                 # Query server rules for each server (with concurrency limit)
                 import asyncio
-                # Each server now costs two A2S round-trips, so the sweep
-                # carries twice the serial work it used to. Unreachable
-                # servers are the expensive case (two 3 s UDP timeouts each);
-                # at 3-wide a handful of dead entries would exhaust the
-                # whole-sweep budget and dump every server to Steam-only
-                # data. 6-wide restores the pre-change headroom. These are
-                # idle UDP waits in the shared executor, not CPU work.
-                semaphore = asyncio.Semaphore(6)  # Limit concurrent queries
+                # Matched to the A2S pool size so an admitted task always has
+                # a worker waiting: any wider and tasks would burn their
+                # A2S_QUERY_TIMEOUT sitting in the executor queue without ever
+                # sending a packet, then "fall back" to the stale Steam count
+                # this whole path exists to replace.
+                semaphore = asyncio.Semaphore(Config.A2S_MAX_CONCURRENCY)
                 
                 async def get_server_with_rules(server_data, server_name, players):
                     server_address = server_data.get('addr', '')
@@ -296,12 +357,7 @@ class SteamAPI:
                         if server is not None and not isinstance(server, Exception):
                             servers.append(server)
 
-                    stale = [s['name'] for s in servers if s.get('player_count_source') == 'steam']
-                    if stale:
-                        logger.debug(
-                            f"{len(stale)} server(s) fell back to Steam's player count "
-                            f"(A2S unanswered): {', '.join(stale[:5])}"
-                        )
+                    self._log_fallback_coverage(servers)
 
                 except asyncio.TimeoutError:
                     logger.warning("Server rules queries timed out, using basic server data")
@@ -327,7 +383,23 @@ class SteamAPI:
         number rather than zeroing it — a dropped UDP packet must not flicker
         a populated server out of the list (`passes_default_filter` hides
         players == 0).
+
+        A live zero is only believed when `rules` came back too. Zero is the
+        one count that removes a server from the filtered cache entirely, and
+        that cache is what `_track_game_start_times` watches for the
+        in_game -> debrief transition that fires !nextgame notifications and
+        closes GameSession rows. A half-answering server (count arrives,
+        rules don't) is not good enough evidence to drop a server mid-match;
+        rules coming back proves the server is alive and talking.
         """
+        # A zero we can't corroborate with rules is treated as no answer.
+        if live_player_count == 0 and rules is None:
+            logger.debug(
+                f"Ignoring uncorroborated zero player count for "
+                f"{server_data.get('addr', '')} (rules query also failed)"
+            )
+            live_player_count = None
+
         # Parse map information from Steam API first (fallback)
         map_name = server_data.get('map', 'Unknown')
         map_capacity = self._extract_map_capacity(map_name)

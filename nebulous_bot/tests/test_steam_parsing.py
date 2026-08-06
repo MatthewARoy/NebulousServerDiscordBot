@@ -69,14 +69,31 @@ def test_rules_json_survives_apostrophes():
 # players were connected for ~7 minutes straight, another held Steam=5 while
 # emptying to 1. A2S_PLAYER is the real count.
 
+LIVE_RULES = {'inprogress': '0'}  # any rules response proves the server answered
+
+
 def test_live_count_supersedes_stale_steam_count():
     # Steam over-reporting (the "shows 6/8, nobody there" complaint).
-    server = enhance(raw(players=6), live_player_count=0)
+    server = enhance(raw(players=6), LIVE_RULES, live_player_count=0)
     assert server['players'] == 0
     assert server['player_count_source'] == 'a2s'
 
     # ...and under-reporting, which hid real players from !ls and !nextgame.
     assert enhance(raw(players=4), live_player_count=8)['players'] == 8
+
+
+def test_uncorroborated_zero_is_not_believed():
+    # Count arrived but rules didn't: the server only half-answered, which is
+    # not enough to drop it out of the filtered cache. Dropping it would also
+    # drop its game-start tracking entry and lose the in_game -> debrief
+    # transition that fires !nextgame notifications.
+    server = enhance(raw(players=6), None, live_player_count=0)
+    assert server['players'] == 6
+    assert server['player_count_source'] == 'steam'
+
+    # A zero WITH rules is a real empty server and is believed (above).
+    # A nonzero count needs no corroboration — it can only add a server.
+    assert enhance(raw(players=0), None, live_player_count=3)['players'] == 3
 
 
 def test_steam_count_kept_when_a2s_does_not_answer():
@@ -90,7 +107,8 @@ def test_steam_count_kept_when_a2s_does_not_answer():
 def test_empty_server_with_stale_steam_count_is_filtered_out():
     # The end-to-end effect: an empty server Steam still claims is populated
     # drops out of the default view instead of being advertised as joinable.
-    assert api.passes_default_filter(enhance(raw(players=6), live_player_count=0)) is False
+    server = enhance(raw(players=6), LIVE_RULES, live_player_count=0)
+    assert api.passes_default_filter(server) is False
 
 
 def test_extract_live_player_count_variants():
