@@ -42,7 +42,10 @@ class AdminCog(commands.Cog, name='Admin'):
         # Fall back to tracked bot start time
         return self.bot.deployment_time
 
-    @commands.command(name='restartmonitor', aliases=['restart'])
+    # hidden=True keeps the maintenance commands out of everyone's !help but
+    # the bot owner's; it does not change who may run them (still guild
+    # admins, via the permission check below).
+    @commands.command(name='restartmonitor', aliases=['restart'], hidden=True)
     @commands.has_permissions(administrator=True)
     async def restart_monitoring(self, ctx):
         """Restart the monitoring loop (admin only)"""
@@ -76,7 +79,7 @@ class AdminCog(commands.Cog, name='Admin'):
             logger.error(f"Error restarting monitoring: {e}", exc_info=True)
             await status_msg.edit(content=f"❌ Failed to restart monitoring: {str(e)}")
 
-    @commands.command(name='debugmonitor')
+    @commands.command(name='debugmonitor', hidden=True)
     @commands.has_permissions(administrator=True)
     async def debug_monitor(self, ctx):
         """Show detailed monitoring loop debug info (admin only)"""
@@ -172,8 +175,9 @@ class AdminCog(commands.Cog, name='Admin'):
         )
 
         embed.add_field(
-            name="🔥 Commands",
+            name="🔥 Popular Commands",
             value=(
+                "`!help` - Full command menu\n"
                 "`!listservers` - List all servers\n"
                 "`!openlobbies` - Show available servers\n"
                 "`!stats` - View game statistics\n"
@@ -183,8 +187,7 @@ class AdminCog(commands.Cog, name='Admin'):
                 "`!nextgame` - Get notified when a game is ready (options: `ptb`, `modded`, `newplayer`, `lobby`, `--skip`)\n"
                 "`!formation` - Optimize fleet formation file\n"
                 "`!refresh` - Force update\n"
-                "`!version` - Show version and changelog\n"
-                "`!status` - This message"
+                "`!version` - Show version and changelog"
             ),
             inline=False
         )
@@ -233,7 +236,7 @@ class AdminCog(commands.Cog, name='Admin'):
             inline=False
         )
 
-        embed.set_footer(text="Use !status to see bot information and commands")
+        embed.set_footer(text="Use !help for the command menu • !status for bot information")
         await ctx.send(embed=embed)
 
     @commands.command(name='commandlogs', aliases=['cmdlogs', 'logs'], hidden=True)

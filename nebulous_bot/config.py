@@ -100,15 +100,24 @@ class Config:
     ADVICE_VOTE_THRESHOLD = int(os.getenv('ADVICE_VOTE_THRESHOLD', 5))
 
     # Version Information
-    VERSION = "2.7.0"
+    VERSION = "2.8.0"
     CHANGELOG = [
         {
-            "version": "2.7.0",
-            "date": "2026-07-30",
+            "version": "2.8.0",
+            "date": "2026-08-06",
             "changes": [
                 "!advice add <tip> — propose new advice; 5+ 👍 from the community adds it to the knowledge pool, 5+ 👎 marks it incorrect",
                 "!advice remove <id> — vote out advice that turns out to be wrong (5+ 👍 removes it)",
                 "!advice list — audit the whole knowledge pool by category, including the incorrect pool; !advice pending shows open votes"
+            ]
+        },
+        {
+            "version": "2.7.0",
+            "date": "2026-08-02",
+            "changes": [
+                "!help is now a proper menu — commands grouped by category, each with usage, examples, aliases and cooldowns",
+                "!help <command> and !help <category> both work (try !help nextgame or !help servers), and a typo suggests the closest match",
+                "Maintenance commands are no longer listed in !help for anyone but the bot owner"
             ]
         },
         {

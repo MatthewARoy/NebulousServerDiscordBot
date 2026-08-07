@@ -1,7 +1,36 @@
 # Commands
 
 All commands use the `!` prefix. Most are usable in DMs as well as guilds.
-Run `!status` to see a summary in Discord.
+Run `!help` to see the same reference in Discord.
+
+## Help
+
+### `!help [command|category]` — alias `!commands`
+The in-Discord command menu, grouped by category:
+
+- `!help` — every command you can run, one line each, grouped by category
+  (Servers, Statistics, Next Game, Formation, Advice, Setup, Admin).
+- `!help <command>` — summary, usage, examples, aliases and cooldown, e.g.
+  `!help nextgame`. Also accepts the prefix (`!help !nextgame`).
+- `!help <category>` — every command in one group, e.g. `!help servers`.
+  Category names are matched case- and space-insensitively (`next game`,
+  `nextgame`, `Next Game`).
+
+The pages are generated from each command's docstring
+(`nebulous_bot/help_command.py`), so a command's `Usage:`/`Examples:` lines
+are what users see — there is no separate help table to keep in sync.
+
+Visibility rules:
+
+- Commands whose checks you fail are left out (a non-admin never sees the
+  `!setstatuschannel` family).
+- Commands marked `hidden=True` — the maintenance ones, `!commandlogs`,
+  `!restartmonitor`, `!debugmonitor` — are shown **only to the bot owner**,
+  marked 🔒. For anyone else `!help commandlogs` answers exactly like an
+  unknown name, so the help menu never confirms they exist, and typo
+  suggestions never mention them. `hidden` controls help visibility only;
+  who may *run* a command is still its own check (`is_owner`,
+  `has_permissions`).
 
 ## Server discovery
 
@@ -114,6 +143,9 @@ Shows the current setup for this guild and indicates whether it's coming
 from a `!set...` command, the bootstrap config, or unset.
 
 ## Admin (operations)
+
+These are hidden from `!help` for everyone but the bot owner (see
+[Help](#help)); the permission checks below are what gate running them.
 
 ### `!restartmonitor` — alias `!restart`
 Restart the server-monitoring loop (administrator only).
