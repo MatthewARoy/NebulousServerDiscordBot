@@ -1,12 +1,17 @@
 import aiohttp
 import asyncio
 import logging
+import socket
 import ssl
+import struct
 import certifi
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Tuple
 from nebulous_bot.config import Config
 
 logger = logging.getLogger(__name__)
+
+# A2S_INFO query payload (Source engine standard).
+A2S_INFO_QUERY = b"\xFF\xFF\xFF\xFFTSource Engine Query\x00"
 
 class SteamAPI:
     def __init__(self):
@@ -66,6 +71,78 @@ class SteamAPI:
             return False
         return True
     
+    @staticmethod
+    def parse_a2s_info_response(data: bytes) -> Optional[Dict]:
+        """Parse an A2S_INFO response packet into live server facts.
+
+        Returns {'name', 'map', 'players', 'max_players', 'bots'} or None if
+        the packet is not a valid Source-format info response.
+        """
+        try:
+            if len(data) < 6 or data[:4] != b"\xFF\xFF\xFF\xFF" or data[4:5] != b"I":
+                return None
+
+            def read_cstring(offset: int) -> Tuple[str, int]:
+                end = data.index(b"\x00", offset)
+                return data[offset:end].decode("utf-8", "replace"), end + 1
+
+            offset = 6  # skip header (5 bytes) + protocol version byte
+            name, offset = read_cstring(offset)
+            map_name, offset = read_cstring(offset)
+            _folder, offset = read_cstring(offset)
+            _game, offset = read_cstring(offset)
+            offset += 2  # appid (uint16)
+            players, max_players, bots = struct.unpack_from("<BBB", data, offset)
+            return {
+                'name': name,
+                'map': map_name,
+                'players': players,
+                'max_players': max_players,
+                'bots': bots,
+            }
+        except (ValueError, struct.error):
+            return None
+
+    def _query_server_info_sync(self, server_address: str) -> Optional[Dict]:
+        """
+        Blocking A2S_INFO query with challenge handshake. Run in a thread.
+
+        This is the only live source of the current map and player count:
+        the Steam listing lags by minutes (wrong map/population for busy
+        servers) and the Nebulous rules payload stopped including 'map'.
+        python-valve cannot do this query — servers now demand the
+        challenge handshake it predates — hence the raw socket.
+        """
+        if ':' not in server_address:
+            return None
+        host, port_str = server_address.split(':', 1)
+        try:
+            port = int(port_str)
+        except ValueError:
+            return None
+
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock.settimeout(2)
+        try:
+            sock.sendto(A2S_INFO_QUERY, (host, port))
+            data, _ = sock.recvfrom(4096)
+            # 'A' response = server demands a challenge; resend with it.
+            if len(data) >= 9 and data[4:5] == b"A":
+                sock.sendto(A2S_INFO_QUERY + data[5:9], (host, port))
+                data, _ = sock.recvfrom(4096)
+            return self.parse_a2s_info_response(data)
+        except OSError as e:
+            logger.debug(f"A2S_INFO query failed for {server_address}: {e}")
+            return None
+        finally:
+            sock.close()
+
+    def _query_server_state_sync(self, server_address: str) -> Tuple[Optional[Dict], Optional[Dict]]:
+        """Query live info and rules for one server in a single worker thread."""
+        info = self._query_server_info_sync(server_address)
+        rules = self._query_server_rules_sync(server_address)
+        return info, rules
+
     def _query_server_rules_sync(self, server_address: str) -> Optional[Dict]:
         """
         Blocking server rules query using python-valve.
@@ -90,8 +167,10 @@ class SteamAPI:
             host, port = server_address.split(':', 1)
             port = int(port)
             
-            # Use valve library to query server rules (same as debug script)
-            with valve.source.a2s.ServerQuerier((host, port), timeout=3) as server:
+            # Use valve library to query server rules (same as debug script).
+            # 2s so an unreachable server's info+rules attempts together stay
+            # inside the 4.5s per-server guard in get_server_state.
+            with valve.source.a2s.ServerQuerier((host, port), timeout=2) as server:
                 raw_rules = server.rules()
                 
                 if not raw_rules:
@@ -121,21 +200,22 @@ class SteamAPI:
             logger.debug(f"Error querying server rules for {server_address}: {e}")
             return None
 
-    async def get_server_rules(self, server_address: str) -> Optional[Dict]:
+    async def get_server_state(self, server_address: str) -> Tuple[Optional[Dict], Optional[Dict]]:
         """
-        Query server rules off the main event loop to prevent Discord message delays.
+        Query live server info and rules off the main event loop to prevent
+        Discord message delays. Returns (info, rules); either may be None.
         """
         try:
-            # Run the blocking A2S query in a thread with a timeout guard
+            # Run the blocking A2S queries in a thread with a timeout guard
             return await asyncio.wait_for(
-                asyncio.to_thread(self._query_server_rules_sync, server_address),
-                timeout=3.5
+                asyncio.to_thread(self._query_server_state_sync, server_address),
+                timeout=4.5
             )
         except asyncio.TimeoutError:
-            logger.debug(f"Server rules query timed out for {server_address}")
+            logger.debug(f"Server state query timed out for {server_address}")
         except Exception as e:
-            logger.debug(f"Error querying server rules for {server_address}: {e}")
-        return None
+            logger.debug(f"Error querying server state for {server_address}: {e}")
+        return None, None
     
     def _parse_nebulous_rules_json(self, rules_data) -> dict:
         """Parse the Nebulous rules from ServerRules response (from debug script)"""
@@ -214,18 +294,18 @@ class SteamAPI:
                     async with semaphore:
                         try:
                             server_address = server_data.get('addr', '')
-                            rules = await self.get_server_rules(server_address)
-                            return self._create_enhanced_server_data(server_data, server_name, players, rules)
+                            info, rules = await self.get_server_state(server_address)
+                            return self._create_enhanced_server_data(server_data, server_name, players, rules, info)
                         except Exception as e:
-                            logger.debug(f"Server rules query failed for {server_address}: {e}")
+                            logger.debug(f"Server state query failed for {server_address}: {e}")
                             return self._create_enhanced_server_data(server_data, server_name, players, None)
-                
+
                 # Execute queries concurrently with timeout
                 try:
                     tasks = [get_server_with_rules(sd, sn, p) for sd, sn, p in basic_servers]
                     enhanced_servers = await asyncio.wait_for(
                         asyncio.gather(*tasks, return_exceptions=True),
-                        timeout=10.0  # 10 second timeout for all server rules queries
+                        timeout=15.0  # overall cap for all per-server info+rules queries
                     )
                     
                     # Add successful results
@@ -246,12 +326,24 @@ class SteamAPI:
             
         return servers
     
-    def _create_enhanced_server_data(self, server_data: Dict, server_name: str, players: int, rules: Optional[Dict]) -> Dict:
-        """Create enhanced server data using Steam API data and server rules"""
+    def _create_enhanced_server_data(self, server_data: Dict, server_name: str, players: int, rules: Optional[Dict], info: Optional[Dict] = None) -> Dict:
+        """Create enhanced server data from the Steam listing, live A2S info,
+        and server rules.
+
+        The Steam listing lags by minutes, so a live A2S_INFO result (map,
+        players, max_players, bots) overrides it. Rules win over both for the
+        map if a server ever publishes one again (current builds don't).
+        """
         # Parse map information from Steam API first (fallback)
         map_name = server_data.get('map', 'Unknown')
+
+        # Live A2S info beats the stale Steam listing
+        if info:
+            if info.get('map'):
+                map_name = info['map']
+            players = info.get('players', players)
         map_capacity = self._extract_map_capacity(map_name)
-        
+
         # Initialize server data with Steam API info
         server = {
             'id': server_data.get('steamid', ''),
@@ -259,8 +351,8 @@ class SteamAPI:
             'address': server_data.get('addr', ''),
             'gameport': server_data.get('gameport', 0),
             'players': players,
-            'max_players': server_data.get('max_players', 0),
-            'bots': server_data.get('bots', 0),
+            'max_players': (info or {}).get('max_players') or server_data.get('max_players', 0),
+            'bots': info.get('bots', server_data.get('bots', 0)) if info else server_data.get('bots', 0),
             'map': map_name,
             'map_capacity': map_capacity,
             'version': server_data.get('version', ''),
