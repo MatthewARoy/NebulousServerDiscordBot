@@ -28,7 +28,8 @@ class SteamAPI:
     async def get_game_servers(self) -> List[Dict]:
         """
         Get ALL game servers for Nebulous: Fleet Command using Steam Web API,
-        enriched with A2S server-rules data (real game state, map, mods).
+        enriched per server with live A2S info (map, player count) and A2S
+        rules (real game state, mods).
 
         Returns the unfiltered list; callers that want the default display
         set (no empty/bot/private servers) filter with passes_default_filter.
