@@ -100,8 +100,16 @@ class Config:
     ADVICE_VOTE_THRESHOLD = int(os.getenv('ADVICE_VOTE_THRESHOLD', 5))
 
     # Version Information
-    VERSION = "2.8.0"
+    VERSION = "2.8.1"
     CHANGELOG = [
+        {
+            "version": "2.8.1",
+            "date": "2026-08-09",
+            "changes": [
+                "Fixed server status showing the wrong map and player count (e.g. ERI 5) — the bot now asks each server directly for live data every cycle instead of trusting Steam's directory, which can lag by many minutes",
+                "Open-lobby detection, '+N needed' counts, and !nextgame pings now use the live numbers too"
+            ]
+        },
         {
             "version": "2.8.0",
             "date": "2026-08-06",

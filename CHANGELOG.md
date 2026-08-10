@@ -4,6 +4,24 @@ The bot reads its own changelog from `nebulous_bot/config.py` (`Config.CHANGELOG
 to power the in-Discord `!version` command, so that file is the source of truth
 for current and recent releases. This document mirrors it for readers on GitHub.
 
+## 2.8.1 — 2026-08-09
+
+- Fixed server status showing the wrong map and player count (e.g. ERI 5) —
+  the bot now asks each server directly for live data every cycle instead of
+  trusting Steam's directory, which can lag by many minutes.
+- Open-lobby detection, "+N needed" counts, and `!nextgame` pings now use
+  the live numbers too.
+
+(Maintainer notes: two silent upstream regressions — Nebulous server builds
+stopped publishing `map` in the A2S rules payload, and servers now demand
+the A2S_INFO challenge handshake, which the abandoned python-valve library
+predates. `steam_api.py` gained a raw-socket challenge-aware A2S_INFO query
+(no new dependency) run in the same worker thread as the rules query; live
+map/players/max_players/bots override the Steam listing, rules still win
+for the map if it ever returns. Timeouts: 2s per UDP query, 4.5s per-server
+guard, 15s sweep cap. Verified live: zero mismatches vs independent probes
+across multi-cycle soaks, including through an ERI fleet restart.)
+
 ## 2.8.0 — 2026-08-06
 
 - `!advice add <tip>` — propose new advice; 5+ 👍 from the community adds it
