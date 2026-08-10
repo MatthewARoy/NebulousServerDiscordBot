@@ -21,6 +21,10 @@ so a release is not done until **both** changelog locations are updated.
    - Write changes in player-facing language (they render in Discord embeds;
      the `!version` embed shows only the first 2 changes per entry, so lead
      with the most important).
+   - **Never put technical/implementation notes in the patch notes** — they
+     are reserved for features. Bugfixes get one super-simple line (e.g.
+     "Bugfix for server count"); mechanism, root cause, and internals go in
+     the `CHANGELOG.md` maintainer-notes block only.
 
 3. **Mirror to `CHANGELOG.md`** at the repo root — same content, markdown
    format, newest-first. `Config.CHANGELOG` is the source of truth;
