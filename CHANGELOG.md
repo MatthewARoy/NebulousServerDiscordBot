@@ -6,11 +6,7 @@ for current and recent releases. This document mirrors it for readers on GitHub.
 
 ## 2.8.1 — 2026-08-09
 
-- Fixed server status showing the wrong map and player count (e.g. ERI 5) —
-  the bot now asks each server directly for live data every cycle instead of
-  trusting Steam's directory, which can lag by many minutes.
-- Open-lobby detection, "+N needed" counts, and `!nextgame` pings now use
-  the live numbers too.
+- Bugfix for server count.
 
 (Maintainer notes: two silent upstream regressions — Nebulous server builds
 stopped publishing `map` in the A2S rules payload, and servers now demand
