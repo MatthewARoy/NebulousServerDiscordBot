@@ -218,7 +218,10 @@ fi
 if [[ "$BUILD_ON_VM" =~ ^[Yy]$ ]]; then
     echo "🔨 Building Docker image on VM..."
     
-    # Copy project files (excluding large directories)
+    # Copy project files (excluding large directories). The transfer is
+    # exclude-based, so knowledge/ (entries/ and catalog/) rides along and
+    # the Dockerfile's `COPY . .` bakes it into the image — no include
+    # rule needed when files are added under knowledge/.
     echo "📤 Copying project files..."
     rsync -avz --exclude '__pycache__' \
                --exclude '*.pyc' \

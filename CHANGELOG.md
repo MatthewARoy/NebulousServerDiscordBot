@@ -4,6 +4,27 @@ The bot reads its own changelog from `nebulous_bot/config.py` (`Config.CHANGELOG
 to power the in-Discord `!version` command, so that file is the source of truth
 for current and recent releases. This document mirrors it for readers on GitHub.
 
+## 2.9.0 — 2026-08-18
+
+- `!advice` search understands community shorthand (FPA, GPC, beamstone, ...)
+  and flags contested ⚠️ / balance-dependent 🕒 advice.
+
+(Maintainer notes: phase 1 of the KB v2 spec,
+`docs/superpowers/specs/2026-08-18-knowledge-base-v2-structured-advice.md`.
+New `knowledge/catalog/`: `components.toml` and `hulls.toml` are generated
+from the live game content registries by the DevAssistant `gamedata`
+command via `NebulousDevAssistant/mcp/catalog_dump.py`; regeneration is
+owned and rerun per game patch, procedure in `knowledge/catalog/README.md`.
+Hand-curated `aliases.toml` and `classes.toml` overlays are CI-validated
+against the generated files. Search expands query tokens through the alias
+table, so shorthand scores against the display-name words the corpus
+spells out. The loader accepts schema v2 fields, with kind, status, and
+patch_sensitive defaulted for legacy entries and no bulk verification
+claims; validator tests enforce the enums and resolve scope ids against
+the catalog. No entry content changed. The deploy path needed no change:
+the rsync is exclude-based and the image is built with `COPY . .`, so
+`knowledge/catalog/` ships automatically.)
+
 ## 2.8.1 — 2026-08-09
 
 - Bugfix for server count.
