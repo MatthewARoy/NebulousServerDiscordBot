@@ -535,6 +535,8 @@ changes they need; those are part of the phase, not an afterthought.
    (6a), proposals-export management command + sheet loop (6c), promotion
    pass in the curate-advice skill with id-stable promotion and permanent
    tombstones (6), patch-triage workflow (6b), archetype ballots.
+   Also: `!advice improve` community corrections to existing entries
+   (ticket: `docs/superpowers/plans/2026-08-18-advice-improve-ticket.md`).
 5. **Anatomy + split.** Hull region geometry (after the socket-key
    stability check), anatomy claim entries, `in_region` triggers,
    `hulls.json` export; split the repo when an external consumer lands.
