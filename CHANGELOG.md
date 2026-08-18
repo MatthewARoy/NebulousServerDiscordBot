@@ -4,6 +4,20 @@ The bot reads its own changelog from `nebulous_bot/config.py` (`Config.CHANGELOG
 to power the in-Discord `!version` command, so that file is the source of truth
 for current and recent releases. This document mirrors it for readers on GitHub.
 
+## 2.9.1 — 2026-08-18
+
+- Internal test-harness improvements.
+
+(Maintainer notes: `TEST_COMMAND_BOT_IDS` + `TEST_COMMAND_GUILD_IDS` env
+vars, both empty by default and both required (fail closed). When set,
+prefix commands from the listed bot user ids are processed instead of
+dropped, only inside the listed guilds (the designated test guild is
+Davaned's personal server), so the Discord MCP puppet bot can drive
+deploy smoke tests; see `docs/DISCORD_TEST_HARNESS.md`. Loop-safe: own
+messages and DMs never processed, gate is the pure tested function
+`harness_command_allowed`. Production behavior is unchanged until the VM
+`.env` opts in.)
+
 ## 2.9.0 — 2026-08-18
 
 - `!advice` search understands community shorthand (FPA, GPC, beamstone, ...)

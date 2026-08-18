@@ -13,7 +13,7 @@ from datetime import datetime, timezone
 from typing import Optional
 from django.core.management.base import BaseCommand
 
-from nebulous_bot.config import Config
+from nebulous_bot.config import Config, harness_command_allowed
 from nebulous_bot.server_monitor import ServerMonitor
 from nebulous_bot.server_formatter import ServerFormatter
 from nebulous_bot.command_logging import setup_command_metrics
@@ -83,6 +83,30 @@ class Command(BaseCommand):
         connector = None
         deployment_time: Optional[datetime] = None
         retention_task: Optional[asyncio.Task] = None
+
+        @bot.event
+        async def on_message(message):
+            """Default command routing, plus the test-harness allowlist.
+
+            discord.py's process_commands drops every bot-authored message,
+            which is correct in production. The test harness (see
+            docs/DISCORD_TEST_HARNESS.md) bypasses that for an allowlisted
+            puppet bot in the designated test guild only — both lists
+            empty by default, fail closed (config.harness_command_allowed);
+            get_context/invoke is the documented way around the author.bot
+            check. Never our own messages, loop-safe by id.
+            """
+            if message.author.bot:
+                if harness_command_allowed(
+                        message.author.id,
+                        message.guild.id if message.guild else None,
+                        bot.user.id,
+                        Config.TEST_COMMAND_BOT_IDS,
+                        Config.TEST_COMMAND_GUILD_IDS):
+                    ctx = await bot.get_context(message)
+                    await bot.invoke(ctx)
+                return
+            await bot.process_commands(message)
 
         @bot.event
         async def on_ready():

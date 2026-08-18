@@ -5,6 +5,29 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
+def parse_id_set(raw):
+    """Comma/space-separated Discord ids -> frozenset of ints.
+
+    Non-numeric fragments are dropped rather than raising, so a typo'd
+    env var degrades to a smaller allowlist instead of a boot failure.
+    """
+    return frozenset(
+        int(part) for part in raw.replace(',', ' ').split() if part.isdigit()
+    )
+
+
+def harness_command_allowed(author_id, guild_id, own_id, bot_ids, guild_ids):
+    """May this bot-authored message enter command processing?
+
+    Fail closed: both allowlists must be non-empty and match, the message
+    must come from a guild, and never from the bot itself.
+    """
+    return (author_id in bot_ids
+            and author_id != own_id
+            and guild_id is not None
+            and guild_id in guild_ids)
+
+
 class Config:
     # Discord Configuration
     DISCORD_TOKEN = os.getenv('DISCORD_TOKEN')
@@ -99,9 +122,26 @@ class Config:
     # to decide a ballot (env-overridable so a small test server can use 1).
     ADVICE_VOTE_THRESHOLD = int(os.getenv('ADVICE_VOTE_THRESHOLD', 5))
 
+    # Bot accounts allowed to invoke prefix commands (discord.py ignores
+    # bot-authored messages by default, which is correct for production).
+    # Dev/test harness only: the Discord MCP test bot's user id goes here
+    # so deploy smoke tests can drive commands end to end. Empty = off.
+    # Scoped by TEST_COMMAND_GUILD_IDS: both lists must be set and match
+    # (see harness_command_allowed), so the harness works only in the
+    # designated personal test guild and nowhere else.
+    TEST_COMMAND_BOT_IDS = parse_id_set(os.getenv('TEST_COMMAND_BOT_IDS', ''))
+    TEST_COMMAND_GUILD_IDS = parse_id_set(os.getenv('TEST_COMMAND_GUILD_IDS', ''))
+
     # Version Information
-    VERSION = "2.9.0"
+    VERSION = "2.9.1"
     CHANGELOG = [
+        {
+            "version": "2.9.1",
+            "date": "2026-08-18",
+            "changes": [
+                "Internal test-harness improvements"
+            ]
+        },
         {
             "version": "2.9.0",
             "date": "2026-08-18",

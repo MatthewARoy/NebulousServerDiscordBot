@@ -35,3 +35,8 @@ STEAM_API_KEY=your_steam_api_key_here
 # NOTIFICATION_INTERVAL=3600             # min seconds between threshold pings (1 hour)
 # DB_PATH=/mnt/data/db.sqlite3           # override SQLite location (production)
 # DEPLOYMENT_TIME=                       # ISO-8601 or unix ts; shown by !status
+# TEST_COMMAND_BOT_IDS=                  # comma-separated bot user ids allowed to
+#                                        # invoke commands (test harness only)
+# TEST_COMMAND_GUILD_IDS=                # guilds where that applies; BOTH must be
+#                                        # set or the harness is off (fail closed).
+#                                        # See docs/DISCORD_TEST_HARNESS.md
