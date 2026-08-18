@@ -1,0 +1,117 @@
+# Generated file — never hand-edit. Regenerate per game patch (game running
+# with DevAssistant enabled):
+#   python NebulousDevAssistant/mcp/catalog_dump.py --out <bot-repo>/knowledge/catalog
+# Hand-curated overlays (aliases.toml, classes.toml) are separate files that
+# regeneration never touches.
+catalog_version = "0.6.2.5:260727-1341"
+generated = 2026-08-18
+generation_command = "python NebulousDevAssistant/mcp/catalog_dump.py --out <bot-repo>/knowledge/catalog"
+kind = "hulls"
+
+[[hull]]
+id = "Stock/Axford Heavy Cruiser"
+display = "Axford Heavy Cruiser"
+class = "Axford"
+faction = "ans"
+
+[[hull]]
+id = "Stock/Bulk Feeder"
+display = "Bulk Feeder"
+class = "Flathead"
+faction = "osp"
+
+[[hull]]
+id = "Stock/Bulk Hauler"
+display = "Bulk Hauler"
+class = "Marauder"
+faction = "osp"
+
+[[hull]]
+id = "Stock/Civ Bulk Hauler"
+display = "Civ Bulk Hauler"
+class = "Bulk Hauler"
+faction = "civilian"
+
+[[hull]]
+id = "Stock/Container Hauler"
+display = "Container Hauler"
+class = "Moorline"
+faction = "osp"
+
+[[hull]]
+id = "Stock/Container Hauler Refit"
+display = "Container Hauler Refit"
+class = "Moorline"
+faction = "osp"
+
+[[hull]]
+id = "Stock/Keystone Destroyer"
+display = "Keystone Destroyer"
+class = "Keystone"
+faction = "ans"
+
+[[hull]]
+id = "Stock/Levy Escort Carrier"
+display = "Levy Escort Carrier"
+class = "Levy"
+faction = "ans"
+
+[[hull]]
+id = "Stock/Mercator Oiler"
+display = "Mercator Oiler"
+class = "Mercator"
+faction = "ans"
+
+[[hull]]
+id = "Stock/Ocello Cruiser"
+display = "Ocello Cruiser"
+class = "Ocello"
+faction = "osp"
+
+[[hull]]
+id = "Stock/Ore Carrier"
+display = "Ore Carrier"
+class = "Journeyman"
+faction = "osp"
+
+[[hull]]
+id = "Stock/Raines Frigate"
+display = "Raines Frigate"
+class = "Raines"
+faction = "ans"
+
+[[hull]]
+id = "Stock/Shuttle"
+display = "Shuttle"
+class = "Ferryman"
+faction = "osp"
+
+[[hull]]
+id = "Stock/Solomon Battleship"
+display = "Solomon Battleship"
+class = "Solomon"
+faction = "ans"
+
+[[hull]]
+id = "Stock/Sprinter Corvette"
+display = "Sprinter Corvette"
+class = "Sprinter"
+faction = "ans"
+
+[[hull]]
+id = "Stock/Tugboat"
+display = "Tugboat"
+class = "Draugr"
+faction = "osp"
+
+[[hull]]
+id = "Stock/Vauxhall Light Cruiser"
+display = "Vauxhall Light Cruiser"
+class = "Vauxhall"
+faction = "ans"
+
+[[hull]]
+id = "Stock/Worden Fleet Carrier"
+display = "Worden Fleet Carrier"
+class = "Worden"
+faction = "ans"

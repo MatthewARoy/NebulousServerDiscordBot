@@ -1,0 +1,78 @@
+# Hand-curated community shorthand -> catalog ids. Regeneration of the
+# generated catalog files never touches this file.
+#
+# Feeds search as synonym expansion: a single-word alias name maps its
+# token to the target's display-name words, so "FPA" scores against
+# entries that spell out "Focused Particle Accelerators". Names must be
+# unique across the file and every id must resolve in components.toml or
+# hulls.toml (CI-validated). Seeded from shorthand already appearing in
+# the curated corpus and the counters thread; grow it as usage appears,
+# in the same commit as the advice that needs it.
+
+[[alias]]
+id = "Stock/Focused Particle Accelerator"
+names = ["FPA"]
+
+[[alias]]
+id = "Stock/Rapid-Cycle Cradle"
+names = ["RCC"]
+
+[[alias]]
+id = "Stock/Adaptive Radar Receiver"
+names = ["ARR"]
+
+[[alias]]
+id = "Stock/Supplementary Radio Amplifiers"
+names = ["SRA"]
+
+[[alias]]
+id = "Stock/Gun Plotting Center"
+names = ["GPC"]
+
+[[alias]]
+id = "Stock/Reinforced DC Locker"
+names = ["RDC"]
+
+[[alias]]
+id = "Stock/Damage Control Complex"
+names = ["DCX"]
+
+[[alias]]
+id = "Stock/Mk600 Beam Cannon"
+names = ["mk600"]
+
+[[alias]]
+id = "Stock/Mk610 Beam Turret"
+names = ["mk610"]
+
+# Hull shorthand. Class names ("Moorline", "Axford") are generated truth
+# in hulls.toml and are not duplicated here; these are the nicknames and
+# type codes the community types instead.
+
+[[alias]]
+id = "Stock/Keystone Destroyer"
+names = ["beamstone", "DD"]
+
+[[alias]]
+id = "Stock/Solomon Battleship"
+names = ["BB"]
+
+[[alias]]
+id = "Stock/Vauxhall Light Cruiser"
+names = ["CL", "vaux"]
+
+[[alias]]
+id = "Stock/Raines Frigate"
+names = ["FF"]
+
+[[alias]]
+id = "Stock/Sprinter Corvette"
+names = ["torpcorv"]
+
+[[alias]]
+id = "Stock/Bulk Hauler"
+names = ["liner"]
+
+[[alias]]
+id = "Stock/Container Hauler"
+names = ["CLN"]

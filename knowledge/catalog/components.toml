@@ -1,0 +1,733 @@
+# Generated file — never hand-edit. Regenerate per game patch (game running
+# with DevAssistant enabled):
+#   python NebulousDevAssistant/mcp/catalog_dump.py --out <bot-repo>/knowledge/catalog
+# Hand-curated overlays (aliases.toml, classes.toml) are separate files that
+# regeneration never touches.
+catalog_version = "0.6.2.5:260727-1341"
+generated = 2026-08-18
+generation_command = "python NebulousDevAssistant/mcp/catalog_dump.py --out <bot-repo>/knowledge/catalog"
+kind = "components"
+
+[[component]]
+id = "Stock/Actively Cooled Amplifiers"
+display = "Actively Cooled Amplifiers"
+
+[[component]]
+id = "Stock/Adaptive Radar Receiver"
+display = "Adaptive Radar Receiver"
+
+[[component]]
+id = "Stock/Ammunition Elevators"
+display = "Ammunition Elevators"
+
+[[component]]
+id = "Stock/Analysis Annex"
+display = "Analysis Annex"
+
+[[component]]
+id = "Stock/Auxiliary Steering"
+display = "Auxiliary Steering"
+
+[[component]]
+id = "Stock/BW1500 Drive"
+display = "BW1500 Drive"
+
+[[component]]
+id = "Stock/BW1500-R Drive"
+display = "BW1500-R Drive"
+
+[[component]]
+id = "Stock/BW2000 Drive"
+display = "BW2000 Drive"
+
+[[component]]
+id = "Stock/BW800 Drive"
+display = "BW800 Drive"
+
+[[component]]
+id = "Stock/BW800-R Drive"
+display = "BW800-R Drive"
+
+[[component]]
+id = "Stock/Basic CIC"
+display = "Basic CIC"
+
+[[component]]
+id = "Stock/Boosted Reactor"
+display = "Boosted Reactor"
+
+[[component]]
+id = "Stock/Bulk Internal Hangar"
+display = "Bulk Internal Hangar"
+
+[[component]]
+id = "Stock/Bulk Magazine"
+display = "Bulk Magazine"
+
+[[component]]
+id = "Stock/Bulwark Huntress"
+display = "Bulwark Huntress"
+
+[[component]]
+id = "Stock/C30 Cannon"
+display = "C30 Cannon"
+
+[[component]]
+id = "Stock/C4 Medium Mount Hangar"
+display = "C4 Medium Mount Hangar"
+
+[[component]]
+id = "Stock/C4 Mount Hangar"
+display = "C4 Mount Hangar"
+
+[[component]]
+id = "Stock/C5 Large Mount Hangar"
+display = "C5 Large Mount Hangar"
+
+[[component]]
+id = "Stock/C53 Cannon"
+display = "C53 Cannon"
+
+[[component]]
+id = "Stock/C54 Cannon"
+display = "C54 Cannon"
+
+[[component]]
+id = "Stock/C65 Cannon"
+display = "C65 Cannon"
+
+[[component]]
+id = "Stock/C81 Plasma Cannon"
+display = "C81 Plasma Cannon"
+
+[[component]]
+id = "Stock/C90 Cannon"
+display = "C90 Cannon"
+
+[[component]]
+id = "Stock/CHI-7700 Drive"
+display = "CHI-7700 Drive"
+
+[[component]]
+id = "Stock/CHI-777 Yard Drive"
+display = "CHI-777 Yard Drive"
+
+[[component]]
+id = "Stock/CHI-9100 Long Haul Drive"
+display = "CHI-9100 Long Haul Drive"
+
+[[component]]
+id = "Stock/CLS-3 Launcher"
+display = "CLS-3 Launcher"
+
+[[component]]
+id = "Stock/CR10 Antenna"
+display = "CR10 Antenna"
+
+[[component]]
+id = "Stock/CR70 Antenna"
+display = "CR70 Antenna"
+
+[[component]]
+id = "Stock/Citadel CIC"
+display = "Citadel CIC"
+
+[[component]]
+id = "Stock/Citadel Magazine"
+display = "Citadel Magazine"
+
+[[component]]
+id = "Stock/Civilian Reactor"
+display = "Civilian Reactor"
+
+[[component]]
+id = "Stock/Container Bank Hangar"
+display = "Container Bank Hangar"
+
+[[component]]
+id = "Stock/Container Bank Launcher"
+display = "Container Bank Launcher"
+
+[[component]]
+id = "Stock/Container Datalink Array"
+display = "Container Datalink Array"
+
+[[component]]
+id = "Stock/Container Stack Launcher"
+display = "Container Stack Launcher"
+
+[[component]]
+id = "Stock/Damage Control Central"
+display = "Damage Control Central"
+
+[[component]]
+id = "Stock/Damage Control Complex"
+display = "Damage Control Complex"
+
+[[component]]
+id = "Stock/Deck Gear Locker"
+display = "Deck Gear Locker"
+
+[[component]]
+id = "Stock/E15 'Masquerade' Signature Booster"
+display = "E15 'Masquerade' Signature Booster"
+
+[[component]]
+id = "Stock/E20 'Lighthouse' Illuminator"
+display = "E20 'Lighthouse' Illuminator"
+
+[[component]]
+id = "Stock/E55 'Spotlight' Illuminator"
+display = "E55 'Spotlight' Illuminator"
+
+[[component]]
+id = "Stock/E57 'Floodlight' Illuminator"
+display = "E57 'Floodlight' Illuminator"
+
+[[component]]
+id = "Stock/E70 'Interruption' Jammer"
+display = "E70 'Interruption' Jammer"
+
+[[component]]
+id = "Stock/E71 'Hangup' Jammer"
+display = "E71 'Hangup' Jammer"
+
+[[component]]
+id = "Stock/E90 'Blanket' Jammer"
+display = "E90 'Blanket' Jammer"
+
+[[component]]
+id = "Stock/ES22 'Pinard' Electronic Support Module"
+display = "ES22 'Pinard' Electronic Support Module"
+
+[[component]]
+id = "Stock/ES32 'Scryer' Missile ID System"
+display = "ES32 'Scryer' Missile ID System"
+
+[[component]]
+id = "Stock/Energy Regulator"
+display = "Energy Regulator"
+
+[[component]]
+id = "Stock/FM200 Drive"
+display = "FM200 Drive"
+
+[[component]]
+id = "Stock/FM200R Drive"
+display = "FM200R Drive"
+
+[[component]]
+id = "Stock/FM230 'Whiplash' Drive"
+display = "FM230 'Whiplash' Drive"
+
+[[component]]
+id = "Stock/FM240 'Dragonfly' Drive"
+display = "FM240 'Dragonfly' Drive"
+
+[[component]]
+id = "Stock/FM280 'Raider' Drive"
+display = "FM280 'Raider' Drive"
+
+[[component]]
+id = "Stock/FM30X 'Prowler' Drive"
+display = "FM30X 'Prowler' Drive"
+
+[[component]]
+id = "Stock/FM500 Drive"
+display = "FM500 Drive"
+
+[[component]]
+id = "Stock/FM500R Drive"
+display = "FM500R Drive"
+
+[[component]]
+id = "Stock/FM530 'Whiplash' Drive"
+display = "FM530 'Whiplash' Drive"
+
+[[component]]
+id = "Stock/FM540 'Dragonfly' Drive"
+display = "FM540 'Dragonfly' Drive"
+
+[[component]]
+id = "Stock/FM580 'Raider' Drive"
+display = "FM580 'Raider' Drive"
+
+[[component]]
+id = "Stock/FR3300 Micro Reactor"
+display = "FR3300 Micro Reactor"
+
+[[component]]
+id = "Stock/FR4800 Reactor"
+display = "FR4800 Reactor"
+
+[[component]]
+id = "Stock/Fire Suppression System"
+display = "Fire Suppression System"
+
+[[component]]
+id = "Stock/Flight Deck Traversal System"
+display = "Flight Deck Traversal System"
+
+[[component]]
+id = "Stock/Focused Particle Accelerator"
+display = "Focused Particle Accelerator"
+
+[[component]]
+id = "Stock/Gun Plotting Center"
+display = "Gun Plotting Center"
+
+[[component]]
+id = "Stock/Intelligence Center"
+display = "Intelligence Center"
+
+[[component]]
+id = "Stock/Ithaca Bridgemaster"
+display = "Ithaca Bridgemaster"
+
+[[component]]
+id = "Stock/J15 Jammer"
+display = "J15 Jammer"
+
+[[component]]
+id = "Stock/J360 Jammer"
+display = "J360 Jammer"
+
+[[component]]
+id = "Stock/J75 Jammer"
+display = "J75 Jammer"
+
+[[component]]
+id = "Stock/Jury-Rigged Reactor"
+display = "Jury-Rigged Reactor"
+
+[[component]]
+id = "Stock/L50 Laser Dazzler"
+display = "L50 Laser Dazzler"
+
+[[component]]
+id = "Stock/Large DC Locker"
+display = "Large DC Locker"
+
+[[component]]
+id = "Stock/Large DC Storage"
+display = "Large DC Storage"
+
+[[component]]
+id = "Stock/Light Civilian Reactor"
+display = "Light Civilian Reactor"
+
+[[component]]
+id = "Stock/ML-9 Mine Launcher"
+display = "ML-9 Mine Launcher"
+
+[[component]]
+id = "Stock/MLS-2 Launcher"
+display = "MLS-2 Launcher"
+
+[[component]]
+id = "Stock/MLS-3 Launcher"
+display = "MLS-3 Launcher"
+
+[[component]]
+id = "Stock/Missile Parallel Interface"
+display = "Missile Parallel Interface"
+
+[[component]]
+id = "Stock/Missile Programming Bus"
+display = "Missile Programming Bus"
+
+[[component]]
+id = "Stock/Missile Programming Bus Array"
+display = "Missile Programming Bus Array"
+
+[[component]]
+id = "Stock/Mk20 'Defender' PDT"
+display = "Mk20 'Defender' PDT"
+
+[[component]]
+id = "Stock/Mk25 'Rebound' PDT"
+display = "Mk25 'Rebound' PDT"
+
+[[component]]
+id = "Stock/Mk29 'Stonewall' PDT"
+display = "Mk29 'Stonewall' PDT"
+
+[[component]]
+id = "Stock/Mk550 Mass Driver"
+display = "Mk550 Mass Driver"
+
+[[component]]
+id = "Stock/Mk600 Beam Cannon"
+display = "Mk600 Beam Cannon"
+
+[[component]]
+id = "Stock/Mk61 Cannon"
+display = "Mk61 Cannon"
+
+[[component]]
+id = "Stock/Mk610 Beam Turret"
+display = "Mk610 Beam Turret"
+
+[[component]]
+id = "Stock/Mk62 Cannon"
+display = "Mk62 Cannon"
+
+[[component]]
+id = "Stock/Mk64 Cannon"
+display = "Mk64 Cannon"
+
+[[component]]
+id = "Stock/Mk65 Cannon"
+display = "Mk65 Cannon"
+
+[[component]]
+id = "Stock/Mk66 Cannon"
+display = "Mk66 Cannon"
+
+[[component]]
+id = "Stock/Mk68 Cannon"
+display = "Mk68 Cannon"
+
+[[component]]
+id = "Stock/Mk81 Railgun"
+display = "Mk81 Railgun"
+
+[[component]]
+id = "Stock/Mk90 'Aurora' PDT"
+display = "Mk90 'Aurora' PDT"
+
+[[component]]
+id = "Stock/Mk95 'Sarissa' PDT"
+display = "Mk95 'Sarissa' PDT"
+
+[[component]]
+id = "Stock/Mount Gyros"
+display = "Mount Gyros"
+
+[[component]]
+id = "Stock/P11 PDT"
+display = "P11 PDT"
+
+[[component]]
+id = "Stock/P20 Flak PDT"
+display = "P20 Flak PDT"
+
+[[component]]
+id = "Stock/P60 Laser PDT"
+display = "P60 Laser PDT"
+
+[[component]]
+id = "Stock/Plant Control Center"
+display = "Plant Control Center"
+
+[[component]]
+id = "Stock/R400 Radar"
+display = "R400 Radar"
+
+[[component]]
+id = "Stock/R550 Early Warning Radar"
+display = "R550 Early Warning Radar"
+
+[[component]]
+id = "Stock/RF101 'Bullseye' Radar"
+display = "RF101 'Bullseye' Radar"
+
+[[component]]
+id = "Stock/RF44 'Pinpoint' Radar"
+display = "RF44 'Pinpoint' Radar"
+
+[[component]]
+id = "Stock/RL18 Launcher"
+display = "RL18 Launcher"
+
+[[component]]
+id = "Stock/RL36 Launcher"
+display = "RL36 Launcher"
+
+[[component]]
+id = "Stock/RM50 'Parallax' Radar"
+display = "RM50 'Parallax' Radar"
+
+[[component]]
+id = "Stock/RS35 'Frontline' Radar"
+display = "RS35 'Frontline' Radar"
+
+[[component]]
+id = "Stock/RS41 'Spyglass' Radar"
+display = "RS41 'Spyglass' Radar"
+
+[[component]]
+id = "Stock/Rapid DC Locker"
+display = "Rapid DC Locker"
+
+[[component]]
+id = "Stock/Rapid-Cycle Cradle"
+display = "Rapid-Cycle Cradle"
+
+[[component]]
+id = "Stock/Redundant Reactor Failsafes"
+display = "Redundant Reactor Failsafes"
+
+[[component]]
+id = "Stock/Reinforced CIC"
+display = "Reinforced CIC"
+
+[[component]]
+id = "Stock/Reinforced DC Locker"
+display = "Reinforced DC Locker"
+
+[[component]]
+id = "Stock/Reinforced Magazine"
+display = "Reinforced Magazine"
+
+[[component]]
+id = "Stock/Reinforced Thruster Nozzles"
+display = "Reinforced Thruster Nozzles"
+
+[[component]]
+id = "Stock/S2 Bandit Launcher"
+display = "S2 Bandit Launcher"
+
+[[component]]
+id = "Stock/S2 Twin Bandit Launcher"
+display = "S2 Twin Bandit Launcher"
+
+[[component]]
+id = "Stock/Signature Scrambler"
+display = "Signature Scrambler"
+
+[[component]]
+id = "Stock/Small DC Locker"
+display = "Small DC Locker"
+
+[[component]]
+id = "Stock/Small Energy Regulator"
+display = "Small Energy Regulator"
+
+[[component]]
+id = "Stock/Small Reactor Booster"
+display = "Small Reactor Booster"
+
+[[component]]
+id = "Stock/Small Workshop"
+display = "Small Workshop"
+
+[[component]]
+id = "Stock/Spacecraft Repair Station"
+display = "Spacecraft Repair Station"
+
+[[component]]
+id = "Stock/Spacecraft Strikedown Station"
+display = "Spacecraft Strikedown Station"
+
+[[component]]
+id = "Stock/Strike Planning Center"
+display = "Strike Planning Center"
+
+[[component]]
+id = "Stock/Strobe Correlator"
+display = "Strobe Correlator"
+
+[[component]]
+id = "Stock/Sundrive Racing Pro"
+display = "Sundrive Racing Pro"
+
+[[component]]
+id = "Stock/Supplementary Radio Amplifiers"
+display = "Supplementary Radio Amplifiers"
+
+[[component]]
+id = "Stock/T20 Cannon"
+display = "T20 Cannon"
+
+[[component]]
+id = "Stock/T30 Cannon"
+display = "T30 Cannon"
+
+[[component]]
+id = "Stock/T81 Plasma Cannon"
+display = "T81 Plasma Cannon"
+
+[[component]]
+id = "Stock/TE45 Mass Driver"
+display = "TE45 Mass Driver"
+
+[[component]]
+id = "Stock/Torpedo Turret"
+display = "Torpedo Turret"
+
+[[component]]
+id = "Stock/Track Correlator"
+display = "Track Correlator"
+
+[[component]]
+id = "Stock/VLS-1-23 Launcher"
+display = "VLS-1-23 Launcher"
+
+[[component]]
+id = "Stock/VLS-1-46 Launcher"
+display = "VLS-1-46 Launcher"
+
+[[component]]
+id = "Stock/VLS-2 Launcher"
+display = "VLS-2 Launcher"
+
+[[component]]
+id = "Stock/VLS-3 Launcher"
+display = "VLS-3 Launcher"
+
+[[munition]]
+id = "Stock/100mm AP Shell"
+display = "100mm AP Shell"
+
+[[munition]]
+id = "Stock/100mm Grapeshot"
+display = "100mm Grapeshot"
+
+[[munition]]
+id = "Stock/100mm HE Shell"
+display = "100mm HE Shell"
+
+[[munition]]
+id = "Stock/100mm HE-HC Shell"
+display = "100mm HE-HC Shell"
+
+[[munition]]
+id = "Stock/120mm AP Shell"
+display = "120mm AP Shell"
+
+[[munition]]
+id = "Stock/120mm HE Shell"
+display = "120mm HE Shell"
+
+[[munition]]
+id = "Stock/120mm HE-RPF Shell"
+display = "120mm HE-RPF Shell"
+
+[[munition]]
+id = "Stock/15mm Sandshot"
+display = "15mm Sandshot"
+
+[[munition]]
+id = "Stock/20mm Slug"
+display = "20mm Slug"
+
+[[munition]]
+id = "Stock/250mm AP Shell"
+display = "250mm AP Shell"
+
+[[munition]]
+id = "Stock/250mm Bomb Shell"
+display = "250mm Bomb Shell"
+
+[[munition]]
+id = "Stock/250mm HE Shell"
+display = "250mm HE Shell"
+
+[[munition]]
+id = "Stock/250mm HE-RPF Shell"
+display = "250mm HE-RPF Shell"
+
+[[munition]]
+id = "Stock/300mm AP Rail Sabot"
+display = "300mm AP Rail Sabot"
+
+[[munition]]
+id = "Stock/35mm Flechette"
+display = "35mm Flechette"
+
+[[munition]]
+id = "Stock/400mm Plasma Ampoule"
+display = "400mm Plasma Ampoule"
+
+[[munition]]
+id = "Stock/450mm AP Shell"
+display = "450mm AP Shell"
+
+[[munition]]
+id = "Stock/450mm HE Shell"
+display = "450mm HE Shell"
+
+[[munition]]
+id = "Stock/500mm Fracturing Block"
+display = "500mm Fracturing Block"
+
+[[munition]]
+id = "Stock/50mm Slug"
+display = "50mm Slug"
+
+[[munition]]
+id = "Stock/600mm Bomb Shell"
+display = "600mm Bomb Shell"
+
+[[munition]]
+id = "Stock/600mm HE Shell"
+display = "600mm HE Shell"
+
+[[munition]]
+id = "Stock/Decoy Container (Clipper)"
+display = "Decoy Container (Clipper)"
+
+[[munition]]
+id = "Stock/Decoy Container (Line Ship)"
+display = "Decoy Container (Line Ship)"
+
+[[munition]]
+id = "Stock/EA12 Chaff Decoy"
+display = "EA12 Chaff Decoy"
+
+[[munition]]
+id = "Stock/EA14 Chaff Decoy"
+display = "EA14 Chaff Decoy"
+
+[[munition]]
+id = "Stock/EA20 Flare Decoy"
+display = "EA20 Flare Decoy"
+
+[[munition]]
+id = "Stock/EA99 Active Decoy"
+display = "EA99 Active Decoy"
+
+[[munition]]
+id = "Stock/Flak Round"
+display = "Flak Round"
+
+[[munition]]
+id = "Stock/S0 Rocket"
+display = "S0 Rocket"
+
+[[munition]]
+id = "Stock/S1 Glide Bomb"
+display = "S1 Glide Bomb"
+
+[[munition]]
+id = "Stock/S1 Prox Bomb"
+display = "S1 Prox Bomb"
+
+[[munition]]
+id = "Stock/S1 Rocket"
+display = "S1 Rocket"
+
+[[munition]]
+id = "Stock/S2 Glide Bomb"
+display = "S2 Glide Bomb"
+
+[[munition]]
+id = "Stock/S3 Cluster Bomb"
+display = "S3 Cluster Bomb"
+
+[[munition]]
+id = "Stock/S3 Mine"
+display = "S3 Mine"
+
+[[munition]]
+id = "Stock/S3 Net Mine"
+display = "S3 Net Mine"
+
+[[munition]]
+id = "Stock/S3 Rocket"
+display = "S3 Rocket"
+
+[[munition]]
+id = "Stock/S3 Sprint Mine"
+display = "S3 Sprint Mine"

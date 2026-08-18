@@ -15,8 +15,19 @@ logger = logging.getLogger(__name__)
 
 KNOWLEDGE_DIR = Path(__file__).resolve().parent.parent / 'knowledge'
 ENTRIES_DIR = KNOWLEDGE_DIR / 'entries'
+CATALOG_DIR = KNOWLEDGE_DIR / 'catalog'
 TAGS_FILE = KNOWLEDGE_DIR / 'tags.toml'
 QUESTIONS_FILE = KNOWLEDGE_DIR / 'QUESTIONS.md'
+
+# Schema v2 enums (2026-08-18 spec). Legacy entries carry none of the new
+# fields; the loader applies these defaults so consumers see one shape.
+ENTRY_KINDS = ('rule', 'concept', 'anatomy')
+ENTRY_STATUSES = ('established', 'contested')
+SCOPE_KEYS = ('factions', 'hulls', 'components', 'archetypes')
+
+# Status badges rendered next to advice: contested / patch-sensitive.
+BADGE_CONTESTED = '\N{WARNING SIGN}\N{VARIATION SELECTOR-16}'
+BADGE_PATCH_SENSITIVE = '\N{CLOCK FACE THREE OCLOCK}'
 
 # Search scoring weights: an exact tag match is the strongest signal,
 # a word in the rule text is next, words in situation/reason weakest.
@@ -59,8 +70,107 @@ def load_entries(entries_dir=None):
             continue
         for entry in data.get('entry', []):
             entry['category'] = path.stem
+            # Schema v2 defaults for legacy entries. Only these three:
+            # verified/verified_version stay absent (verification is
+            # asserted entry by entry, never in bulk), as do exceptions
+            # and scope.
+            entry.setdefault('kind', 'rule')
+            entry.setdefault('status', 'established')
+            entry.setdefault('patch_sensitive', False)
             entries.append(entry)
     return entries
+
+
+def _load_toml(path):
+    """Parse one TOML file, or None (logged) if missing/unreadable."""
+    try:
+        with open(path, 'rb') as f:
+            return tomllib.load(f)
+    except (tomllib.TOMLDecodeError, OSError) as e:
+        logger.error("Could not read catalog file %s: %s", path, e)
+        return None
+
+
+def load_catalog(catalog_dir=None):
+    """Load knowledge/catalog/ (generated game truth + curated overlays).
+
+    Returns a dict with `components` and `munitions` ({id: display}),
+    `hulls` ({id: {display, class, faction}}), `classes` ({name: [ids]}),
+    `aliases` ({lowercased name: id}), and `version` (the game build the
+    generated files were dumped from). Same failure-tolerant stance as
+    load_entries: a missing or broken file degrades to that part being
+    empty and can never stop the bot from booting.
+    """
+    catalog_dir = Path(catalog_dir) if catalog_dir else CATALOG_DIR
+    catalog = {'components': {}, 'munitions': {}, 'hulls': {},
+               'classes': {}, 'aliases': {}, 'version': ''}
+    if not catalog_dir.is_dir():
+        return catalog
+    components = _load_toml(catalog_dir / 'components.toml')
+    if components:
+        catalog['version'] = components.get('catalog_version', '')
+        for table in ('component', 'munition'):
+            for row in components.get(table, []):
+                if row.get('id'):
+                    catalog[table + 's'][row['id']] = row.get('display', row['id'])
+    hulls = _load_toml(catalog_dir / 'hulls.toml')
+    if hulls:
+        catalog['version'] = catalog['version'] or hulls.get('catalog_version', '')
+        for row in hulls.get('hull', []):
+            if row.get('id'):
+                catalog['hulls'][row['id']] = {
+                    'display': row.get('display', row['id']),
+                    'class': row.get('class', ''),
+                    'faction': row.get('faction', ''),
+                }
+    classes = _load_toml(catalog_dir / 'classes.toml')
+    if classes:
+        for row in classes.get('class', []):
+            if row.get('name'):
+                catalog['classes'][row['name']] = list(row.get('members', []))
+    aliases = _load_toml(catalog_dir / 'aliases.toml')
+    if aliases:
+        for row in aliases.get('alias', []):
+            for name in row.get('names', []):
+                if row.get('id'):
+                    catalog['aliases'][name.lower()] = row['id']
+    return catalog
+
+
+def alias_expansions(catalog):
+    """Search-token expansions from the alias overlay: {token: [tokens]}.
+
+    Single-token alias names only ("fpa", "beamstone"); each maps to its
+    target's display-name tokens so shorthand queries score against the
+    words the corpus actually spells out. The alias token itself is
+    excluded ("mk600" -> ["beam", "cannon"]).
+    """
+    displays = dict(catalog.get('components', {}))
+    displays.update(catalog.get('munitions', {}))
+    for hull_id, hull in catalog.get('hulls', {}).items():
+        displays[hull_id] = hull.get('display', hull_id)
+    expansions = {}
+    for name, target in catalog.get('aliases', {}).items():
+        name_tokens = tokenize(name)
+        if len(name_tokens) != 1:
+            continue
+        display = displays.get(target)
+        if not display:
+            continue
+        extra = [t for t in tokenize(display) if t != name_tokens[0]]
+        if extra:
+            expansions[name_tokens[0]] = extra
+    return expansions
+
+
+def entry_badges(entry):
+    """Status badge string for an entry ('', '⚠️', '🕒', or both)."""
+    badges = ''
+    if entry.get('status') == 'contested':
+        badges += BADGE_CONTESTED
+    if entry.get('patch_sensitive'):
+        badges += BADGE_PATCH_SENSITIVE
+    return badges
 
 
 def load_tags(tags_file=None):
@@ -125,11 +235,23 @@ def score_entry(query_tokens, entry):
     return score
 
 
-def search(entries, query, limit=3):
-    """Return the top-scoring entries for a free-text query, best first."""
+def search(entries, query, limit=3, expansions=None):
+    """Return the top-scoring entries for a free-text query, best first.
+
+    `expansions` (see alias_expansions) adds each query token's synonym
+    tokens to the query, so "FPA" also scores as "focused particle
+    accelerator". Original tokens always stay; expansions never recurse.
+    """
     query_tokens = tokenize(query)
     if not query_tokens:
         return []
+    if expansions:
+        extra = []
+        for token in query_tokens:
+            for exp in expansions.get(token, ()):
+                if exp not in query_tokens and exp not in extra:
+                    extra.append(exp)
+        query_tokens = query_tokens + extra
     scored = []
     for entry in entries:
         s = score_entry(query_tokens, entry)

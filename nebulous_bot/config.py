@@ -100,8 +100,15 @@ class Config:
     ADVICE_VOTE_THRESHOLD = int(os.getenv('ADVICE_VOTE_THRESHOLD', 5))
 
     # Version Information
-    VERSION = "2.8.1"
+    VERSION = "2.9.0"
     CHANGELOG = [
+        {
+            "version": "2.9.0",
+            "date": "2026-08-18",
+            "changes": [
+                "!advice search understands community shorthand (FPA, GPC, beamstone, ...) and flags contested ⚠️ / balance-dependent 🕒 advice"
+            ]
+        },
         {
             "version": "2.8.1",
             "date": "2026-08-09",

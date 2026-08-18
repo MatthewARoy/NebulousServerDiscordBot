@@ -1,0 +1,2235 @@
+{
+  "channel_id": "1461715057166651637",
+  "channel_name": "Brainstorming Fleets And Their Counters",
+  "guild_id": "409638848302153728",
+  "exported_at": "2026-08-18T18:41:54.739215+00:00",
+  "message_count": 182,
+  "messages": [
+    {
+      "id": "1461715057166651637",
+      "author_id": "464542842451394560",
+      "author_name": "𝔣𝔩𝔶𝔫𝔫",
+      "timestamp": "2026-01-16T13:33:46.981000+00:00",
+      "content": "I'm looking to gather the playerbase's knowledge/opinions on the current meta fleets and their counters. My main goal is to make a diagram that will help new players (and maybe myself) better understand making good comps, but also want to get at potential balance issues (e.g. does fleet X truly have no counters?), and at the nature of strong all-ins that an enemy isn't prepared for (e.g. 40 rocket shuttles, 12 CLs, etc).\n\nPlease indulge me in this little project and respond to this thread with something like:\n\n**Fleet Archetype** \nThe type of fleet, description, potentially a fleet file as an example. If you really want to help, provide a screenshot of one of the main ships\n**Why it's powerful**\nDescription of how it's played out in matches (including information about who was in the match can help, e.g. skill level, but I don't intend to restrict this in any way), what specific fleets it killed/won against, any weaknesses it had, etc\n**Strategies for countering it**\nList strategies you or others have tried for countering it in real games, and how effective they were. Then, feel free to list strategies you think should work, but haven't been tried yet. \nPlease list at least one 3k (or 12k comp) that counters it\n**Balance changes it's affected by**\nHave there been any PTB changes that make the fleet more powerful? Less powerful? Any hypothetical changes that would affect this?\n\nThe goal is to make something like this: https://i.redd.it/zfqhu451s6931.jpg , so please list out specific well-known fleet archetypes. Of course, player skill is a factor, but I intend to visualize the skill-range outcome in some way, e.g. evenly matched fleets vs fleets where the comp/build gives an edge.",
+      "reply_to_id": null,
+      "reactions": [
+        {
+          "emoji": "🔥",
+          "count": 6
+        }
+      ],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461715057166651637"
+    },
+    {
+      "id": "1461715910053073030",
+      "author_id": "117300289085636610",
+      "author_name": "The Cyndar System",
+      "timestamp": "2026-01-16T13:37:10.325000+00:00",
+      "content": "Does this only refer to fleets newly powerful on PTB or affected by the PTB? Or is this anything that's good on PTB or live?",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461715910053073030"
+    },
+    {
+      "id": "1461716161527021590",
+      "author_id": "464542842451394560",
+      "author_name": "𝔣𝔩𝔶𝔫𝔫",
+      "timestamp": "2026-01-16T13:38:10.281000+00:00",
+      "content": "<@117300289085636610> for anything.",
+      "reply_to_id": null,
+      "reactions": [
+        {
+          "emoji": "👍",
+          "count": 2
+        }
+      ],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461716161527021590"
+    },
+    {
+      "id": "1461718319072805128",
+      "author_id": "464542842451394560",
+      "author_name": "𝔣𝔩𝔶𝔫𝔫",
+      "timestamp": "2026-01-16T13:46:44.680000+00:00",
+      "content": "As an example:\n\n**Fleet Archetype**\nFrigate blob, e.g. 5 frigates armed with 120mm or 250mm guns supported by corvettes mounting PD, softkill, and EWAR\n**Why it's powerful**\nFrigate blobs have high mobility, high DPS, and strong jamming / low radar signature. They also have strong PD (especially against craft), and generally have omnisoftkill suites. This fleet is often countered by monitors, but is very effective against soft OSP targets, like liners, tugs, and shuttles. \n**Strategies for countering it**\nA nuanced discussion (had its own thread), but common counters for frigblob are:\n- monitors, especially in places they can control a large portion of the map with bombshell, or with mobility buffs from drives. Monitors struggle with mobility/full map presence, and can be focused down if facing a frigate ball 1:1 without supporting sensor assets or if ambushed.\n- Ocellos, for their ability to bring floodlights and break jamming and providing locks, and decent damage of 450 against frigates. Ocellos can die to frigblobs when shot from side-angles, so need to be supported by other assets with good DPS and need to be range/position controlled. \n- LRT/EWAR: essential tools for gaining and maintaining tracks, can require multiple offsets\n- 250 liners, when supported. A single 250 salvo can kill a frigate or two, but needs to be carefully range controlled and supported by the team to get shots on target without dying to 120mm HE\n- 450 liners, essential for high-DPS long range supporting fire\n- cruise missiles, e.g. massed S2s or containers. While frigate blobs have strong PD, they are often grouped in a way that makes it difficult to softkill missiles against all of the ships from all angles, so containers can often get through, especially if their PD or softkill has been degraded\n**Balance Changes it's affected by**\nChanges to craft G have made RPF more effective against craft, making frigblob difficult to strike as a carrier player. New PTB changes introduce tools that make it significantly easier to counter blobs, namely MD-fragmentation munitions and buffed EWR/LRT tracking",
+      "reply_to_id": null,
+      "reactions": [
+        {
+          "emoji": "❤️",
+          "count": 7
+        }
+      ],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461718319072805128"
+    },
+    {
+      "id": "1461718642982125803",
+      "author_id": "340611540648591360",
+      "author_name": "PuppyFromHell",
+      "timestamp": "2026-01-16T13:48:01.906000+00:00",
+      "content": "Radarless 4FPA beam CH with heavy PD paired with paraspy CL and a reinforced ACAP sprinter. Takes missiles like a champ, kills everything else, keeps winning. No changes since AvA have made it significantly different in power level. Ggez",
+      "reply_to_id": null,
+      "reactions": [
+        {
+          "emoji": "😂",
+          "count": 18
+        }
+      ],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461718642982125803"
+    },
+    {
+      "id": "1461718780353974449",
+      "author_id": "464542842451394560",
+      "author_name": "𝔣𝔩𝔶𝔫𝔫",
+      "timestamp": "2026-01-16T13:48:34.658000+00:00",
+      "content": "blind man OP please nerf, especially when running the yukon gambit (100% wr)",
+      "reply_to_id": "1461718642982125803",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461718780353974449"
+    },
+    {
+      "id": "1461722218919624825",
+      "author_id": "143088322011463680",
+      "author_name": "WzSnipes",
+      "timestamp": "2026-01-16T14:02:14.476000+00:00",
+      "content": "Plasma cc gun grummers is like 40-1 right now i think",
+      "reply_to_id": null,
+      "reactions": [
+        {
+          "emoji": "😂",
+          "count": 8
+        }
+      ],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461722218919624825"
+    },
+    {
+      "id": "1461724388813443192",
+      "author_id": "464542842451394560",
+      "author_name": "𝔣𝔩𝔶𝔫𝔫",
+      "timestamp": "2026-01-16T14:10:51.819000+00:00",
+      "content": "So it *does* have a counter!? I've been struggling against it all this time",
+      "reply_to_id": "1461722218919624825",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461724388813443192"
+    },
+    {
+      "id": "1461727141812240459",
+      "author_id": "705300497338335246",
+      "author_name": "Duke of Stars",
+      "timestamp": "2026-01-16T14:21:48.185000+00:00",
+      "content": "Moorline carrier with only pikes armed with SAH s1s, no counters too OP pls nerf by making pikes twice the size of sturgeon and slower than Solomon",
+      "reply_to_id": null,
+      "reactions": [
+        {
+          "emoji": "😂",
+          "count": 5
+        }
+      ],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461727141812240459"
+    },
+    {
+      "id": "1461737694433378507",
+      "author_id": "343823737897877515",
+      "author_name": "thecrystalwoods",
+      "timestamp": "2026-01-16T15:03:44.126000+00:00",
+      "content": "1 can we actually be serious in here",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461737694433378507"
+    },
+    {
+      "id": "1461738440113782866",
+      "author_id": "340611540648591360",
+      "author_name": "PuppyFromHell",
+      "timestamp": "2026-01-16T15:06:41.910000+00:00",
+      "content": "who's not being serious?",
+      "reply_to_id": null,
+      "reactions": [
+        {
+          "emoji": "👆",
+          "count": 7
+        }
+      ],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461738440113782866"
+    },
+    {
+      "id": "1461738612306481183",
+      "author_id": "343823737897877515",
+      "author_name": "thecrystalwoods",
+      "timestamp": "2026-01-16T15:07:22.964000+00:00",
+      "content": ".",
+      "reply_to_id": "1461727141812240459",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461738612306481183"
+    },
+    {
+      "id": "1461743908684828867",
+      "author_id": "143088322011463680",
+      "author_name": "WzSnipes",
+      "timestamp": "2026-01-16T15:28:25.719000+00:00",
+      "content": "The counter is osp bringing 5 more 250 CC along with this",
+      "reply_to_id": "1461724388813443192",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461743908684828867"
+    },
+    {
+      "id": "1461743940129525824",
+      "author_id": "143088322011463680",
+      "author_name": "WzSnipes",
+      "timestamp": "2026-01-16T15:28:33.216000+00:00",
+      "content": "Hence the 1 loss",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461743940129525824"
+    },
+    {
+      "id": "1461748258517946472",
+      "author_id": "464542842451394560",
+      "author_name": "𝔣𝔩𝔶𝔫𝔫",
+      "timestamp": "2026-01-16T15:45:42.800000+00:00",
+      "content": "Yeah I gotta add all these fleets to the rock paper scissors diagram to be fair",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461748258517946472"
+    },
+    {
+      "id": "1461748303342469310",
+      "author_id": "464542842451394560",
+      "author_name": "𝔣𝔩𝔶𝔫𝔫",
+      "timestamp": "2026-01-16T15:45:53.487000+00:00",
+      "content": "I see",
+      "reply_to_id": "1461743908684828867",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461748303342469310"
+    },
+    {
+      "id": "1461771152597843998",
+      "author_id": "439618316198215680",
+      "author_name": "𝐁𝐥𝐚𝐜𝐤 𝐁𝐚𝐭 𝐀𝟖𝐓",
+      "timestamp": "2026-01-16T17:16:41.174000+00:00",
+      "content": "No I'm pretty sure they are just a middie and think pikes are op",
+      "reply_to_id": "1461738612306481183",
+      "reactions": [
+        {
+          "emoji": "😂",
+          "count": 3
+        }
+      ],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461771152597843998"
+    },
+    {
+      "id": "1461771252040470714",
+      "author_id": "439618316198215680",
+      "author_name": "𝐁𝐥𝐚𝐜𝐤 𝐁𝐚𝐭 𝐀𝟖𝐓",
+      "timestamp": "2026-01-16T17:17:04.883000+00:00",
+      "content": "And we should value their opinion",
+      "reply_to_id": null,
+      "reactions": [
+        {
+          "emoji": "this",
+          "count": 1
+        }
+      ],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461771252040470714"
+    },
+    {
+      "id": "1461771555372531854",
+      "author_id": "439618316198215680",
+      "author_name": "𝐁𝐥𝐚𝐜𝐤 𝐁𝐚𝐭 𝐀𝟖𝐓",
+      "timestamp": "2026-01-16T17:18:17.203000+00:00",
+      "content": "You know the ANS s2 yub with only pure wake? This graph implys that every archetype counters and can be countered so we need to buff pure wake s2",
+      "reply_to_id": "1461718642982125803",
+      "reactions": [
+        {
+          "emoji": "this",
+          "count": 3
+        }
+      ],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461771555372531854"
+    },
+    {
+      "id": "1461786346216624231",
+      "author_id": "430099423692062730",
+      "author_name": "turbo_leszczu",
+      "timestamp": "2026-01-16T18:17:03.615000+00:00",
+      "content": "alright im gonna give it a try",
+      "reply_to_id": null,
+      "reactions": [
+        {
+          "emoji": "💀",
+          "count": 1
+        }
+      ],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461786346216624231"
+    },
+    {
+      "id": "1461792588280365315",
+      "author_id": "430099423692062730",
+      "author_name": "turbo_leszczu",
+      "timestamp": "2026-01-16T18:41:51.839000+00:00",
+      "content": "**Massed beam DD cap fleet**\nFleet containing at least 4 really cheap beamstones, aided by equally cheap gunvettes and cringe cappers. Typically 4 beamstones + 6 sprinters\n**Why it is powerful**\nLarge amount of beams allows you to disperse them in critical points around a map and severely punish enemy ships of all sizes once they decide to push. Beam DDs remain hidden until the last moment, they are guided by tracks generated by your sprinters and the rest of your team. Cheap corvettes can be thrown onto points, but they rely on the beamstones for combating contesting enemy cappers and keeping points from being recaptured. Once you gain point advantage, its really hard for the enemy to push unless beamstones are delt with first.\n**Counters**\nDue to beamstones being cringed and not very good hull in general its easy for light assets, like shuttles or tugs, to outflank them and either evade or outrange their beam. CMD missiles and craft are great at dealing with assets without substantial hardkill. Its useful to have sensor assets for detecting hidden DDs, but its often easy to guess their position based on terrain and point layout of the map. Cheap containers are also good at supressing beams without PD, but they are not reliable. Lastly, if the position of a beamstone is known, its often possible for high DPS frontline to disable the beam before it manages to make an impact.\n**Balance Changes it's affected by**\nOSP get new toys to fight sprinters (MD frag, 250 bomb), which make it more difficult for such fleet to execute 1st part of its victory plan, which is relying on getting early point advantage by capping with cringed throw-away sprinters.",
+      "reply_to_id": null,
+      "reactions": [
+        {
+          "emoji": "❤️",
+          "count": 4
+        }
+      ],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461792588280365315"
+    },
+    {
+      "id": "1461793874090659984",
+      "author_id": "225807412165083136",
+      "author_name": "Rear Admiral Crunch",
+      "timestamp": "2026-01-16T18:46:58.400000+00:00",
+      "content": "**Fleet Archetype**\nCapture fleet, 5+ sprinters or shuttles with minimal investment, sometimes supported by 'harder' assets such as frigates, destroyers, monitors, etc.\n\n**Why it's powerful**\nCapture fleets have poor damage output but are virtually essential for winning on any map running control points, as they can spend relatively few points to contest and win capture points while also having many opportunities to attempt recapture. Despite their low combat power, most games where one team lacks a cap fleet are a defacto loss for said team.\n \n**Strategies for countering it**\nCapture fleets consisting of only light assets are trivially easy to counter, posing nearly no combat threat when directly encountered. Of course, some strategies work better against them than others:\n\n- Carriers, generally, are extremely effective against caps due to craft and their inherent ability to loiter.\n- Missile fleets are able to stop cap fleets without physically moving assets anywhere near them.\n- Direct frontline assets will typically win against cappers.\n- Midline assets will, as well, usually win against cappers with little contest.\n\n**Balance Changes it's affected by**\nAny change which makes very light assets more vulnerable will hit cappers: the at-this-time recent PTB testing mass drivers as an area denial tool is an example. This also means many anti-blob tools have a knock-on effect of being effective against capture assets as well.",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461793874090659984"
+    },
+    {
+      "id": "1461798999211245619",
+      "author_id": "703626698637312020",
+      "author_name": "ES",
+      "timestamp": "2026-01-16T19:07:20.324000+00:00",
+      "content": "thankfully, the cl description was already written. Content warning: \nhttps://discord.com/channels/409638848302153728/943416769660452904/1344396571810201663",
+      "reply_to_id": "1461748303342469310",
+      "reactions": [
+        {
+          "emoji": "😭",
+          "count": 6
+        },
+        {
+          "emoji": "doge",
+          "count": 1
+        }
+      ],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461798999211245619"
+    },
+    {
+      "id": "1461799769218224190",
+      "author_id": "430099423692062730",
+      "author_name": "turbo_leszczu",
+      "timestamp": "2026-01-16T19:10:23.908000+00:00",
+      "content": "diabolical",
+      "reply_to_id": "1461798999211245619",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461799769218224190"
+    },
+    {
+      "id": "1461805347802189928",
+      "author_id": "1409692499131371530",
+      "author_name": "lux",
+      "timestamp": "2026-01-16T19:32:33.946000+00:00",
+      "content": "I really appreciate the contributions but I'd point out its better to focus on specific fleets (cap fleet is too general, beam caps is better because its more specific. Including a specific fleet file could help a lot too). I think its probably best to focus on \"meta\" fleets or common fleets (e.g. frigblob, dual CH), but could also be good to include outdated or off-meta fleets that are *overcountered* or don't work anymore after new things were changed in the game (e.g. why aren't torpvettes as effective) - Flynn",
+      "reply_to_id": null,
+      "reactions": [
+        {
+          "emoji": "😂",
+          "count": 4
+        }
+      ],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461805347802189928"
+    },
+    {
+      "id": "1461810604086923376",
+      "author_id": "705300497338335246",
+      "author_name": "Duke of Stars",
+      "timestamp": "2026-01-16T19:53:27.142000+00:00",
+      "content": "Forgot your discord password? xD",
+      "reply_to_id": "1461805347802189928",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461810604086923376"
+    },
+    {
+      "id": "1461810993880633364",
+      "author_id": "225807412165083136",
+      "author_name": "Rear Admiral Crunch",
+      "timestamp": "2026-01-16T19:55:00.076000+00:00",
+      "content": "my counterpoint is that you describe this as a tool for new players in which case the extremely fundamental fleet archetypes like a TF oak thing or a capper thing are worth including",
+      "reply_to_id": "1461805347802189928",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461810993880633364"
+    },
+    {
+      "id": "1461811071638573151",
+      "author_id": "225807412165083136",
+      "author_name": "Rear Admiral Crunch",
+      "timestamp": "2026-01-16T19:55:18.615000+00:00",
+      "content": "but it is your project so ultimately up to you",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461811071638573151"
+    },
+    {
+      "id": "1461811957865906248",
+      "author_id": "339186648744984578",
+      "author_name": "Lobster",
+      "timestamp": "2026-01-16T19:58:49.908000+00:00",
+      "content": "TF Oak is ultimately just NSLW's starter interpretation of a dual CH fleet, so i think including it specifically would be redundant. capfleets are a little harder to write about, since they tend to vary quite a bit depending on who built them, even within archetypes like beamDD/cringe capper spam. i suppose i could take a stab at a torp corv writeup though.",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461811957865906248"
+    },
+    {
+      "id": "1461826559173329172",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-01-16T20:56:51.131000+00:00",
+      "content": "lemme find the 5 month old write up I did on the different ASF investment of ANS carrier archetypes",
+      "reply_to_id": null,
+      "reactions": [
+        {
+          "emoji": "🙏",
+          "count": 1
+        }
+      ],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461826559173329172"
+    },
+    {
+      "id": "1461828559051034728",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-01-16T21:04:47.939000+00:00",
+      "content": "> So: [ANS carrier] anti-craft fighter investments. There are [three] approaches. Assuming you make any investment at all, as Star pointed out. \n> \n> The first is TaistyCookie's method of the minimum viable fighter escort required to get bombers through an enemy CVLN. This wants at least 12 ceramic bombers and 32 basic fighters split 50/50 between 20mm and coilgun (10 pts and 17 pts respectively, can be even cheaper if you drop the hico), with a sprinkling of S1 ACMs. You use the ceramic bombers to tank the BVR engagement, then mop up with the fighters. Repeat until you get strikes through. The high craft requirement for this cheapest investment means you can't run it in a single levy fleet. The closest you can get is a 4 hangar levy, which can only bring 8 of the desired 12 bombers.\n> \n> The 2nd is Falk Tethy's method of matching the SDM-2 cycle rate of the Moorline, using Hunter's Ceramic SDM-2 bomber tech (Meat Weasel). This requires 3-4 ceramic SDM-2 bombers to act as heavy fighters, microed specifically with doctrines set to focus and salvo size 1, firing cmd only SDM-2. Manually click each target to engage with them, and tank all return fire. You still need ~16 fighters to make up the rest of the SDM-2 cycle rate, but you won't be able to afford many munitions here so keep them cheap.\n> \n> In both of the first two approaches, the goal isn't to fully contest the air war. You just need to ball up a small squad of fighters to protect a bomber group, with the fighters buying enough time to get the bomber group to the target (and hopefully back).\n> \n> The 3rd is SAH Spamto. You bring 2 levys full of centerline fuel tank/S1 bay tantos with a mix of 20mm, coil, and nose illum. Then you send your 84 tantos to assassinate the enemy backline, and after that their LNs. In none of these do you use gucci high investment fighters. Since it can match fighter spam CVLN's pt for pt, frame for frame, it can contest them anywhere and everywhere.",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461828559051034728"
+    },
+    {
+      "id": "1461834301589946439",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-01-16T21:27:37.067000+00:00",
+      "content": "**Fleet Archetype**\nShadow Wizard Money Gang (SWMG), or S3 bomber-maxed double Levy \n**Why it's powerful**\nYou ball up bombers and then you right click on targets. The targets die. Use your bombers for scouting or to drain enemy point defense/missile networks afterwards, as bringing them back to land clogs up your cycle speed and therefor your DPM. Bomber decoys allow for PD pen with minimal effort. The Ceramic, Ablative, and Hico craft modules are all very useful in preventing enemy missile based anti-craft investment from mattering.\n**Strategies for countering it**\nIn addition to the normal things that apply to every carrier, like ship based ACM investment; having good sensor coverage and any fighters in the area makes it very easy to zone attacks out and pick off bombers. This includes things like backpack fighters off frontline fleets.\n**Balance changes it's affected by**\nOn current main branch, this fleet struggles more than it used to as it can no longer use ceramic to defend against SDM-2 fire, nor can it use bomber based SDM-2s to defend itself from enemy craft. On PTB, this fleet requires significantly more effort to play than before, as you can no longer int your bombers directly at the target over open space as soon as they come off the carrier deck without taking losses. Careful pathing to utilize cover and avoid enemy sensors is necessary to get good results. Accordingly, don't put up more wings of craft in the air than you can micro at any one time, lest you lose them when you aren't looking.",
+      "reply_to_id": null,
+      "reactions": [
+        {
+          "emoji": "😂",
+          "count": 1
+        }
+      ],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461834301589946439"
+    },
+    {
+      "id": "1461834327275999421",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-01-16T21:27:43.191000+00:00",
+      "content": "**Fleet Archetype**\nKitty Petter, or S2 bomber-maxed single Levy. So named because you can play it one handed while you pet your cat.\nAs S2 based loadouts are significantly more expensive than torpedo based ones, the Kitty Petter archetype utilizes a single invested Levy, as it cannot afford to buy two hulls without seriously cutting into mag depth. \n**Why it's powerful**\nUnlike the above fleet, a Kitty Petter Levy drops its munitions at long ranges to avoid any form of enemy counterplay. Bomber decoys allow for PD pen with minimal effort. While Ceramic, Ablative, and Hico craft modules remain useful, what really shines in contested environments with this fleet is Stealth coating. This, paired with the long range of S2 strikes, brings your already small exposure time to enemy sensors (and thus counterplay) to ludicrously low levels, or even no time spent detected at all. For these reasons, it is incredibly easy to play, if not always the most points efficient option, even against significantly better players.\n**Strategies for countering it**\nAs ship based defenses are almost entirely ignored, countering this requires a very on-the-ball CVLN player. They need not just extremely excellent sensor coverage, but many widely dispersed interceptors in position to stop the S2 drop.\n**Balance changes it's affected by**\nOn current main branch, this fleet struggles *slightly* more than it used to as it can no longer use bomber based SDM-2s to defend itself from enemy craft. This fleet is mostly unaffected by PTB craft maneuver changes, remaining effective even when played with one hand.\nBombers needing to pay for command channels and this being incompatible with the bomber decoy launcher has led to a split in kitty petter builds; either they upgrade to slightly pricier Act!/[EO] and continue to use the decoy launcher, or they continue to use the cmd/backup seekers and add jamming and decoy penaids to the salvo",
+      "reply_to_id": null,
+      "reactions": [
+        {
+          "emoji": "😂",
+          "count": 2
+        }
+      ],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461834327275999421"
+    },
+    {
+      "id": "1461835406030012550",
+      "author_id": "1409692499131371530",
+      "author_name": "lux",
+      "timestamp": "2026-01-16T21:32:00.386000+00:00",
+      "content": "These are awesome I appreciate the contributions",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461835406030012550"
+    },
+    {
+      "id": "1461835482286788720",
+      "author_id": "1409692499131371530",
+      "author_name": "lux",
+      "timestamp": "2026-01-16T21:32:18.567000+00:00",
+      "content": "I should make an S2cello one and a Squalingson one",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461835482286788720"
+    },
+    {
+      "id": "1461835586284425216",
+      "author_id": "1409692499131371530",
+      "author_name": "lux",
+      "timestamp": "2026-01-16T21:32:43.362000+00:00",
+      "content": "At least for the \"helping new players\" angle I think doing the fleets that new players die to the most is ideal",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461835586284425216"
+    },
+    {
+      "id": "1461836149604483144",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-01-16T21:34:57.668000+00:00",
+      "content": "One thing is that on main branch, S2cello is the best ship OSP has to defend against carriers. On PTB less so, because the floor has been raised up with LRDP weapons against craft, and because the SDM-2 warhead reverted to its pre-buffed state",
+      "reply_to_id": "1461835482286788720",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461836149604483144"
+    },
+    {
+      "id": "1461841115878785034",
+      "author_id": "214369622302916608",
+      "author_name": "SecretMink",
+      "timestamp": "2026-01-16T21:54:41.720000+00:00",
+      "content": "**Fleet Archetype** \nJourneyman Half-cap \"Jcaps\", e.g 1200-1500pt Journeyman CVL equipped for light ASF and strike duties, combined with as many 2xT20 chaffbox shuttles you can fit in the remainder. (or whatever other capping assets you may so desire)\n**Why it's powerful**\nSince CVs are one of the more powerful anti-capfleet tools, being able to bring craft-based light strike to bear on enemy capping assets allows for significant overmatch when contesting points. It also provides the opportunity to stop an enemy CV, whether full 3K or another CV-halfcap, from doing the same to your cappers by contesting the airspace around objectives. Bonus points for having a single sortie of anti-capital strike to land an opportunistic finishing blow to swing the frontline engagement. Also very good at rooting out beam DDs to clear the way for your cappers.\n**Strategies for countering it**\nToken ACM investment on opfor frontline seriously hampers the ability of Jcaps' to operate, as you dont have the craft numbers to sustain losses and the only way you find out about ACMs is by getting a wing killed by them. Another potential way of countering this fleet is by having 5K of Levys and 3K of CLs hellpush E side Gold Rush and kill you. All in all, you have less cappers than a full cap fleet and you have less craft than a full CV one, so expect an uphill battle if either (or both) of those archetypes are brought in full by the enemy composition. Lastly, since Jcaps craft prey on minimally defended assets like sprinters or DDs, a lack of those assets in the enemy team limits the impact the Jman can have.\n**Balance changes it's affected by**\nThe PTB craft maneuver nerfs affect this greatly, as RPF even in low quantities can attrit your wings of craft, as well as sarissas currently being a death sentence for any wings in the AO. The changes to shift ASF engagements to S1 missiles by removing SDM2 on craft and nerfing guns have made fighting an uphill ASF battle much more achievable.",
+      "reply_to_id": null,
+      "reactions": [
+        {
+          "emoji": "🔥",
+          "count": 3
+        }
+      ],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461841115878785034"
+    },
+    {
+      "id": "1461844557300891906",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-01-16T22:08:22.219000+00:00",
+      "content": "Very basic entry level overview of CL archetypes for someone else to crib off, since I've played around with all of them but not well enough to write one of these I think. Each of these fleets are better on PTB than on Main branch, due to the CLN and craft evasion changes reducing the power of their main backline counters.\n\n3CL: maximum 250mm firepower, typically with the best point defense, damage control, and softkill of the three.\n2CL Caps: The same as the above, but cuts 1 CL to buy 5-6 cappers depending on investment. Can also reduce this to 3 cringe cappers to buy a single BDD.\n2CL w/ Ocello Killers: Cuts 1 CL to buy 12 Ocello Killer S3H hybrids. Depending on tuning and optimal encounters, these can theoretically kill anywhere from 2 (6 rounds per) to 4 Ocellos (3 rounds per in perfect conditions using Ares tuning), or to structure break 2 Liners if the hits are broadside on (potentially killing 4 Liners if the hits are bow to stern, so some of these tunings are cruise TRP capable). \n3CL w/ Liner Killers: The newest of the bunch. Reduces DC and point defense investments (also typically goes from 4 to 3 AE per CL) to buy 9 rounds of S3H, 3 per ship. These can be used to full kill one Liner or Ocello, or to help kill 3 separate Liners faster if fired from a single ship instead of the full formation.\n\nSome combination of these fleets has made for excellent all-in comps since at least carriers release update, as they are among the most resistant to craft of any ANS ship type, especially when multiple of these fleets are on the field",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461844557300891906"
+    },
+    {
+      "id": "1461846382825705655",
+      "author_id": "1409692499131371530",
+      "author_name": "lux",
+      "timestamp": "2026-01-16T22:15:37.458000+00:00",
+      "content": "Some of the main counters to CLs:\n- ocellos, usually a hard counter in a 1v1 since they outrange you and outarmor you unless you are able to get an ambush or side shot\n- 450 liners beyond 8km with offset LRT or ocello lock\n- monitors if within plasma range and the cls cant disengage\n- cln / s2 spam if the cls fail softkill",
+      "reply_to_id": "1461844557300891906",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461846382825705655"
+    },
+    {
+      "id": "1461850408778465432",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-01-16T22:31:37.320000+00:00",
+      "content": ">Very basic entry levy overview\nGee I wonder how carrier brained I am today",
+      "reply_to_id": "1461844557300891906",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461850408778465432"
+    },
+    {
+      "id": "1461855893946630351",
+      "author_id": "590508786175967259",
+      "author_name": "Isfet Solaris",
+      "timestamp": "2026-01-16T22:53:25.086000+00:00",
+      "content": "Liner killers still make 0 sense to me as a liner player lol",
+      "reply_to_id": "1461844557300891906",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461855893946630351"
+    },
+    {
+      "id": "1461856062599729450",
+      "author_id": "590508786175967259",
+      "author_name": "Isfet Solaris",
+      "timestamp": "2026-01-16T22:54:05.296000+00:00",
+      "content": "Like how is anyone with eyes eating S3HEKP down the spine of their LN",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461856062599729450"
+    },
+    {
+      "id": "1461856185396367454",
+      "author_id": "590508786175967259",
+      "author_name": "Isfet Solaris",
+      "timestamp": "2026-01-16T22:54:34.573000+00:00",
+      "content": "It's so painfully easy to just yaw out of angle and say no to half or more of their damage potential",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461856185396367454"
+    },
+    {
+      "id": "1461856411003785431",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-01-16T22:55:28.362000+00:00",
+      "content": "Liner Killers are in this case salvo size 3, 2 rounds HEI 1 round HEKP for DT break at the back",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461856411003785431"
+    },
+    {
+      "id": "1461856575776886915",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-01-16T22:56:07.647000+00:00",
+      "content": "Built to kill broadside on much much more efficiently than just firing HEKP at the broadside until it structure breaks",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461856575776886915"
+    },
+    {
+      "id": "1461856591534887059",
+      "author_id": "590508786175967259",
+      "author_name": "Isfet Solaris",
+      "timestamp": "2026-01-16T22:56:11.404000+00:00",
+      "content": "Ohhh okay",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461856591534887059"
+    },
+    {
+      "id": "1461856636661665946",
+      "author_id": "590508786175967259",
+      "author_name": "Isfet Solaris",
+      "timestamp": "2026-01-16T22:56:22.163000+00:00",
+      "content": "I was confused I thought they were just HEKP",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461856636661665946"
+    },
+    {
+      "id": "1461856674775171153",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-01-16T22:56:31.250000+00:00",
+      "content": "It's much cheaper too, which is why 3cl can afford jt",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461856674775171153"
+    },
+    {
+      "id": "1461856690721919122",
+      "author_id": "590508786175967259",
+      "author_name": "Isfet Solaris",
+      "timestamp": "2026-01-16T22:56:35.052000+00:00",
+      "content": "Yeah",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461856690721919122"
+    },
+    {
+      "id": "1461856745247866935",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-01-16T22:56:48.052000+00:00",
+      "content": "But it's paradoxically too cheap and mag depth intensive for 2cl",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461856745247866935"
+    },
+    {
+      "id": "1461856959165890591",
+      "author_id": "590508786175967259",
+      "author_name": "Isfet Solaris",
+      "timestamp": "2026-01-16T22:57:39.054000+00:00",
+      "content": "I mean makes sense, 2cl is ironically usually more hurting for points ime because you also have a half cap or goalie BDDs or something",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461856959165890591"
+    },
+    {
+      "id": "1461857110458634403",
+      "author_id": "590508786175967259",
+      "author_name": "Isfet Solaris",
+      "timestamp": "2026-01-16T22:58:15.125000+00:00",
+      "content": "Unless you're running JUST 2 1500 CLs which I'll never understand but have seen done",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461857110458634403"
+    },
+    {
+      "id": "1461857171582222522",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-01-16T22:58:29.698000+00:00",
+      "content": "No sorry, I was referring to the 2cl with hekp archetype there",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461857171582222522"
+    },
+    {
+      "id": "1461857218935783424",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-01-16T22:58:40.988000+00:00",
+      "content": "2cl caps can't afford any missiles",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461857218935783424"
+    },
+    {
+      "id": "1461857287768641669",
+      "author_id": "590508786175967259",
+      "author_name": "Isfet Solaris",
+      "timestamp": "2026-01-16T22:58:57.399000+00:00",
+      "content": "Yeah that's kinda what I thought :P",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461857287768641669"
+    },
+    {
+      "id": "1461857875843350689",
+      "author_id": "1409692499131371530",
+      "author_name": "lux",
+      "timestamp": "2026-01-16T23:01:17.607000+00:00",
+      "content": "Hold my beer",
+      "reply_to_id": "1461857218935783424",
+      "reactions": [
+        {
+          "emoji": "😂",
+          "count": 4
+        }
+      ],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461857875843350689"
+    },
+    {
+      "id": "1461859200140447898",
+      "author_id": "590508786175967259",
+      "author_name": "Isfet Solaris",
+      "timestamp": "2026-01-16T23:06:33.344000+00:00",
+      "content": "*Rounds the corner with Ocellos carrying a bunch of VLS 1s filled with arming missiles*\n\nBehold, missiles on 2CLcap",
+      "reply_to_id": "1461857875843350689",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461859200140447898"
+    },
+    {
+      "id": "1461859840908591235",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-01-16T23:09:06.115000+00:00",
+      "content": "Medium Cavalry",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461859840908591235"
+    },
+    {
+      "id": "1461864622977187841",
+      "author_id": "343823737897877515",
+      "author_name": "thecrystalwoods",
+      "timestamp": "2026-01-16T23:28:06.249000+00:00",
+      "content": "sneaking it right past a rock while you're pinned down by an axford pair, and you fuck your softkill up \n(this doesn not actually kill the liner)",
+      "reply_to_id": "1461856062599729450",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461864622977187841"
+    },
+    {
+      "id": "1461904224911626314",
+      "author_id": "116735132324462599",
+      "author_name": "Davaned",
+      "timestamp": "2026-01-17T02:05:28.086000+00:00",
+      "content": "Arming missile (no known counters besides surrendering immediately)",
+      "reply_to_id": null,
+      "reactions": [
+        {
+          "emoji": "👆",
+          "count": 3
+        },
+        {
+          "emoji": "🔥",
+          "count": 3
+        }
+      ],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461904224911626314"
+    },
+    {
+      "id": "1461905479595720846",
+      "author_id": "116735132324462599",
+      "author_name": "Davaned",
+      "timestamp": "2026-01-17T02:10:27.226000+00:00",
+      "content": "I think if you're actually doing this thoroughly I'd also specify what components a team comp requires. There's lots of builds that only are strong if their comp supports it (missile backline for example), or mostly are strong if they exploit a gap in the opponents comp (sprinter bombers, if opponents don't have sensor coverage and ways to counter orbital assets). \n\nIf this becomes a general strategy doc I could probs dump it into an llm mb neb bot and make it searchable for quick advice",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461905479595720846"
+    },
+    {
+      "id": "1461905774807617706",
+      "author_id": "437982985418047508",
+      "author_name": "Adriser",
+      "timestamp": "2026-01-17T02:11:37.610000+00:00",
+      "content": "### Fleet Archetype\n\nBarracuda maxed Moorline with R2 strike focus.\nBackline with its own sensor support from wake / radar skiffs\nHardkill, SMD and ASF check.\n\n### Why it's powerful\n\nWith the amount of Cudas a Moorline can bring any normal SMD investment from ANS leads to the Moorline having a lot more Cudas than ANS has SMDs.\nR2 from large flights need massed hardkill to be defeated, impossible to achieve with cappers or single Beamstones.\nTo kill them before they launch options are: SMDs (expensive, limited), AMMs (limited, short range), Sarissa (expensive and power hungry, limiting drives), Auroras (bad for most other threats ANS faces, see CLN + same problems as the Sarissa).\nCan ignore small SMD or AMM/ACM investment as losing a few craft is only a slight annoyance. \nR2 have a short arm time. R2 can even knock out a BB through active hardkill and remove its armor (two deck cycles, for example, give 48 R2s). \nBelow critical mass RPF just turns all craft yellow or orange and will struggle to kill.\n\n### Strategies for countering it\n\nThe R2 Cudas often come completely unarmed (sometimes even without 20mm to save on arming time), even a token fighter force with missiles can rack up lots of kills.\nR2 Cudas need escort wings vs craft, winning the ASF war stops the R2 attacks.\nR2 block fuel slots, when turning around most flights will be near their fuel limit, or even out of fuel. Catching them in a dogfight is free kills. \nAbove critical mass RPF causes entire flights to get wiped. \nLarge Cuda swarms are easy to spot, 250 RPF from CLs can cause massive losses.\nThe constant stream of starting and landing Cudas is a great way to lead sprinter bombers ( or a cruise strike) to the CLN.\n\n### Balance Changes it's affected by\nCraft evasion nerf: Lower critical RPF mass.\nSarissas become a no fly zone.\nCheap SSMs with the 3pip frag breakpoint and SDM2 removal from craft lets cudas outrange most Tanto builds using 1 point missiles.",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461905774807617706"
+    },
+    {
+      "id": "1461908331106009149",
+      "author_id": "430099423692062730",
+      "author_name": "turbo_leszczu",
+      "timestamp": "2026-01-17T02:21:47.079000+00:00",
+      "content": "**4tc Spyglass BB**\nSolomon fitted with 450 mm guns as main battery, and Spyglass radar buffed by 4 track correlators. Can be used as a single hull fleet with missile complement, or run with cappers/support ships. Usually carries full softkill and ACMs to defend against strikes.\n**Why its powerfull**\nSpyglass radar generates tracks up to maximum range of 450 mm guns, which makes 4tc BB able to fight back against any other 450mm equipped ship on OSP, negating sensor range advantage of LRT. It can punish any ship larger than a tug up to 11 km away, often denying multiple points at once from being conested by larger hulls if its positioned well. Especially good against liners since they are easiest to hit at long range.\n**Counters**\n- Ocellos - even tho BB can stand up quite well to enemy 450 mm fire, properely built, dodging ocellos can eventually supress a battleship, since they can avoid most of the dmg due to more thrust and slimmer profile.\n- Ambush tactics - Battleships are usually ill suited for fighting smaller hulls, and even if they have pickets or anti-light missiles its often possible to drive up to it with a pair of rocket shuttles or a torp tug. It reqires smart use of terrain to hide approach.\n- Rails/MDs - they outrange 450 mm guns and even tho they cant kill, they degrade BBs ability to dodge and make it vounerable to 450 mm fire.\n- Massed missiles/craft - even tho BB can carry full softkill and quite a lot of ACMs, when its degraded or out of position its vounerable to missile strikes, which means the end for such BB. After a strike a gun/bomb followup is needed to finish the job.\n- Jamming - Spyglass radar is easy to jam once you get within 10 km of it. Monitor fleet equipped with jammers can cover its approach through open space untill BB is in range of plasma and 250/100 mm guns. Risky tactic, since there are often other ships providing offset tracks for BB.  Solomon can also sometimes carry second radar and illum for anti jam",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461908331106009149"
+    },
+    {
+      "id": "1461909609982726175",
+      "author_id": "430099423692062730",
+      "author_name": "turbo_leszczu",
+      "timestamp": "2026-01-17T02:26:51.987000+00:00",
+      "content": "**Balance changes**\nSDM-2 nerf means its more expensive to defend against bombers, might reqiure BB to rely on S3H ACMs for anti-bomber duties",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461909609982726175"
+    },
+    {
+      "id": "1461912811490906278",
+      "author_id": "343823737897877515",
+      "author_name": "thecrystalwoods",
+      "timestamp": "2026-01-17T02:39:35.286000+00:00",
+      "content": "just do a normal bot, i don't think a LLM bot is actually going to be more helpful than just normal help docs",
+      "reply_to_id": "1461905479595720846",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461912811490906278"
+    },
+    {
+      "id": "1461917087068061911",
+      "author_id": "116735132324462599",
+      "author_name": "Davaned",
+      "timestamp": "2026-01-17T02:56:34.663000+00:00",
+      "content": "I mean the llm concept would be for RAG based semantic search, aka a very fuzzy match on a user question to an answer derived from the doc.\nOtherwise it'd be more like hard coded answers or just a link to a doc",
+      "reply_to_id": "1461912811490906278",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461917087068061911"
+    },
+    {
+      "id": "1461919971499184180",
+      "author_id": "343823737897877515",
+      "author_name": "thecrystalwoods",
+      "timestamp": "2026-01-17T03:08:02.365000+00:00",
+      "content": "ah, ok that sounds better",
+      "reply_to_id": "1461917087068061911",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461919971499184180"
+    },
+    {
+      "id": "1461927672971268241",
+      "author_id": "464542842451394560",
+      "author_name": "𝔣𝔩𝔶𝔫𝔫",
+      "timestamp": "2026-01-17T03:38:38.539000+00:00",
+      "content": "Yeah I think 12ks might be more ideal\nAlso the form was an idea but a more compact form could be useful too, e.g.:\nVauxhalls\nCountered by:\n- ocellos\n- LRT\n- 450 at range\n- ambush plasma",
+      "reply_to_id": "1461905479595720846",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461927672971268241"
+    },
+    {
+      "id": "1461927779355459787",
+      "author_id": "464542842451394560",
+      "author_name": "𝔣𝔩𝔶𝔫𝔫",
+      "timestamp": "2026-01-17T03:39:03.903000+00:00",
+      "content": "I'm just looking for inspiration here so don't be worried about posting anything, I want quantity",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461927779355459787"
+    },
+    {
+      "id": "1461930019642150994",
+      "author_id": "116735132324462599",
+      "author_name": "Davaned",
+      "timestamp": "2026-01-17T03:47:58.029000+00:00",
+      "content": "Yeah I really like the approach. Neb has true hard counters in it, which is different than a lot of other games. Most of the time something that's strong is because it doesn't frequently encounter it's weakness. A greater understanding of the rock paper scissors implicit in builds will help people adapt to pubs faster than release cycles fix them.\nI do think so much of neb reactive counterplay comes down to good sensors and battlefield sense, but there's a lot of proactive counterplay that can be done",
+      "reply_to_id": "1461927672971268241",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1461930019642150994"
+    },
+    {
+      "id": "1462311265648251113",
+      "author_id": "339186648744984578",
+      "author_name": "Lobster",
+      "timestamp": "2026-01-18T05:02:54.160000+00:00",
+      "content": "Ok, I did say I would do a writeup about torpcorvs at some point, so here it goes.\n\n**Fleet Archetype: Torpcorv-based capfleet**\nBecause they are made of numerous, individually-cheap ships, capfleet archetypes are less rigid than most others. A Torpcorv-based capfleet refers to one in which VLS-3 armed corvettes are expected to do most of the work of infiltrating enemy caps and defending friendly ones.\nThe most standard torpcorv fleets would look like this:\n- A singular beam DD, required for denying the center point on 1-neutral maps\n- 2 sensor assets (ELINT or spyglass), to compensate for the mediocre radar on the eponymous corvettes\n- 3-5 corvettes, run individually, typically loaded with a mk61, defender, VLS1, and VLS3 filled with a mix of torpedos and hybrids\n- 0-3 gun or cringe cappers, used in much the same manner as they are today\nLike in modern capfleets, some ships could be swapped out for orbital bombers or a gun vauxhall, though flexibility was somewhat lower due to the higher base cost of a torpedo corvette.\n**Why it was powerful**\nWhen played well, torpcorvs could defeat practically any OSP clipper, including gun shuttles, rocket shuttles, and MMTs. This made them a self-sufficient and cost-efficient way to fight OSP capfleets relying on the aforementioned builds.\n**Strategies for countering it**\nMMTs are at worst an even matchup against torpcorvs, and rocket shuttles can also destroy them under favorable circumstances. Additionally, they struggle against larger ships such as monitors and liners. \n**Balance changes it's affected by**\nToo many to count, but this build was harmed significantly by the introduction of carriers, which torpcorvs were largely defenseless against.\nSimultaneously, the meta evolved towards overmatch-style capfleets, which torpcorvs were mostly ineffective against. These days, they tend to be a rare sight.",
+      "reply_to_id": null,
+      "reactions": [
+        {
+          "emoji": "🙏🏻",
+          "count": 1
+        }
+      ],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1462311265648251113"
+    },
+    {
+      "id": "1462311370925015101",
+      "author_id": "339186648744984578",
+      "author_name": "Lobster",
+      "timestamp": "2026-01-18T05:03:19.260000+00:00",
+      "content": "btw, please ask me first if you're going to put this into a bot",
+      "reply_to_id": null,
+      "reactions": [
+        {
+          "emoji": "👍",
+          "count": 1
+        }
+      ],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1462311370925015101"
+    },
+    {
+      "id": "1463058781410951279",
+      "author_id": "116735132324462599",
+      "author_name": "Davaned",
+      "timestamp": "2026-01-20T06:33:15.806000+00:00",
+      "content": "Not planning to do any bot stuff for a long while, real life got busy, but if I do and decide to do this for sure it would be intentional community voted on advice, and possibly a collection of missile/ship templates",
+      "reply_to_id": "1462311370925015101",
+      "reactions": [
+        {
+          "emoji": "🫡",
+          "count": 3
+        }
+      ],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1463058781410951279"
+    },
+    {
+      "id": "1463173215785451728",
+      "author_id": "1096225095980171405",
+      "author_name": "amogusrath",
+      "timestamp": "2026-01-20T14:07:59.087000+00:00",
+      "content": "Hey guys. Remember that it says *powerful* fleets! Emphasis on powerful.",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1463173215785451728"
+    },
+    {
+      "id": "1463174895788621904",
+      "author_id": "449941929426288642",
+      "author_name": "_bell",
+      "timestamp": "2026-01-20T14:14:39.631000+00:00",
+      "content": "<:This:897676404219609088>",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1463174895788621904"
+    },
+    {
+      "id": "1463174913094586490",
+      "author_id": "449941929426288642",
+      "author_name": "_bell",
+      "timestamp": "2026-01-20T14:14:43.757000+00:00",
+      "content": "<:peareatinghamster:1433177955743301732>",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1463174913094586490"
+    },
+    {
+      "id": "1463175033655398614",
+      "author_id": "339186648744984578",
+      "author_name": "Lobster",
+      "timestamp": "2026-01-20T14:15:12.501000+00:00",
+      "content": "does it though? :)",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 1,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1463175033655398614"
+    },
+    {
+      "id": "1463193961404436641",
+      "author_id": "221421498483605515",
+      "author_name": "CheeseSlayer",
+      "timestamp": "2026-01-20T15:30:25.228000+00:00",
+      "content": "Just buy 250LN\nGgez",
+      "reply_to_id": "1461841115878785034",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1463193961404436641"
+    },
+    {
+      "id": "1463207753555251429",
+      "author_id": "464542842451394560",
+      "author_name": "𝔣𝔩𝔶𝔫𝔫",
+      "timestamp": "2026-01-20T16:25:13.533000+00:00",
+      "content": "I'd prefer some submissions of fleets people are struggling against / trying to counter. Both are okay",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1463207753555251429"
+    },
+    {
+      "id": "1463207805669609634",
+      "author_id": "464542842451394560",
+      "author_name": "𝔣𝔩𝔶𝔫𝔫",
+      "timestamp": "2026-01-20T16:25:25.958000+00:00",
+      "content": "Gonna get this diagram made probably this week",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1463207805669609634"
+    },
+    {
+      "id": "1463208111555870875",
+      "author_id": "464542842451394560",
+      "author_name": "𝔣𝔩𝔶𝔫𝔫",
+      "timestamp": "2026-01-20T16:26:38.887000+00:00",
+      "content": "Brainstorming Fleets And Their Counters",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1463208111555870875"
+    },
+    {
+      "id": "1463228120860594317",
+      "author_id": "449941929426288642",
+      "author_name": "_bell",
+      "timestamp": "2026-01-20T17:46:09.477000+00:00",
+      "content": "**Bludcellos**\nOcellos with all RL36/RL18\n\n**Why it’s powerful**\nOcellos are the ideal platform for R2 deployment because they’re tanky, fast, and extremely gurted out. Jump your enemy, piranha all over them, and watch as their fingers involuntarily alt+f4 because they just died to a rocket ocello. \n\n**Strategies for countering it**\nThere are no possible strategies for countering bludcellos.\n\n**Balance changes it’s affected by**\nThe addition of the new players servers have reduced the performance of bludcellos.",
+      "reply_to_id": null,
+      "reactions": [
+        {
+          "emoji": "this",
+          "count": 5
+        },
+        {
+          "emoji": "👆",
+          "count": 5
+        },
+        {
+          "emoji": "💀",
+          "count": 3
+        }
+      ],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1463228120860594317"
+    },
+    {
+      "id": "1463228899046588698",
+      "author_id": "449941929426288642",
+      "author_name": "_bell",
+      "timestamp": "2026-01-20T17:49:15.011000+00:00",
+      "content": "I’m struggling against this fleet so",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1463228899046588698"
+    },
+    {
+      "id": "1463239631829991526",
+      "author_id": "464542842451394560",
+      "author_name": "𝔣𝔩𝔶𝔫𝔫",
+      "timestamp": "2026-01-20T18:31:53.906000+00:00",
+      "content": "Sorry to hear that, makes sense since they're pretty unstoppable 🦎",
+      "reply_to_id": "1463228899046588698",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1463239631829991526"
+    },
+    {
+      "id": "1463239999070929115",
+      "author_id": "449941929426288642",
+      "author_name": "_bell",
+      "timestamp": "2026-01-20T18:33:21.463000+00:00",
+      "content": "ya",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1463239999070929115"
+    },
+    {
+      "id": "1463242914590359594",
+      "author_id": "430099423692062730",
+      "author_name": "turbo_leszczu",
+      "timestamp": "2026-01-20T18:44:56.577000+00:00",
+      "content": "light raid rocket cruisers",
+      "reply_to_id": "1463228120860594317",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1463242914590359594"
+    },
+    {
+      "id": "1463270514624692266",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-01-20T20:34:36.938000+00:00",
+      "content": "**Fleet Archetype: Light Cavalry**\nInstead of dispersing the torpcorvs across the map where they are individually vulnerable and prone to being picked off by anything and everything, you ball them up in a blob where they can specialize mounts to provide mutual support to the formation as a whole. This typically consists of 8 torpcorvs, mounting a decent jamming and point defense network. This allows you to fuck it we ball.\n**Why it was powerful**\nDeploy nearby allied frontline, so they can finish off your targets.\nThe incredible speed of whiplash corvettes and their small signatures allows the blob to close rapidly with any OSP formation, who are typically not expecting this form of attack from ANS. This frequently induces hesitation, further delaying response. The jamming power of 4 blankets allows the blob to close to inside 4km without detection, and their speed allows them to potentially out-pace the coordination required to task OSP long range sensor assets. The massed torpedo fire from the blob will penetrate most any PD network fielded, making it a softkill check or die encounter. However, the fleets low mag depth of only 6 salvos of torpedoes limits the ability of the fleet to mulch more than two OSP fleets.\nFuck it we ball\n**Strategies for countering it**\nAccording to Hunter, if the blob starts receiving bombshell fire around 7km. Of course, this requires some form of track on the blob, as accurately pos-firing at blob moving at 60+ m/s is.. difficult. Rushdown builds like this don't care about the classical counters to blobs, because they *want* to get in your face where they can trade you out.\nFuck it we ball\n**Balance changes it's affected by**\nThe introduction of carriers gave the impression that this fleet would be reduced in power, but in fact it merely added a time limit. Therefore, the best most consistent way to play it is to attack as soon as possible.\nIn PTB, new bombsells and sensor tweaks are being trialed to help interactions.\nFuck it we ball",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1463270514624692266"
+    },
+    {
+      "id": "1463283051290296370",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-01-20T21:24:25.912000+00:00",
+      "content": "I ran out of space\nUnlike a frigball, the sprinter hull means the blob is vulnerable to being ambushed by obelisks/sandblaster Liner fleets. Due in part to its lower mag depth and the slow speed of torpedoes, it is also weaker against ruttle ambushes or even shuttle blobs than a conventional gun based blob would be. You can if nothing else tie the blob up dealing with small threats it doesn't want to spend torpedoes on, forcing it to try to kill them with the few unbuffed mk61s it typically has.",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1463283051290296370"
+    },
+    {
+      "id": "1463324151820320911",
+      "author_id": "430099423692062730",
+      "author_name": "turbo_leszczu",
+      "timestamp": "2026-01-21T00:07:45.042000+00:00",
+      "content": "**Mixed 450 mm and rails**\nCommon fleet on both sides of the barricade. On AN it can consist of a capital ship with 450 mm guns aided by rail DDs, or 450 mm CH + rail CH. On OSP its most commonly encountered in form of 450 mm CC + rail CC, sometimes with 450 mm LN in place of Ocello. In case of OSP often aided by LRT sensor.\n**Advantages**\nRails are great force multiplier for 450 mm guns, they hit moving targets reliably at long range and cause fires that overwhelm DC and knock out thrusters/radar panels, stunning anyone unfortunate enough to be shot by them. Unable to dodge and repair damage, ships in this state are very susceptible to 450 mm guns, even at max range. This type of fleet can deal with almost any other pure 450mm capital ship, forcing it to either abandon position and give space, or die if combined fire is intense enough. The key to this fleet being effective is keeping proper distance and protecting your main dmg dealing hull, the 450mm capital ship from being killed in frontline fight before the rail fire can take an effect.\n**Counters**\nBackline assets such are rail ships are usually weakly defended, they are prime target for missiles, cavalry flank or craft. Once the support rail assets are gone, such fleet loses its favorable matchup against other capital ships and is prone to being overwhelmed in head on fight.\n**Balance changes**\nCheaper cruise S2H could encourage more frequent fishing for backline rails, but its not a significant change. If new MD frag shell is to be added, OSP version of this build could see ppl mixing in MDs into equation for more anti-light utility.",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1463324151820320911"
+    },
+    {
+      "id": "1498249798686347306",
+      "author_id": "744966263951982752",
+      "author_name": "Kate",
+      "timestamp": "2026-04-27T09:09:48.142000+00:00",
+      "content": "<@814564877967425576>",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1498249798686347306"
+    },
+    {
+      "id": "1498249851794620476",
+      "author_id": "814564877967425576",
+      "author_name": "Skjeletthodet",
+      "timestamp": "2026-04-27T09:10:00.804000+00:00",
+      "content": "Oh there thanks!",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1498249851794620476"
+    },
+    {
+      "id": "1498249855531745400",
+      "author_id": "744966263951982752",
+      "author_name": "Kate",
+      "timestamp": "2026-04-27T09:10:01.695000+00:00",
+      "content": "There we go.",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1498249855531745400"
+    },
+    {
+      "id": "1498446658554564618",
+      "author_id": "464542842451394560",
+      "author_name": "𝔣𝔩𝔶𝔫𝔫",
+      "timestamp": "2026-04-27T22:12:03.192000+00:00",
+      "content": "totally still doing this, totally 😂",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1498446658554564618"
+    },
+    {
+      "id": "1498446700291821598",
+      "author_id": "464542842451394560",
+      "author_name": "𝔣𝔩𝔶𝔫𝔫",
+      "timestamp": "2026-04-27T22:12:13.143000+00:00",
+      "content": "I got such high-quality submissions after all",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1498446700291821598"
+    },
+    {
+      "id": "1503515373738393801",
+      "author_id": "372450812539961346",
+      "author_name": "thespyeye",
+      "timestamp": "2026-05-11T21:53:19.064000+00:00",
+      "content": "**Fleet Archetype** \nHalfblob-CV caps: 5 sprinters in a ball, a 1300 point levy, and 2-3 cringe cappers.\n**Why it's powerful**\nThe half sprinterball makes short work of most low investment OSP cap assets while the levy cleans up cap monitors/liners and also functions as additional cap deny.\n**Strategies for countering it**\nHaving a pentabrick and running even token ASF will easily dissuade both the sprinterball and the levy.\n**Balance changes it's affected by**\nThe PTB craft changes make it much easier for 250 liners to defend themselves from low numbers of claymores and the addition of 250 bomb lets those same 250 liners dissuade the sprinterball",
+      "reply_to_id": null,
+      "reactions": [
+        {
+          "emoji": "🫡",
+          "count": 3
+        }
+      ],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1503515373738393801"
+    },
+    {
+      "id": "1503518148194734202",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-05-11T22:04:20.546000+00:00",
+      "content": "I should do a writeup on half-brick caps as the main branch counter",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1503518148194734202"
+    },
+    {
+      "id": "1503779695110393856",
+      "author_id": "430099423692062730",
+      "author_name": "turbo_leszczu",
+      "timestamp": "2026-05-12T15:23:38.190000+00:00",
+      "content": "**Fleet archetype**\nRail DD array with sidearms, sensors and EWar. Typically rail 4-6 DDs + scouting/locking FFL. One DD can be converted to 4tc Spyglass carrier.\n**Why strong**\nBackline/Near frontline fleet that has a lot of battle presence and is hard to dislodge. Railguns are main weapon for suppressing enemy ships and punishing pushes through open space. Thanks to forward deployed FFL and/or 4tc Spyglass DD the fleet can provide fireable tracks for rails at range. Secondary armament in form of 120 mm or 250 mm guns is a powerful tool for denying enemy backline hunters, cappers and to some degree, also craft. Combined rail and 250 mm fire is enough to stop a capital ship like LN or CC before it can rush you down. Jammer and dynamic positioning allow the fleet to remain hidden from LRT and enemy ships that get too close. The array can be equipped with full softkill suite and/or hardkill, which make it very hard to touch by missiles. The fleet achieves best results in open, 5v5 maps. It can position itself at important junctions, where it can deter/punish enemy capital push with rails and cover nearby point with guns at the same time.\n**How to counter**\nMD/rail counter battery (LRT has always greater range), well timed craft/rocket shuttle strike form behind cover, using cover to avoid rail fire.\n**Balance changes**\nCraft on PTB will suffer more from RPF fire",
+      "reply_to_id": null,
+      "reactions": [
+        {
+          "emoji": "💀",
+          "count": 8
+        },
+        {
+          "emoji": "🫡",
+          "count": 1
+        }
+      ],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1503779695110393856"
+    },
+    {
+      "id": "1503789802401562707",
+      "author_id": "439618316198215680",
+      "author_name": "𝐁𝐥𝐚𝐜𝐤 𝐁𝐚𝐭 𝐀𝟖𝐓",
+      "timestamp": "2026-05-12T16:03:47.956000+00:00",
+      "content": "Fleet archetype:\nDouble beam BB\nWhy strong?\n2 BB 6 Beam\nHow counter\nShoot it\nBalance changes: \nBuff",
+      "reply_to_id": null,
+      "reactions": [
+        {
+          "emoji": "😂",
+          "count": 6
+        }
+      ],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1503789802401562707"
+    },
+    {
+      "id": "1503800078685704454",
+      "author_id": "225807412165083136",
+      "author_name": "Rear Admiral Crunch",
+      "timestamp": "2026-05-12T16:44:38.013000+00:00",
+      "content": "**Fleet Archetype** \nTorpedo CVLN.\n**Why it's powerful**\nBring sixty torps. Right click on a guy and reduce them to constituent atoms. \n**Strategies for countering it**\nGrab your knees, crane your neck downwards, and kiss your ass goodbye.\n\nYou can also run larp ASF tantos and you will probably kill ~20% of the CVLN's magdepth just by intercepting bombers. This isn't enough, but it may prove to be a vital moral victory in the wider war.\n**Balance changes it's affected by**\nThe PTB kills craft with a gun so it'll probably be merely really good instead of very good.",
+      "reply_to_id": null,
+      "reactions": [
+        {
+          "emoji": "💀",
+          "count": 5
+        }
+      ],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1503800078685704454"
+    },
+    {
+      "id": "1503802375947681842",
+      "author_id": "225807412165083136",
+      "author_name": "Rear Admiral Crunch",
+      "timestamp": "2026-05-12T16:53:45.723000+00:00",
+      "content": "alright fine a version that isn't a shitpost\n\n**Fleet Archetype**\nA carrier lineship (hereafter CVLN) which is equipped primarily for sortieing sturgeons with torpedoes. Typically very light on 'real' fighter assets or light strike in favor of overwhelmingly large presence with torpedoes.\n\n**Why it's powerful**\nIt's hard to meaningfully oppose bombers without very proactive space superiority presence, especially when a CVLN likely has more sturgeons than your team has tantos. Meanwhile, said CVLN can bring ~30 individual sorties worth of torpedoes, typically in the area of 60 torpedoes.\n\nSturgeons themselves pose a threat to any target in the game in sufficient numbers. Torpedoes can leave even battleships on life support, and Sturgeons can deploy bombs to immediately DT break surviving components.\n\n**Strategies for countering it**\nSDM2s and S3H ACMs are both proactive measures that a ship can take for defending itself against bomber wings. Air superiority usually wins well against dedicated torp-sturgeon CVLNs since they necessarily spend very little on high end barracudas for airsup work. Past that, OSP only has access to radar, CMD, and wake seekers; omnisoftkill against their typical seeker ensemble followed by measures to avoid being hit by straightrunning CMD/SAH (or CMD/HOJ) torps can sometimes foil bomber strikes.\n\n**Balance changes it's affected by**\nThe incoming PTB is going to severely reduce craft manueverability. This makes sturgeons far more vulnerable during their approach phase to conventional hardkill, while also featuring buffs to RPF's performance against craft. Thus, intercepting sturgeons before they can fire will become easier than it is on live.\n\nThe PTB also removes SDM2 from ANS, though the performance boost sarissa experienced likely makes up the difference, on-balance.",
+      "reply_to_id": null,
+      "reactions": [
+        {
+          "emoji": "🫡",
+          "count": 3
+        },
+        {
+          "emoji": "this",
+          "count": 1
+        }
+      ],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1503802375947681842"
+    },
+    {
+      "id": "1503835783428178215",
+      "author_id": "464542842451394560",
+      "author_name": "𝔣𝔩𝔶𝔫𝔫",
+      "timestamp": "2026-05-12T19:06:30.687000+00:00",
+      "content": "BTW the reason I made this thread was only partially because I (previously) planned to make said diagram, the main reason I made it is to get balconers brainstorming about fleet counters before complaining/asking for nerfs *shrug*\n\nBut overall I think it's worth debating how often neb comes out as a complex rock-paper-scissors especially in the face of all-ins or when matches are potentially determined by skill on each side",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1503835783428178215"
+    },
+    {
+      "id": "1503836947951517707",
+      "author_id": "143088322011463680",
+      "author_name": "WzSnipes",
+      "timestamp": "2026-05-12T19:11:08.331000+00:00",
+      "content": "Haha more light cav",
+      "reply_to_id": null,
+      "reactions": [
+        {
+          "emoji": "this",
+          "count": 3
+        }
+      ],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1503836947951517707"
+    },
+    {
+      "id": "1504207361101926481",
+      "author_id": "221421498483605515",
+      "author_name": "CheeseSlayer",
+      "timestamp": "2026-05-13T19:43:01.708000+00:00",
+      "content": "https://tenor.com/view/monster-bob-blob-stare-gif-1160213367645308177",
+      "reply_to_id": "1503779695110393856",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1504207361101926481"
+    },
+    {
+      "id": "1504207841097945288",
+      "author_id": "430099423692062730",
+      "author_name": "turbo_leszczu",
+      "timestamp": "2026-05-13T19:44:56.148000+00:00",
+      "content": "tech you dont see",
+      "reply_to_id": "1504207361101926481",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1504207841097945288"
+    },
+    {
+      "id": "1504208423028527327",
+      "author_id": "372450812539961346",
+      "author_name": "thespyeye",
+      "timestamp": "2026-05-13T19:47:14.891000+00:00",
+      "content": "We see the tech we just don't see it winning games",
+      "reply_to_id": "1504207841097945288",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1504208423028527327"
+    },
+    {
+      "id": "1504209350477086891",
+      "author_id": "430099423692062730",
+      "author_name": "turbo_leszczu",
+      "timestamp": "2026-05-13T19:50:56.012000+00:00",
+      "content": "i stole the idea from hunter btw",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1504209350477086891"
+    },
+    {
+      "id": "1504238086203113492",
+      "author_id": "214369622302916608",
+      "author_name": "SecretMink",
+      "timestamp": "2026-05-13T21:45:07.143000+00:00",
+      "content": "Its only purpose is to let enemy jcaps get 60k damage from a 1400pt CVL",
+      "reply_to_id": "1504208423028527327",
+      "reactions": [
+        {
+          "emoji": "😂",
+          "count": 2
+        }
+      ],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1504238086203113492"
+    },
+    {
+      "id": "1504520913381752903",
+      "author_id": "225807412165083136",
+      "author_name": "Rear Admiral Crunch",
+      "timestamp": "2026-05-14T16:28:58.397000+00:00",
+      "content": "actually it's the strongest fleet in the game: it's so strong that after people post farming it for damage in <#1016005945547046912> you get to nerf their fleet in the entire rest of the game",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1504520913381752903"
+    },
+    {
+      "id": "1504536650938581041",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-05-14T17:31:30.523000+00:00",
+      "content": "To be fair, the only reason I wasn't pulling my hair out facing that all-rails team was because I was Jcaps. My frontline was swearing up a storm",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1504536650938581041"
+    },
+    {
+      "id": "1504536864051167346",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-05-14T17:32:21.333000+00:00",
+      "content": "https://youtu.be/7iV9vYktHXU?si=08eBzuuMVN86UqsG",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1504536864051167346"
+    },
+    {
+      "id": "1504590817761693830",
+      "author_id": "1245118490629902338",
+      "author_name": "LimeAxolotl",
+      "timestamp": "2026-05-14T21:06:44.900000+00:00",
+      "content": "I spectated a game once where ANS had 18 railstones, and a CL trio. It was brutal, and after a long one sided fight, OSP won on caps with like five ships left alive because ANS lost all their cappers to a CLN. Rails are scary for Frontline.",
+      "reply_to_id": "1504536650938581041",
+      "reactions": [
+        {
+          "emoji": "💀",
+          "count": 4
+        }
+      ],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1504590817761693830"
+    },
+    {
+      "id": "1505215472885567568",
+      "author_id": "439618316198215680",
+      "author_name": "𝐁𝐥𝐚𝐜𝐤 𝐁𝐚𝐭 𝐀𝟖𝐓",
+      "timestamp": "2026-05-16T14:28:54.287000+00:00",
+      "content": "This may be a statement on OSP teams skill not on the power of rails",
+      "reply_to_id": "1504590817761693830",
+      "reactions": [
+        {
+          "emoji": "😂",
+          "count": 4
+        }
+      ],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1505215472885567568"
+    },
+    {
+      "id": "1509004271079653576",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-05-27T01:24:14.169000+00:00",
+      "content": "Updated the balance changes part for MCC",
+      "reply_to_id": "1461834327275999421",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1509004271079653576"
+    },
+    {
+      "id": "1513824547445674046",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-09T08:38:17.611000+00:00",
+      "content": "",
+      "reply_to_id": "1513816046233063606",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1513824547445674046"
+    },
+    {
+      "id": "1513824737787117609",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-09T08:39:02.992000+00:00",
+      "content": "<@223274291318358016>  I can't believe Vison men made it in 😂",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1513824737787117609"
+    },
+    {
+      "id": "1513825157612048444",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-09T08:40:43.086000+00:00",
+      "content": "Notes so far; single CL caps I'm pretty sure is disadvantaged to 250LN caps, which is why 2CL caps is preferred",
+      "reply_to_id": null,
+      "reactions": [
+        {
+          "emoji": "👍",
+          "count": 1
+        }
+      ],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1513825157612048444"
+    },
+    {
+      "id": "1513826038767943840",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-09T08:44:13.170000+00:00",
+      "content": "I'd push Jcaps vs Visonman to OSP favored; even very cheap Jman will have no trouble farming them and unlike tug caps can DT break the vison men trivially with CBU",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1513826038767943840"
+    },
+    {
+      "id": "1513827113298296913",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-09T08:48:29.358000+00:00",
+      "content": "Old beamstone caps was pretty disadvantaged against tug caps, but current invested ones aren't since they have PD to resist ruttle/R2cuda that mostly invalidates common MMTs as a side effect",
+      "reply_to_id": null,
+      "reactions": [
+        {
+          "emoji": "👍",
+          "count": 1
+        }
+      ],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1513827113298296913"
+    },
+    {
+      "id": "1513827308933353572",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-09T08:49:16.001000+00:00",
+      "content": "As far as 10 rutles goes, I'd move that from Even to ANS favored against the RPF fleets, whether blob or 2/3 CL or Greedford, or at least even for greedford",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1513827308933353572"
+    },
+    {
+      "id": "1513828519031865464",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-09T08:54:04.511000+00:00",
+      "content": "Carrier moorline should probably move to advantaged vs beamstone caps along with rail destroyer formations for the same reason its advantaged against torp corv caps.\n\nComps to add to OSP: S2LN, S2CC, S2 tug ball, gun tug ball, MN Half-cap",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1513828519031865464"
+    },
+    {
+      "id": "1513907390712516748",
+      "author_id": "223274291318358016",
+      "author_name": "vren55",
+      "timestamp": "2026-06-09T14:07:28.985000+00:00",
+      "content": "Will add your thoughts on the effectiveness?",
+      "reply_to_id": "1513828519031865464",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1513907390712516748"
+    },
+    {
+      "id": "1513926522468171787",
+      "author_id": "223274291318358016",
+      "author_name": "vren55",
+      "timestamp": "2026-06-09T15:23:30.351000+00:00",
+      "content": "https://docs.google.com/spreadsheets/d/1kD9gaWlHmF-EJujien6tDi0Rmyco0t9qSwGv8Rh9ViU/edit?usp=sharing\n\nUpdated, thanks... I REALLY DON\"T LIKE IT",
+      "reply_to_id": "1513827113298296913",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1513926522468171787"
+    },
+    {
+      "id": "1513945237289041920",
+      "author_id": "225807412165083136",
+      "author_name": "Rear Admiral Crunch",
+      "timestamp": "2026-06-09T16:37:52.312000+00:00",
+      "content": "where levy halfcap",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1513945237289041920"
+    },
+    {
+      "id": "1513945431338520747",
+      "author_id": "223274291318358016",
+      "author_name": "vren55",
+      "timestamp": "2026-06-09T16:38:38.577000+00:00",
+      "content": "Is it like *that* effective?",
+      "reply_to_id": "1513945237289041920",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1513945431338520747"
+    },
+    {
+      "id": "1513945478125846560",
+      "author_id": "223274291318358016",
+      "author_name": "vren55",
+      "timestamp": "2026-06-09T16:38:49.732000+00:00",
+      "content": "i mean i would just put \"OSP\" for most of it",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1513945478125846560"
+    },
+    {
+      "id": "1513945741649907984",
+      "author_id": "225807412165083136",
+      "author_name": "Rear Admiral Crunch",
+      "timestamp": "2026-06-09T16:39:52.561000+00:00",
+      "content": "you bring overmatch to every single caps duel and also sometimes punch into capitals for the love of the game",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1513945741649907984"
+    },
+    {
+      "id": "1513946027265232999",
+      "author_id": "223274291318358016",
+      "author_name": "vren55",
+      "timestamp": "2026-06-09T16:41:00.657000+00:00",
+      "content": "🤔",
+      "reply_to_id": "1513945741649907984",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1513946027265232999"
+    },
+    {
+      "id": "1513946210543730869",
+      "author_id": "225807412165083136",
+      "author_name": "Rear Admiral Crunch",
+      "timestamp": "2026-06-09T16:41:44.354000+00:00",
+      "content": "i'm more in shock that somehow literally nobody mentioned levy halfcap",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1513946210543730869"
+    },
+    {
+      "id": "1513946277921030175",
+      "author_id": "225807412165083136",
+      "author_name": "Rear Admiral Crunch",
+      "timestamp": "2026-06-09T16:42:00.418000+00:00",
+      "content": "also shadow wizard money gang didn't make it in for some reason",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1513946277921030175"
+    },
+    {
+      "id": "1513946298854801408",
+      "author_id": "223274291318358016",
+      "author_name": "vren55",
+      "timestamp": "2026-06-09T16:42:05.409000+00:00",
+      "content": "it's not particularlycommon when you can dual levy--",
+      "reply_to_id": "1513946210543730869",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1513946298854801408"
+    },
+    {
+      "id": "1513946326516109553",
+      "author_id": "223274291318358016",
+      "author_name": "vren55",
+      "timestamp": "2026-06-09T16:42:12.004000+00:00",
+      "content": "Plz don't give me trauma fuck me",
+      "reply_to_id": "1513946277921030175",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1513946326516109553"
+    },
+    {
+      "id": "1513946406166204479",
+      "author_id": "225807412165083136",
+      "author_name": "Rear Admiral Crunch",
+      "timestamp": "2026-06-09T16:42:30.994000+00:00",
+      "content": "i feel like i have personally seen more levy halfcap than i have swmg",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1513946406166204479"
+    },
+    {
+      "id": "1513946464605438053",
+      "author_id": "225807412165083136",
+      "author_name": "Rear Admiral Crunch",
+      "timestamp": "2026-06-09T16:42:44.927000+00:00",
+      "content": "but i am definitely also personally putting my fingers on that scale so",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1513946464605438053"
+    },
+    {
+      "id": "1513946808982704209",
+      "author_id": "225807412165083136",
+      "author_name": "Rear Admiral Crunch",
+      "timestamp": "2026-06-09T16:44:07.033000+00:00",
+      "content": "but like, yeah, pre-update the levy halfcap experience was farming OSP for a ton of damage and punching into capitals any time you were bored of winning in fights over neutral caps and post-update levy halfcap is slightly harder",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1513946808982704209"
+    },
+    {
+      "id": "1513947913653457050",
+      "author_id": "223274291318358016",
+      "author_name": "vren55",
+      "timestamp": "2026-06-09T16:48:30.407000+00:00",
+      "content": "added, my grading anyway",
+      "reply_to_id": "1513946808982704209",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1513947913653457050"
+    },
+    {
+      "id": "1513948484028465212",
+      "author_id": "225807412165083136",
+      "author_name": "Rear Admiral Crunch",
+      "timestamp": "2026-06-09T16:50:46.395000+00:00",
+      "content": "my commentary would be that a levy halfcap can pen into ocello a shockingly large amount of the time but less than expected, OSP as an advantage is still fair; in ruttle swarms the ruttle swarm def has the advantage as long as they're sentient; tugshuttle cap fleet gets farmed, S2LN gets farmed (unless it enters range for its main sequence against the levy), S2Cello is a win for OSP, i've farmed tugballs before but it's an open question if this is a competence thing, MNs are shockingly harder to kill with torps than you'd think though i think levy halfcap still has an edge",
+      "reply_to_id": null,
+      "reactions": [
+        {
+          "emoji": "👍",
+          "count": 1
+        }
+      ],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1513948484028465212"
+    },
+    {
+      "id": "1513949002347974806",
+      "author_id": "225807412165083136",
+      "author_name": "Rear Admiral Crunch",
+      "timestamp": "2026-06-09T16:52:49.972000+00:00",
+      "content": "i wish i had relevant commentary for kitty petters but i don't",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1513949002347974806"
+    },
+    {
+      "id": "1513949064750825624",
+      "author_id": "223274291318358016",
+      "author_name": "vren55",
+      "timestamp": "2026-06-09T16:53:04.850000+00:00",
+      "content": "I feel like warbler softkills kitty petters really well",
+      "reply_to_id": "1513949002347974806",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1513949064750825624"
+    },
+    {
+      "id": "1513949203032969216",
+      "author_id": "225807412165083136",
+      "author_name": "Rear Admiral Crunch",
+      "timestamp": "2026-06-09T16:53:37.819000+00:00",
+      "content": "it is kinda just the OSP softkill tutorial device",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1513949203032969216"
+    },
+    {
+      "id": "1513949232015474838",
+      "author_id": "225807412165083136",
+      "author_name": "Rear Admiral Crunch",
+      "timestamp": "2026-06-09T16:53:44.729000+00:00",
+      "content": "<@214369622302916608> new fleet idea",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1513949232015474838"
+    },
+    {
+      "id": "1513949428179009537",
+      "author_id": "214369622302916608",
+      "author_name": "SecretMink",
+      "timestamp": "2026-06-09T16:54:31.498000+00:00",
+      "content": "Go on…",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1513949428179009537"
+    },
+    {
+      "id": "1513949541467160668",
+      "author_id": "225807412165083136",
+      "author_name": "Rear Admiral Crunch",
+      "timestamp": "2026-06-09T16:54:58.508000+00:00",
+      "content": "kitty petters but every missile has the softkill instructions written on the side of the tube",
+      "reply_to_id": null,
+      "reactions": [
+        {
+          "emoji": "🔥",
+          "count": 3
+        }
+      ],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1513949541467160668"
+    },
+    {
+      "id": "1513965525586149547",
+      "author_id": "464542842451394560",
+      "author_name": "𝔣𝔩𝔶𝔫𝔫",
+      "timestamp": "2026-06-09T17:58:29.419000+00:00",
+      "content": "I used to do this with WSB",
+      "reply_to_id": "1513949541467160668",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1513965525586149547"
+    },
+    {
+      "id": "1513968709994020927",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-09T18:11:08.641000+00:00",
+      "content": "Easily stronger than Jcaps",
+      "reply_to_id": "1513946027265232999",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1513968709994020927"
+    },
+    {
+      "id": "1513969113523814442",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-09T18:12:44.850000+00:00",
+      "content": "Both because it's a better carrier for (marginally) more expensive hull cost, and because ANS just has an easier time using craft than OSP does. \nUsed to be you could reliably farm and there was nothing OSP could do, now there is only mostly nothing they can do",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1513969113523814442"
+    },
+    {
+      "id": "1513970723905999061",
+      "author_id": "223274291318358016",
+      "author_name": "vren55",
+      "timestamp": "2026-06-09T18:19:08.795000+00:00",
+      "content": "... honestly the table's just confirmed most of my worst fears",
+      "reply_to_id": "1513969113523814442",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1513970723905999061"
+    },
+    {
+      "id": "1513970748992000111",
+      "author_id": "223274291318358016",
+      "author_name": "vren55",
+      "timestamp": "2026-06-09T18:19:14.776000+00:00",
+      "content": "like you see the issue right?",
+      "reply_to_id": null,
+      "reactions": [
+        {
+          "emoji": "💯",
+          "count": 1
+        }
+      ],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1513970748992000111"
+    },
+    {
+      "id": "1513970859834871829",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-09T18:19:41.203000+00:00",
+      "content": "To elaborate, Jcaps can match either the craft count of levy caps or it can match the munitions quality, it can't do both",
+      "reply_to_id": "1513968709994020927",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1513970859834871829"
+    },
+    {
+      "id": "1513970962784059444",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-09T18:20:05.748000+00:00",
+      "content": "Wulfenite choses to match the craft count with double Jman, using rockets to strike",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1513970962784059444"
+    },
+    {
+      "id": "1513971097836720211",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-09T18:20:37.947000+00:00",
+      "content": "Temu kitty petters Jcaps does the opposite, bringing 10 bombers +sensor craft to run R3 S2",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1513971097836720211"
+    },
+    {
+      "id": "1513971111270809803",
+      "author_id": "223274291318358016",
+      "author_name": "vren55",
+      "timestamp": "2026-06-09T18:20:41.150000+00:00",
+      "content": "Based on my grading, there are 17 OSP builds only 2 of which can effectively counter more than 10 ANS builds. there are 19 ANS builds 6 of them counter more than 10 OSP builds",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1513971111270809803"
+    },
+    {
+      "id": "1513971878912589874",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-09T18:23:44.170000+00:00",
+      "content": "Because of this Id actually call wulfenite style Jcaps vs levy halfcap even against each other, even if Jcaps has generally harder matchups against the rest of ANS",
+      "reply_to_id": "1513970962784059444",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1513971878912589874"
+    },
+    {
+      "id": "1513971917172768799",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-09T18:23:53.292000+00:00",
+      "content": "But it depends on the type of Jcap",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1513971917172768799"
+    },
+    {
+      "id": "1513971958478278706",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-09T18:24:03.140000+00:00",
+      "content": "Bomber maxxed is disadvantaged against levy halfcap because it literally has no room for fighters",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1513971958478278706"
+    },
+    {
+      "id": "1513972203664965812",
+      "author_id": "225807412165083136",
+      "author_name": "Rear Admiral Crunch",
+      "timestamp": "2026-06-09T18:25:01.597000+00:00",
+      "content": "it also doesn't help that CVs have such a wide range of builds",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1513972203664965812"
+    },
+    {
+      "id": "1513972663620468908",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-09T18:26:51.259000+00:00",
+      "content": "Oh right, S2cello doesn't have SDM2 in VLS anymore, and as a build is highly vulnerable to ambushing or other missile based counterfire",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1513972663620468908"
+    },
+    {
+      "id": "1513972697351061654",
+      "author_id": "225807412165083136",
+      "author_name": "Rear Admiral Crunch",
+      "timestamp": "2026-06-09T18:26:59.301000+00:00",
+      "content": "so sometimes a 3k CVLN is a complete waste of time and sometimes a 3k CVLN will kill every capital ship in the game",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1513972697351061654"
+    },
+    {
+      "id": "1513972891090161796",
+      "author_id": "225807412165083136",
+      "author_name": "Rear Admiral Crunch",
+      "timestamp": "2026-06-09T18:27:45.492000+00:00",
+      "content": "imo the 4 aurora S2cello is still decently hard to pen without gathering a bunch of bombers which levy just, can't really do",
+      "reply_to_id": "1513972663620468908",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1513972891090161796"
+    },
+    {
+      "id": "1513972902322638961",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-09T18:27:48.170000+00:00",
+      "content": "I'd say disadvantaged against carriers and other backline, but advantaged against ASN Frontline, 99% of which will not carry the tools to softkill it and who does likely won't have the mechanics to do so",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1513972902322638961"
+    },
+    {
+      "id": "1513972917371797605",
+      "author_id": "223274291318358016",
+      "author_name": "vren55",
+      "timestamp": "2026-06-09T18:27:51.758000+00:00",
+      "content": "It kinda makes sense that 3K CVLN is a 6 on effective build counters",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1513972917371797605"
+    },
+    {
+      "id": "1513972951584735252",
+      "author_id": "223274291318358016",
+      "author_name": "vren55",
+      "timestamp": "2026-06-09T18:27:59.915000+00:00",
+      "content": "not like as effective as some ANS builds but not bad",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1513972951584735252"
+    },
+    {
+      "id": "1513973030303432905",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-09T18:28:18.683000+00:00",
+      "content": "I've honestly never seen a 4 aurora s2cello",
+      "reply_to_id": "1513972891090161796",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1513973030303432905"
+    },
+    {
+      "id": "1513973068207493131",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-09T18:28:27.720000+00:00",
+      "content": "Kinda odd now that I think about it",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1513973068207493131"
+    },
+    {
+      "id": "1513973112763580426",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-09T18:28:38.343000+00:00",
+      "content": "Either way it's 1 out of what is normally a pair",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1513973112763580426"
+    },
+    {
+      "id": "1513973113698648114",
+      "author_id": "225807412165083136",
+      "author_name": "Rear Admiral Crunch",
+      "timestamp": "2026-06-09T18:28:38.566000+00:00",
+      "content": "misremembered the 3-aurora S2cello as 4 aurora",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1513973113698648114"
+    },
+    {
+      "id": "1513973121332412468",
+      "author_id": "225807412165083136",
+      "author_name": "Rear Admiral Crunch",
+      "timestamp": "2026-06-09T18:28:40.386000+00:00",
+      "content": "two cheek and chin",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1513973121332412468"
+    },
+    {
+      "id": "1513973154253635815",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-09T18:28:48.235000+00:00",
+      "content": "And playing close to rocks besides",
+      "reply_to_id": "1513973112763580426",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1513973154253635815"
+    },
+    {
+      "id": "1513973242271105064",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-09T18:29:09.220000+00:00",
+      "content": "Because of this easy to ambush ambusher nature Id say disadvantaged against beam caps",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1513973242271105064"
+    },
+    {
+      "id": "1513973305970004110",
+      "author_id": "225807412165083136",
+      "author_name": "Rear Admiral Crunch",
+      "timestamp": "2026-06-09T18:29:24.407000+00:00",
+      "content": "fair",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1513973305970004110"
+    },
+    {
+      "id": "1513973408478793759",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-09T18:29:48.847000+00:00",
+      "content": "Esp because modern beam caps bring auroras",
+      "reply_to_id": "1513973242271105064",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1513973408478793759"
+    },
+    {
+      "id": "1513973573151359218",
+      "author_id": "317486044188508161",
+      "author_name": "Larc",
+      "timestamp": "2026-06-09T18:30:28.108000+00:00",
+      "content": "Not all S2cellos have the 2 bellbirds + SSJ required to pen 2 aurora",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1513973573151359218"
+    },
+    {
+      "id": "1525947496650768507",
+      "author_id": "1026235090994462800",
+      "author_name": "GrafvonDuester",
+      "timestamp": "2026-07-12T19:30:33.935000+00:00",
+      "content": "https://youtu.be/r2whuz6tkb0?si=iI1-dE2-XW7OEBhr",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1525947496650768507"
+    },
+    {
+      "id": "1525947513528516728",
+      "author_id": "1026235090994462800",
+      "author_name": "GrafvonDuester",
+      "timestamp": "2026-07-12T19:30:37.959000+00:00",
+      "content": "Behold",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1525947513528516728"
+    },
+    {
+      "id": "1525947523242393700",
+      "author_id": "1026235090994462800",
+      "author_name": "GrafvonDuester",
+      "timestamp": "2026-07-12T19:30:40.275000+00:00",
+      "content": "Necromancy",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1525947523242393700"
+    },
+    {
+      "id": "1525947696236597470",
+      "author_id": "1026235090994462800",
+      "author_name": "GrafvonDuester",
+      "timestamp": "2026-07-12T19:31:21.520000+00:00",
+      "content": "The bit about pokemon and using networks to calculate the meta got me thinking",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1525947696236597470"
+    },
+    {
+      "id": "1525949416798683168",
+      "author_id": "372450812539961346",
+      "author_name": "thespyeye",
+      "timestamp": "2026-07-12T19:38:11.734000+00:00",
+      "content": "The neb meta is an acyclic graph where the root is two nodes, frigblob and CLs",
+      "reply_to_id": null,
+      "reactions": [
+        {
+          "emoji": "😭",
+          "count": 2
+        }
+      ],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1525949416798683168"
+    },
+    {
+      "id": "1526009940576047126",
+      "author_id": "339186648744984578",
+      "author_name": "Lobster",
+      "timestamp": "2026-07-12T23:38:41.727000+00:00",
+      "content": "damn, not even a node for brickulous?",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1526009940576047126"
+    },
+    {
+      "id": "1532944675541876826",
+      "author_id": "464542842451394560",
+      "author_name": "𝔣𝔩𝔶𝔫𝔫",
+      "timestamp": "2026-08-01T02:54:51.384000+00:00",
+      "content": "This is peak ty",
+      "reply_to_id": "1525947496650768507",
+      "reactions": [
+        {
+          "emoji": "👍",
+          "count": 1
+        }
+      ],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1532944675541876826"
+    },
+    {
+      "id": "1532965461782691893",
+      "author_id": "910821461260898345",
+      "author_name": "crumbs of a fractured meta",
+      "timestamp": "2026-08-01T04:17:27.210000+00:00",
+      "content": "guh",
+      "reply_to_id": "1513926522468171787",
+      "reactions": [],
+      "attachments": 1,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1532965461782691893"
+    },
+    {
+      "id": "1532984892315668671",
+      "author_id": "223274291318358016",
+      "author_name": "vren55",
+      "timestamp": "2026-08-01T05:34:39.810000+00:00",
+      "content": "Oh i deleted it, there were too many ppl who uhh",
+      "reply_to_id": "1532965461782691893",
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1532984892315668671"
+    },
+    {
+      "id": "1532984907263901857",
+      "author_id": "223274291318358016",
+      "author_name": "vren55",
+      "timestamp": "2026-08-01T05:34:43.374000+00:00",
+      "content": "Frankly it wasn't helping",
+      "reply_to_id": null,
+      "reactions": [],
+      "attachments": 0,
+      "jump_url": "https://discord.com/channels/409638848302153728/1461715057166651637/1532984907263901857"
+    }
+  ]
+}
