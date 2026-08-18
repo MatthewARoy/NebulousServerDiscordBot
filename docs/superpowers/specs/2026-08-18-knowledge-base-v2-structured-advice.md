@@ -335,10 +335,11 @@ to provide structure; curators add it. The back half changes:
   regardless of which store currently holds the entry. `!advice remove
   ca-NNN` keeps working unchanged.
 - **Promotion ordering is safe by construction.** First the entry lands in
-  TOML and deploys; then the DB row is marked `promoted`. During any
-  overlap the loader dedupes by id and the curated copy wins, so there is
-  no window where the advice disappears or double-serves, and a rollback
-  of either side leaves one working copy.
+  TOML and deploys; then the DB row is marked `promoted`. The loader rule
+  makes every ordering safe: a `promoted` DB row is served only when no
+  TOML entry with the same id exists, and when both exist the curated copy
+  wins. So there is no window where the advice disappears or double-serves,
+  and a rollback of either side still leaves exactly one working copy.
 - **Tombstones are permanent.** An approved removal writes the DB
   tombstone (as today) and additionally snapshots the removed entry's rule
   text into the proposal row at resolution time, so the incorrect-pool
