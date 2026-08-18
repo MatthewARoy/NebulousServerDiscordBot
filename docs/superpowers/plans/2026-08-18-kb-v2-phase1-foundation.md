@@ -54,3 +54,45 @@ user-visible behavior change is better search recall and status badges.
 
 Entry enrichment (phase 2), trigger evaluator and `!fleetcheck` (phase 3),
 DB migrations and modal intake (phase 4), anatomy files (phase 5).
+
+## Session kickoff prompt
+
+Paste this to start the implementation session. If the catalog dump needs
+DevAssistant, start the session from the workspace root or the bot repo
+(not the worktree path) so it can reach both.
+
+```text
+Implement Phase 1 (Foundation) of the Knowledge Base v2 design for the
+Nebulous Discord bot.
+
+Context to load first:
+- Branch: claude/nfc-knowledge-base-d98a97. Continue on this branch; do
+  not merge to main.
+- Plan (your task list, follow its 7 work items in order):
+  docs/superpowers/plans/2026-08-18-kb-v2-phase1-foundation.md
+- Spec (the why; sections 1-2 matter most for this phase):
+  docs/superpowers/specs/2026-08-18-knowledge-base-v2-structured-advice.md
+
+Scope: phase 1 is compatibility only. Catalog generation + hand-curated
+alias/class overlays, alias-fed search in nebulous_bot/knowledge.py,
+schema v2 fields accepted by loader and validator tests with safe legacy
+defaults, status badges in !advice, deploy-script rsync include for
+knowledge/catalog/, version bump. No entry content edits, no triggers,
+no DB changes, no voting changes.
+
+First decision to settle: the catalog dump mechanism. Check whether a
+NebulousDevAssistant command can dump the hull/component registries
+(devcli.py commands, or the commands.json manifest; the game must be
+running with DevAssistant enabled, and you have autonomy to launch/kill
+it). If not, write a decompile-driven generator in the workspace tooling.
+Either way the committed output is knowledge/catalog/components.toml and
+hulls.toml with catalog_version, generation command, and date in the
+header, plus a knowledge/catalog/README.md documenting regeneration.
+
+House rules that bite here: no new dependencies (tomllib only), tests
+stay pure-logic and DB-free (construct via __new__), eager loading at
+boot, version bump updates both Config.CHANGELOG and CHANGELOG.md
+(patch notes are features-only, one simple line). Run the verify skill
+before each commit. Any docs you write: plain prose, no em dashes.
+Commit when verified; I run deploys myself.
+```
