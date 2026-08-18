@@ -1,0 +1,50 @@
+# Hand-curated component classes: the named sets advice speaks in
+# ("class:beam-weapons"). Membership is editorial judgment ("what counts
+# as a beam weapon for this advice"), not a data dump, which is why this
+# file is separate from the generated catalog. Names must be unique,
+# lowercase-hyphenated; every member must resolve in components.toml
+# (components or munitions), CI-validated. Seeded from what the current
+# 47 entries talk about; phase 2 enrichment reviews membership entry by
+# entry.
+
+[[class]]
+name = "beam-weapons"
+members = ["Stock/Mk600 Beam Cannon", "Stock/Mk610 Beam Turret"]
+
+# The plan sketch called this "chaff-launchers", but chaff is a munition
+# fired from the standard missile launchers; the honest set is the decoy
+# munitions themselves.
+[[class]]
+name = "chaff-decoys"
+members = ["Stock/EA12 Chaff Decoy", "Stock/EA14 Chaff Decoy"]
+
+[[class]]
+name = "flare-decoys"
+members = ["Stock/EA20 Flare Decoy"]
+
+[[class]]
+name = "antennas"
+members = ["Stock/CR10 Antenna", "Stock/CR70 Antenna"]
+
+# Seeded from community usage (fb-033: capitals need an acceleration
+# drive). Membership needs a phase 2 review against actual drive stats.
+[[class]]
+name = "acceleration-drives"
+members = [
+    "Stock/FM230 'Whiplash' Drive",
+    "Stock/FM530 'Whiplash' Drive",
+    "Stock/Sundrive Racing Pro",
+]
+
+# fb-028's "RDC/DCX" pair.
+[[class]]
+name = "reinforced-damage-control"
+members = ["Stock/Reinforced DC Locker", "Stock/Damage Control Complex"]
+
+[[class]]
+name = "cics"
+members = ["Stock/Basic CIC", "Stock/Reinforced CIC", "Stock/Citadel CIC"]
+
+[[class]]
+name = "magazines"
+members = ["Stock/Bulk Magazine", "Stock/Reinforced Magazine", "Stock/Citadel Magazine"]
