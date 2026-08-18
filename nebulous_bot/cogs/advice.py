@@ -154,6 +154,10 @@ class AdviceCog(commands.Cog, name='Advice'):
         # connects) per house style. Corpus is tiny.
         self.entries = knowledge.load_entries()
         self.tags = knowledge.load_tags()
+        # Catalog aliases feed search as synonym expansion ("FPA" scores
+        # as "focused particle accelerator"). Loaded once at boot like
+        # the corpus; an absent catalog degrades to no expansion.
+        self.expansions = knowledge.alias_expansions(knowledge.load_catalog())
         # Community state, filled by cog_load from the DB:
         self.community = {}      # proposal pk -> entry dict (approved adds)
         self.removed_ids = set() # entry ids voted out of the pool
@@ -199,7 +203,8 @@ class AdviceCog(commands.Cog, name='Advice'):
             await ctx.send(embed=self._overview_embed(corpus))
             return
 
-        results = knowledge.search(corpus, query, limit=MAX_RESULTS)
+        results = knowledge.search(corpus, query, limit=MAX_RESULTS,
+                                   expansions=self.expansions)
         if not results:
             embed = discord.Embed(
                 title="🤷 No advice found",
@@ -221,6 +226,7 @@ class AdviceCog(commands.Cog, name='Advice'):
             title=f"📚 Community advice: {_truncate(query, 100)}",
             color=Config.EMBED_COLOR,
         )
+        any_badges = ''
         for entry in results:
             body = []
             if entry.get('situation'):
@@ -232,12 +238,22 @@ class AdviceCog(commands.Cog, name='Advice'):
                 body.append(f"— [{credit}]({entry['source_url']})")
             else:
                 body.append(f"— {credit}")
+            badges = knowledge.entry_badges(entry)
+            any_badges += badges
             embed.add_field(
-                name=_truncate(f"💡 {entry['rule']}", 256),
+                name=_truncate(f"💡{badges} {entry['rule']}", 256),
                 value=_truncate('\n'.join(body), _FIELD_LIMIT),
                 inline=False,
             )
-        embed.set_footer(text="!advice tags for topics • !advice add <tip> to contribute")
+        legend = []
+        if knowledge.BADGE_CONTESTED in any_badges:
+            legend.append(f"{knowledge.BADGE_CONTESTED} contested")
+        if knowledge.BADGE_PATCH_SENSITIVE in any_badges:
+            legend.append(f"{knowledge.BADGE_PATCH_SENSITIVE} balance-dependent")
+        footer = "!advice tags for topics • !advice add <tip> to contribute"
+        if legend:
+            footer = ' · '.join(legend) + " • " + footer
+        embed.set_footer(text=footer)
         await ctx.send(embed=embed)
 
     def _overview_embed(self, corpus):
@@ -325,7 +341,8 @@ class AdviceCog(commands.Cog, name='Advice'):
                 color=_BALLOT_COLOR,
             )
             embed.add_field(name="Proposed by", value=ctx.author.mention, inline=False)
-            related = knowledge.search(self._corpus(), cleaned, limit=1)
+            related = knowledge.search(self._corpus(), cleaned, limit=1,
+                                       expansions=self.expansions)
             if related:
                 r = related[0]
                 embed.add_field(
