@@ -322,6 +322,15 @@ def community_entry_id(pk):
     return f'{COMMUNITY_ID_PREFIX}-{pk:03d}'
 
 
+def community_entry_pk(entry_id):
+    """Inverse of community_entry_id: "ca-007" -> 7, or None if the id is
+    not a community one."""
+    m = _ENTRY_ID_RE.match(entry_id.strip().lower())
+    if not m or m.group(1) != COMMUNITY_ID_PREFIX:
+        return None
+    return int(m.group(2))
+
+
 def normalize_entry_id(raw):
     """Canonicalize a user-typed entry id ("FB-3" -> "fb-003"), or None."""
     m = _ENTRY_ID_RE.match(raw.strip().lower())

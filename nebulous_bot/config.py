@@ -140,7 +140,8 @@ class Config:
             "date": "2026-08-18",
             "changes": [
                 "!advice results now show each tip's id, and search matches singular and plural alike",
-                "Bugfix for advice search ranking",
+                "Advice votes expire after 7 days, and each server has its own share of open votes",
+                "Bugfixes for advice search ranking and vote settling",
                 "Internal test-harness improvements"
             ]
         },

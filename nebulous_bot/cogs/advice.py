@@ -32,6 +32,8 @@ LIST_PAGE_SIZE = 15
 ADVICE_MIN_LEN = 10
 ADVICE_MAX_LEN = 300
 MAX_OPEN_BALLOTS = 25  # bounds self.pending; deleting a ballot message voids it
+MAX_OPEN_BALLOTS_PER_GUILD = 5  # no single server may starve the others
+BALLOT_TTL_DAYS = 7  # a vote nobody settles must not hold a slot forever
 
 _BALLOT_COLOR = 0xf1c40f  # amber: vote in progress
 _BALLOT_FOOTER = (
@@ -80,6 +82,20 @@ def format_result_field(entry):
     return name, _truncate('\n'.join(body), _FIELD_LIMIT)
 
 
+def find_existing_advice(entries, community, text):
+    """The pool entry whose rule is exactly `text`, or None.
+
+    Curated entries match even while tombstoned: re-proposing a voted-out
+    entry's exact words would mint a ca-* copy stripped of the situation,
+    reason, tags and original source the curated entry carried.
+    """
+    lowered = ' '.join(text.split()).lower()
+    for entry in list(entries) + list(community):
+        if entry.get('rule', '').lower() == lowered:
+            return entry
+    return None
+
+
 def validate_advice_text(text):
     """Return (cleaned_text, error_message); exactly one is None."""
     if not text or not text.strip():
@@ -106,9 +122,70 @@ async def _db(fn, *args):
     return await sync_to_async(fn)(*args)
 
 
-def _load_community_state():
-    """Returns (approved add rows, pending rows, removed entry ids)."""
+def _expire_stale_ballots(ttl_days):
+    """Void ballots older than the TTL; returns their message ids.
+
+    Deleting the ballot message was the only way to void a vote, and the
+    message belongs to the bot, so a guild without a moderator could not
+    clear one at all. Stale ballots then held open-vote slots forever.
+    """
+    from datetime import timedelta
+
+    from django.utils import timezone
     from nebulous_bot.models import AdviceProposal
+    stale = AdviceProposal.objects.filter(
+        status=AdviceProposal.STATUS_PENDING,
+        created_at__lt=timezone.now() - timedelta(days=ttl_days),
+    )
+    message_ids = list(stale.values_list('message_id', flat=True))
+    if message_ids:
+        stale.update(status=AdviceProposal.STATUS_EXPIRED, resolved_at=timezone.now())
+    return message_ids
+
+
+def _restore_entry(entry_id, community_pk):
+    """Undo an approved removal. Returns (overturned ballots, add row).
+
+    The removal ballots move to 'rejected', the end state a declined
+    removal leaves; their recorded tallies are untouched, so the vote
+    itself stays auditable. A dedicated 'overturned' status would need a
+    migration, and phase 4 already plans that batch.
+    """
+    from nebulous_bot.models import AdviceProposal
+    ballots = list(
+        AdviceProposal.objects
+        .filter(kind=AdviceProposal.KIND_REMOVE, target_entry_id=entry_id,
+                status=AdviceProposal.STATUS_APPROVED)
+        .values('pk', 'up_votes', 'down_votes')
+    )
+    if ballots:
+        AdviceProposal.objects.filter(pk__in=[b['pk'] for b in ballots]).update(
+            status=AdviceProposal.STATUS_REJECTED)
+    row = None
+    if community_pk is not None:
+        AdviceProposal.objects.filter(
+            pk=community_pk, kind=AdviceProposal.KIND_ADD,
+            status=AdviceProposal.STATUS_REMOVED,
+        ).update(status=AdviceProposal.STATUS_APPROVED)
+        row = (
+            AdviceProposal.objects
+            .filter(pk=community_pk, kind=AdviceProposal.KIND_ADD,
+                    status=AdviceProposal.STATUS_APPROVED)
+            .values('pk', 'kind', 'advice_text', 'target_entry_id', 'author_id',
+                    'author_name', 'guild_id', 'channel_id', 'message_id')
+            .first()
+        )
+    return ballots, row
+
+
+def _load_community_state(ttl_days):
+    """Returns (approved add rows, pending rows, removed entry ids).
+
+    Sweeps ballots past the TTL first, so a restart never reinstates a
+    dead vote into the open-ballot budget.
+    """
+    from nebulous_bot.models import AdviceProposal
+    _expire_stale_ballots(ttl_days)
     fields = ('pk', 'kind', 'advice_text', 'target_entry_id', 'author_id',
               'author_name', 'guild_id', 'channel_id', 'message_id')
     approved = list(
@@ -201,10 +278,9 @@ class AdviceCog(commands.Cog, name='Advice'):
         self.pending = {}        # ballot message_id -> proposal row dict
         self._resolve_lock = asyncio.Lock()
         self._propose_lock = asyncio.Lock()  # serializes dup-check -> create
-        self._reconciled = False
 
     async def cog_load(self):
-        approved, pending, removed = await _db(_load_community_state)
+        approved, pending, removed = await _db(_load_community_state, BALLOT_TTL_DAYS)
         for row in approved:
             self.community[row['pk']] = self._entry_from_row(row)
         self.pending = {row['message_id']: row for row in pending}
@@ -222,6 +298,42 @@ class AdviceCog(commands.Cog, name='Advice'):
 
     def _corpus(self):
         return knowledge.active_entries(self.entries, self.community.values(), self.removed_ids)
+
+    def _at_capacity(self, guild_id):
+        mine = sum(1 for r in self.pending.values() if r['guild_id'] == guild_id)
+        return mine >= MAX_OPEN_BALLOTS_PER_GUILD or len(self.pending) >= MAX_OPEN_BALLOTS
+
+    async def _sweep_stale_ballots(self):
+        expired = await _db(_expire_stale_ballots, BALLOT_TTL_DAYS)
+        for message_id in expired:
+            self.pending.pop(message_id, None)
+        if expired:
+            logger.info("Expired %d advice ballots older than %d days",
+                        len(expired), BALLOT_TTL_DAYS)
+
+    async def _ballot_slot_taken(self, ctx):
+        """True (having said so) when this guild may not open another vote.
+
+        Two caps: a per-guild share so one server cannot starve the rest,
+        and the global bound on self.pending. Both sweep expired ballots
+        before refusing, so the budget always frees itself.
+        """
+        if self._at_capacity(ctx.guild.id):
+            await self._sweep_stale_ballots()
+        if not self._at_capacity(ctx.guild.id):
+            return False
+        mine = sum(1 for r in self.pending.values() if r['guild_id'] == ctx.guild.id)
+        if mine >= MAX_OPEN_BALLOTS_PER_GUILD:
+            await ctx.send(
+                f"❌ This server already has {mine} open votes — settle some first "
+                f"(`!advice pending`). Votes expire on their own after {BALLOT_TTL_DAYS} days."
+            )
+        else:
+            await ctx.send(
+                f"❌ There are already {len(self.pending)} open votes across all servers "
+                "— try again shortly (`!advice pending`)."
+            )
+        return True
 
     # --- search (unchanged behaviour) ------------------------------------
 
@@ -335,17 +447,20 @@ class AdviceCog(commands.Cog, name='Advice'):
         # The lock serializes duplicate-check -> create, so two simultaneous
         # proposals of the same text can't both pass the checks.
         async with self._propose_lock:
-            if len(self.pending) >= MAX_OPEN_BALLOTS:
-                await ctx.send(
-                    f"❌ There are already {len(self.pending)} open votes — settle some first "
-                    "(`!advice pending`). Deleting a ballot message cancels its vote."
-                )
+            if await self._ballot_slot_taken(ctx):
                 return
             lowered = cleaned.lower()
-            for entry in self._corpus():
-                if entry.get('rule', '').lower() == lowered:
-                    await ctx.send(f"❌ That advice is already in the pool as `{entry['id']}`.")
-                    return
+            existing = find_existing_advice(self.entries, self.community.values(), cleaned)
+            if existing is not None:
+                if existing['id'] in self.removed_ids:
+                    await ctx.send(
+                        f"❌ `{existing['id']}` was voted out of the pool. Re-adding the same "
+                        "words would lose the context it carried — reword it, or ask the "
+                        "bot owner to restore the entry."
+                    )
+                else:
+                    await ctx.send(f"❌ That advice is already in the pool as `{existing['id']}`.")
+                return
             for row in self.pending.values():
                 if row['kind'] == 'add' and row['advice_text'].lower() == lowered:
                     url = _jump_url(row['guild_id'], row['channel_id'], row['message_id'])
@@ -404,11 +519,7 @@ class AdviceCog(commands.Cog, name='Advice'):
             )
             return
         async with self._propose_lock:
-            if len(self.pending) >= MAX_OPEN_BALLOTS:
-                await ctx.send(
-                    f"❌ There are already {len(self.pending)} open votes — settle some first "
-                    "(`!advice pending`). Deleting a ballot message cancels its vote."
-                )
+            if await self._ballot_slot_taken(ctx):
                 return
             entry = next((e for e in self._corpus() if e['id'] == norm), None)
             if entry is None:
@@ -459,14 +570,58 @@ class AdviceCog(commands.Cog, name='Advice'):
             # discounts the bot's seeds when they actually exist.
             logger.warning("Could not seed ballot reactions on %s: %s", message.id, e)
 
+    @advice.command(name='restore', hidden=True)
+    @commands.is_owner()
+    async def advice_restore(self, ctx, entry_id: str = None):
+        """Put a voted-out entry back in the knowledge pool (bot owner only).
+
+        A removal vote is global and permanent otherwise; this is the only
+        way back. Example: `!advice restore fb-001`
+        """
+        norm = knowledge.normalize_entry_id(entry_id or '')
+        if not norm or norm not in self.removed_ids:
+            shown = norm or _truncate(entry_id or '?', 50)
+            await ctx.send(
+                f"❌ Nothing is tombstoned under `{shown}` — see `!advice list incorrect`."
+            )
+            return
+        ballots, row = await _db(_restore_entry, norm, knowledge.community_entry_pk(norm))
+        self.removed_ids.discard(norm)
+        if row:
+            self.community[row['pk']] = self._entry_from_row(row)
+        entry = next((e for e in self._corpus() if e['id'] == norm), None)
+        if entry:
+            description = _truncate(f"> {escape_markdown(entry['rule'])}", _DESC_LIMIT)
+        else:
+            description = ("The tombstone is cleared, but no entry with that id is loaded "
+                           "any more — it is gone from the knowledge files.")
+        embed = discord.Embed(
+            title=f"♻️ Restored to the knowledge pool: {norm}",
+            description=description,
+            color=Config.EMBED_COLOR,
+        )
+        embed.add_field(
+            name="Removal ballots overturned",
+            value=', '.join(f"👍 {b['up_votes']} · 👎 {b['down_votes']}" for b in ballots) or 'none',
+            inline=False,
+        )
+        await ctx.send(embed=embed)
+        logger.info("Advice entry %s restored by user %s, overturning %d removal ballots",
+                    norm, ctx.author.id, len(ballots))
+
     @advice.command(name='pending')
     async def advice_pending(self, ctx):
         """Show proposals currently up for a vote."""
-        if not self.pending:
+        # Other guilds' ballots are not listed: their jump links would go
+        # nowhere for anyone here, and their votes are not this server's
+        # business.
+        guild_id = ctx.guild.id if ctx.guild else 0
+        here = [r for r in self.pending.values() if r['guild_id'] == guild_id]
+        if not here:
             await ctx.send("No advice votes are open right now. Start one with `!advice add <tip>`.")
             return
         lines = []
-        for row in sorted(self.pending.values(), key=lambda r: r['pk']):
+        for row in sorted(here, key=lambda r: r['pk']):
             url = _jump_url(row['guild_id'], row['channel_id'], row['message_id'])
             if row['kind'] == 'add':
                 what = escape_markdown(_truncate(row['advice_text'], 120))
@@ -584,6 +739,16 @@ class AdviceCog(commands.Cog, name='Advice'):
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
+        await self._vote_changed(payload)
+
+    @commands.Cog.listener()
+    async def on_raw_reaction_remove(self, payload):
+        """Withdrawing a vote can settle a ballot too: a tie stays open by
+        design, so 5-5 waits for someone to pull a vote, and that is not an
+        added reaction."""
+        await self._vote_changed(payload)
+
+    async def _vote_changed(self, payload):
         if payload.user_id == self.bot.user.id:
             return
         if str(payload.emoji) not in (knowledge.UP_EMOJI, knowledge.DOWN_EMOJI):
@@ -611,11 +776,9 @@ class AdviceCog(commands.Cog, name='Advice'):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        """Re-tally ballots once per boot — votes cast while the bot was
-        offline arrive as no event, so pending ballots are checked here."""
-        if self._reconciled:
-            return
-        self._reconciled = True
+        """Re-tally open ballots on every connect — votes cast while the
+        bot was away arrive as no event, and a reconnect leaves the same gap
+        a restart does. Bounded by MAX_OPEN_BALLOTS."""
         for message_id in list(self.pending):
             try:
                 await self._tally(message_id)

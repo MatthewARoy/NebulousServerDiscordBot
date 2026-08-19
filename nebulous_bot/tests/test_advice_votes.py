@@ -4,9 +4,13 @@ Vote counting/resolution and corpus assembly live in nebulous_bot.knowledge;
 text validation and the cog's corpus wiring are exercised via __new__ per
 house pattern.
 """
+import asyncio
+from types import SimpleNamespace
+
 from nebulous_bot import knowledge
 from nebulous_bot.cogs.advice import (
-    AdviceCog, format_result_field, validate_advice_text, ADVICE_MAX_LEN)
+    AdviceCog, find_existing_advice, format_result_field, validate_advice_text,
+    ADVICE_MAX_LEN, MAX_OPEN_BALLOTS, MAX_OPEN_BALLOTS_PER_GUILD)
 
 
 # --- resolve_votes ------------------------------------------------------
@@ -169,3 +173,95 @@ def test_result_field_leaves_curated_text_verbatim():
     assert '*When:* Fitting the ANS Mk600 Beam Cannon' in value
     assert '*Why:* Beams deal many small ticks of damage' in value
     assert value.endswith('— [Davaned](https://discord.com/channels/1/2/3) · `fb-001`')
+
+
+# --- restore plumbing ---------------------------------------------------
+
+def test_community_entry_pk_inverts_the_public_id():
+    assert knowledge.community_entry_pk('ca-007') == 7
+    assert knowledge.community_entry_pk('CA-1234') == 1234
+
+
+def test_community_entry_pk_rejects_curated_ids():
+    assert knowledge.community_entry_pk('fb-001') is None
+    assert knowledge.community_entry_pk('nonsense') is None
+
+
+# --- duplicate detection sees tombstones --------------------------------
+
+def _curated(eid='fb-001', rule='Take at least 2 Focused Particle Accelerators'):
+    return {'id': eid, 'rule': rule, 'tags': [], 'category': 'fleet-building'}
+
+
+def test_find_existing_advice_matches_a_tombstoned_curated_entry():
+    # The cog passes self.entries, which keeps tombstoned entries, so the
+    # exact words of voted-out advice cannot be voted straight back in.
+    found = find_existing_advice([_curated()], [],
+                                 '  take   at LEAST 2 focused particle accelerators ')
+    assert found['id'] == 'fb-001'
+
+
+def test_find_existing_advice_ignores_different_wording():
+    assert find_existing_advice([_curated()], [], 'Bring two FPAs for beams') is None
+
+
+# --- ballot budget ------------------------------------------------------
+
+def _ballot(message_id, guild_id):
+    return {'pk': message_id, 'message_id': message_id, 'guild_id': guild_id, 'kind': 'add'}
+
+
+def _cog_with_ballots(rows):
+    cog = AdviceCog.__new__(AdviceCog)
+    cog.pending = {row['message_id']: row for row in rows}
+    cog.bot = SimpleNamespace(user=SimpleNamespace(id=BOT))
+    return cog
+
+
+def test_one_guild_cannot_take_the_whole_ballot_budget():
+    cog = _cog_with_ballots([_ballot(i, 111) for i in range(MAX_OPEN_BALLOTS_PER_GUILD)])
+    assert cog._at_capacity(111) is True
+    assert cog._at_capacity(222) is False
+
+
+def test_global_cap_still_applies_across_guilds():
+    # One ballot each in many guilds: every guild is under its own share,
+    # but the global bound is reached.
+    cog = _cog_with_ballots([_ballot(i, 1000 + i) for i in range(MAX_OPEN_BALLOTS)])
+    assert cog._at_capacity(999) is True
+
+
+# --- vote withdrawal ----------------------------------------------------
+
+def _tally_spy(cog):
+    seen = []
+
+    async def fake_tally(message_id):
+        seen.append(message_id)
+
+    cog._tally = fake_tally
+    return seen
+
+
+def test_withdrawing_a_vote_re_tallies_the_ballot():
+    cog = _cog_with_ballots([_ballot(99, 111)])
+    seen = _tally_spy(cog)
+    payload = SimpleNamespace(user_id=42, emoji=knowledge.DOWN_EMOJI, message_id=99)
+    asyncio.run(cog.on_raw_reaction_remove(payload))
+    assert seen == [99]
+
+
+def test_vote_events_ignore_the_bots_own_reactions():
+    cog = _cog_with_ballots([_ballot(99, 111)])
+    seen = _tally_spy(cog)
+    payload = SimpleNamespace(user_id=BOT, emoji=knowledge.UP_EMOJI, message_id=99)
+    asyncio.run(cog.on_raw_reaction_add(payload))
+    assert seen == []
+
+
+def test_vote_events_ignore_messages_that_are_not_ballots():
+    cog = _cog_with_ballots([_ballot(99, 111)])
+    seen = _tally_spy(cog)
+    payload = SimpleNamespace(user_id=42, emoji=knowledge.UP_EMOJI, message_id=12345)
+    asyncio.run(cog.on_raw_reaction_remove(payload))
+    assert seen == []

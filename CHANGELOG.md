@@ -8,7 +8,9 @@ for current and recent releases. This document mirrors it for readers on GitHub.
 
 - `!advice` results now show each tip's id, and search matches singular and
   plural alike.
-- Bugfix for advice search ranking.
+- Advice votes expire after 7 days, and each server has its own share of open
+  votes.
+- Bugfixes for advice search ranking and vote settling.
 - Internal test-harness improvements.
 
 (Maintainer notes on the advice fixes, from the 2026-08-18 review of the
@@ -31,6 +33,30 @@ markdown-parsed embed value, and the credit label gets a bracket-escaping
 pass of its own: discord.py `escape_markdown` leaves bare brackets alone, so
 a display name containing "](" could hijack the masked link it sits in.
 Curated text contains no markdown, so its rendering is byte-identical.)
+
+(Maintainer notes on the advice voting fixes, same review. Ballot lifecycle:
+proposals had no timeout, and voiding one meant deleting the bot's own ballot
+message, which needs Manage Messages, so a guild without a moderator could not
+clear a dead vote at all and it held a slot in the global 25-ballot budget
+forever. Ballots now expire after `BALLOT_TTL_DAYS` (7), swept at boot and
+again whenever a proposal finds the budget full, so the budget frees itself
+without a background task on the tiny VM. The single cap became two, a
+per-guild share of 5 plus the global 25, so one server cannot starve the
+others; `!advice pending` now lists only the current guild's ballots, since
+jump links into another server go nowhere for anyone reading them. Vote
+withdrawal: a tie stays open by design, so a 5-5 ballot sat waiting for an
+added reaction that never came. `on_raw_reaction_remove` now re-tallies
+through the same path as an added vote, and the `on_ready` reconciliation runs
+on every connect instead of once per process, because a reconnect leaves the
+same gap a restart does. Re-proposal: the duplicate check runs over
+`self.entries`, which keeps tombstoned curated entries, instead of the active
+corpus, so a voted-out entry's exact words can no longer be voted back in as
+an unstructured `ca-*` copy that has lost its situation, reason, tags and
+source. New owner-only `!advice restore <id>` is the way back from a removal
+vote, which was otherwise global, permanent and undoable only through
+`manage.py shell` on the VM; it moves the removal ballots to `rejected` and
+leaves their recorded tallies intact rather than introducing an `overturned`
+status, which would need a migration that phase 4 already plans to batch.)
 
 (Maintainer notes: `TEST_COMMAND_BOT_IDS` + `TEST_COMMAND_GUILD_IDS` env
 vars, both empty by default and both required (fail closed). When set,
