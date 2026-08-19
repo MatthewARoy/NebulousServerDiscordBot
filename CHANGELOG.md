@@ -4,6 +4,37 @@ The bot reads its own changelog from `nebulous_bot/config.py` (`Config.CHANGELOG
 to power the in-Discord `!version` command, so that file is the source of truth
 for current and recent releases. This document mirrors it for readers on GitHub.
 
+## 2.9.2 — 2026-08-18
+
+- `!listservers`, `!openlobbies` and `!nextgame` reply straight away from the
+  latest refresh instead of waiting on a live server sweep, and the posted
+  list keeps updating in place.
+
+(Maintainer notes: those three commands awaited `force_update()`, so every
+invocation blocked on a full Steam `GetServerList` plus a per-server A2S
+rules sweep. The A2S half runs three queries at a time behind a 2 s socket
+timeout, which is deliberate on a 1/8-OCPU VM, so the wait was structural:
+the command log put `!listservers` at 9.9 s average over 24 h and `!nextgame`
+at 13.3 s, with worst cases of 27.7 s and 25.0 s, while every other command
+stayed under a second. The measurements were the same on 2.8.1, 2.9.0 and
+2.9.1, so this was not a regression from any of them. They now call
+`ServerMonitor.ensure_fresh_cache()`, which serves the monitoring loop's
+cache when it is younger than `Config.COMMAND_CACHE_MAX_AGE` (90 s) and
+sweeps only when the cache is cold or the loop has stalled. The loop's own
+period is `UPDATE_INTERVAL` plus the sweep, so a healthy cache is never older
+than about 45 s and the 90 s threshold leaves 2x headroom. An `asyncio.Lock`
+with a re-check after acquire collapses a stampede into one sweep instead of
+one per channel, which also serializes command sweeps against each other for
+the first time. Freshness is visible and self-correcting: `!listservers`
+already stamps the data's age into its title as a Discord relative
+timestamp, `!openlobbies` carries it as the embed timestamp, and the
+tracked-message updater edits both replies in place on the next cycle.
+`!refresh` still forces a live sweep, so an immediate answer is one command
+away. `!nextgame` posts a confirmation rather than a tracked list; cached
+data only feeds its skip-lobbies and immediate-notify checks, and the
+waitlist check on the next cycle catches anything that appears in between.
+Total load on Steam goes down, since per-command sweeps are gone.)
+
 ## 2.9.1 — 2026-08-18
 
 - `!advice` results now show each tip's id, and search matches singular and

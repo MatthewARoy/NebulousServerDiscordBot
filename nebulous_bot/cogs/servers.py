@@ -80,8 +80,12 @@ class ServersCog(commands.Cog, name='Servers'):
             await ctx.send("❌ Server monitoring not initialized yet. Please wait a moment.")
             return
 
-        # Always fetch fresh data from Steam
-        await server_monitor.force_update()
+        # Serve the monitoring loop's cache (refreshed every
+        # Config.UPDATE_INTERVAL) instead of making the user wait out a live
+        # Steam + A2S sweep. The embed title carries the data's age as a
+        # Discord relative timestamp, and the tracked-message updater edits
+        # this reply in place on the next cycle.
+        await server_monitor.ensure_fresh_cache()
 
         # Parse filter arguments
         filters, show_all, ptb_only = parse_listservers_filters(filter_args)
@@ -131,8 +135,8 @@ class ServersCog(commands.Cog, name='Servers'):
             await ctx.send("❌ Server monitoring not initialized yet. Please wait a moment.")
             return
 
-        # Always fetch fresh data from Steam
-        await server_monitor.force_update()
+        # Cached data plus in-place refresh, same as !listservers.
+        await server_monitor.ensure_fresh_cache()
 
         open_servers = server_monitor.get_open_lobbies()
         embed = formatter.create_lobby_list_embed(open_servers, server_monitor.last_update)

@@ -24,6 +24,9 @@ class ServerMonitor:
         self.steam_api = SteamAPI()  # Using real Steam API now
         self.last_update = None
         self.cached_servers = []
+        # Serializes live sweeps: without it, a stale cache makes every
+        # command in the window start its own Steam + A2S sweep.
+        self._refresh_lock = asyncio.Lock()
         
         # Multi-server support: track status messages per guild
         # Format: {guild_id: {'message': Message, 'created_at': datetime}}
@@ -838,6 +841,41 @@ class ServerMonitor:
         if filters:
             return self.filter_servers(base_servers, filters)
         return base_servers
+
+    def cache_age_seconds(self) -> Optional[float]:
+        """Seconds since the last successful sweep, or None if there is no
+        usable cache yet."""
+        if not self.cached_servers or self.last_update is None:
+            return None
+        return (datetime.now(timezone.utc) - self.last_update).total_seconds()
+
+    async def ensure_fresh_cache(self, max_age_seconds: Optional[float] = None) -> float:
+        """Guarantee reasonably fresh cached data for a command reply.
+
+        Commands used to await force_update(), so every !listservers made
+        the user sit through a full Steam + A2S sweep: ~10 s, because the
+        A2S half is deliberately throttled to 3 concurrent queries. The
+        monitoring loop already refreshes every UPDATE_INTERVAL, so the
+        cache is normally seconds old. Serve that, and let the
+        tracked-message updater bring the posted reply current in place.
+
+        Only a cold cache or a stalled loop pays for a live sweep, and the
+        lock collapses a stampede into one sweep rather than one per
+        channel. Returns the age of the data the caller will render.
+        """
+        max_age = Config.COMMAND_CACHE_MAX_AGE if max_age_seconds is None else max_age_seconds
+        age = self.cache_age_seconds()
+        if age is not None and age <= max_age:
+            return age
+        async with self._refresh_lock:
+            # Another waiter may have refreshed while we queued on the lock.
+            age = self.cache_age_seconds()
+            if age is not None and age <= max_age:
+                return age
+            logger.info("Cache stale (age=%s, max=%ss) - refreshing for a command",
+                        'none' if age is None else round(age), max_age)
+            await self.force_update()
+        return self.cache_age_seconds() or 0.0
 
     async def force_update(self):
         """Force an immediate update of server data"""

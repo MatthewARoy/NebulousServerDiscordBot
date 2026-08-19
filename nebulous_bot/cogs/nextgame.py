@@ -161,8 +161,10 @@ class NextGameCog(commands.Cog, name='Next Game'):
             await ctx.send(embed=embed)
             return
 
-        # Force update to get fresh server data before checking
-        await server_monitor.force_update()
+        # Cached data is enough to decide which lobbies to skip and whether
+        # to notify immediately; if a game appears seconds later the waitlist
+        # check on the next monitoring cycle catches it anyway.
+        await server_monitor.ensure_fresh_cache()
 
         # Add user to waitlist with queue-mode preferences
         skip_lobbies = server_monitor.get_joinable_lobby_ids(ptb_only=ptb_only, modded_only=modded_only, newplayer_only=newplayer_only) if skip_current_lobbies else []

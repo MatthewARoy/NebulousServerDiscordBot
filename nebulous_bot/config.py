@@ -111,6 +111,11 @@ class Config:
     # Bot Configuration
     COMMAND_PREFIX = "!"
     UPDATE_INTERVAL = 30  # seconds - update every 30 seconds
+    # How stale the monitoring loop's cache may be before a command pays for
+    # its own live sweep. The loop's period is UPDATE_INTERVAL plus the sweep
+    # itself (~10 s, capped at 15 s), so a healthy cache is never older than
+    # ~45 s; 90 s leaves 2x headroom and fires only when the loop has stalled.
+    COMMAND_CACHE_MAX_AGE = 90  # seconds
     STATUS_MESSAGE_REFRESH_INTERVAL = int(os.getenv('STATUS_MESSAGE_REFRESH_INTERVAL', 86400))  # seconds - create new message daily (86400 = 24 hours)
     MAX_SERVERS_DISPLAY = 20
     
@@ -133,8 +138,15 @@ class Config:
     TEST_COMMAND_GUILD_IDS = parse_id_set(os.getenv('TEST_COMMAND_GUILD_IDS', ''))
 
     # Version Information
-    VERSION = "2.9.1"
+    VERSION = "2.9.2"
     CHANGELOG = [
+        {
+            "version": "2.9.2",
+            "date": "2026-08-18",
+            "changes": [
+                "!listservers, !openlobbies and !nextgame reply straight away from the latest refresh instead of waiting on a live server sweep, and the posted list keeps updating in place"
+            ]
+        },
         {
             "version": "2.9.1",
             "date": "2026-08-18",
