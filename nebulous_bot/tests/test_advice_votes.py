@@ -5,7 +5,8 @@ text validation and the cog's corpus wiring are exercised via __new__ per
 house pattern.
 """
 from nebulous_bot import knowledge
-from nebulous_bot.cogs.advice import AdviceCog, validate_advice_text, ADVICE_MAX_LEN
+from nebulous_bot.cogs.advice import (
+    AdviceCog, format_result_field, validate_advice_text, ADVICE_MAX_LEN)
 
 
 # --- resolve_votes ------------------------------------------------------
@@ -130,3 +131,41 @@ def test_validate_advice_text_rejects_overlong():
     cleaned, error = validate_advice_text('x' * (ADVICE_MAX_LEN + 1))
     assert cleaned is None
     assert 'too long' in error
+
+
+# --- result rendering ---------------------------------------------------
+
+def test_result_field_carries_the_entry_id():
+    entry = knowledge.community_entry(7, 'keep your radar on', 'Someone')
+    name, value = format_result_field(entry)
+    assert 'keep your radar on' in name
+    assert value.endswith('`ca-007`')
+
+
+def test_result_field_credit_link_cannot_be_hijacked():
+    entry = knowledge.community_entry(
+        1, 'some advice text', 'evil](https://evil.example) x',
+        source_url='https://discord.com/channels/1/2/3')
+    credit_line = format_result_field(entry)[1].splitlines()[-1]
+    # Discord renders the escaped brackets as literal text, so strip them:
+    # exactly one masked link is left, and it points at the real source.
+    unescaped = credit_line.replace('\\]', '').replace('\\[', '')
+    assert unescaped.count('](') == 1
+    assert unescaped.endswith('](https://discord.com/channels/1/2/3) · `ca-001`')
+
+
+def test_result_field_leaves_curated_text_verbatim():
+    entry = {
+        'id': 'fb-001',
+        'rule': 'Take at least 2 Focused Particle Accelerators',
+        'situation': 'Fitting the ANS Mk600 Beam Cannon',
+        'reason': 'Beams deal many small ticks of damage',
+        'author': 'Davaned',
+        'source_url': 'https://discord.com/channels/1/2/3',
+        'category': 'fleet-building',
+    }
+    name, value = format_result_field(entry)
+    assert name.endswith('Take at least 2 Focused Particle Accelerators')
+    assert '*When:* Fitting the ANS Mk600 Beam Cannon' in value
+    assert '*Why:* Beams deal many small ticks of damage' in value
+    assert value.endswith('— [Davaned](https://discord.com/channels/1/2/3) · `fb-001`')

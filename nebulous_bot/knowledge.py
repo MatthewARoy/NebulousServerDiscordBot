@@ -44,10 +44,28 @@ DOWN_EMOJI = '\N{THUMBS DOWN SIGN}'
 _WORD_RE = re.compile(r'[a-z0-9]+')
 _ENTRY_ID_RE = re.compile(r'^([a-z]{2,3})-0*(\d+)$')
 
+# Shortest token allowed to lose a trailing 's'. Community shorthand is short
+# and plural-looking ("ans", "vls", "gps"); folding it would merge unrelated
+# terms, and the recall it would buy is nil.
+MIN_STEM_LEN = 4
+
+
+def _fold_plural(token):
+    """Singularize a token so "missiles" and "missile" score as one word.
+
+    Query and corpus both fold, so the two only have to agree with each
+    other: an imperfect stem ("radius" -> "radiu") still matches itself.
+    Guarded on length (shorthand must survive) and on a double 's' (so
+    "mass" does not become "mas").
+    """
+    if len(token) >= MIN_STEM_LEN and token.endswith('s') and not token.endswith('ss'):
+        return token[:-1]
+    return token
+
 
 def tokenize(text):
-    """Lowercase word tokens; hyphenated terms yield their parts too."""
-    return _WORD_RE.findall(text.lower())
+    """Lowercase, singularized word tokens; hyphenated terms yield their parts too."""
+    return [_fold_plural(t) for t in _WORD_RE.findall(text.lower())]
 
 
 def load_entries(entries_dir=None):
@@ -235,12 +253,24 @@ def score_entry(query_tokens, entry):
     return score
 
 
+def _corpus_rank(entry):
+    """Tie-break rank: curated entries sort ahead of community ones.
+
+    Community ids ("ca-NNN") precede every curated prefix alphabetically,
+    so on the plain id tie-break a community submission that restates a
+    curated entry — scoring the same, because it repeats the same words —
+    would take that entry's place in the results.
+    """
+    return 1 if entry.get('category') == COMMUNITY_CATEGORY else 0
+
+
 def search(entries, query, limit=3, expansions=None):
     """Return the top-scoring entries for a free-text query, best first.
 
     `expansions` (see alias_expansions) adds each query token's synonym
     tokens to the query, so "FPA" also scores as "focused particle
     accelerator". Original tokens always stay; expansions never recurse.
+    Ties break curated-first, then by id, so ordering is stable.
     """
     query_tokens = tokenize(query)
     if not query_tokens:
@@ -257,7 +287,7 @@ def search(entries, query, limit=3, expansions=None):
         s = score_entry(query_tokens, entry)
         if s > 0:
             scored.append((s, entry))
-    scored.sort(key=lambda pair: (-pair[0], pair[1].get('id', '')))
+    scored.sort(key=lambda pair: (-pair[0], _corpus_rank(pair[1]), pair[1].get('id', '')))
     return [entry for _score, entry in scored[:limit]]
 
 

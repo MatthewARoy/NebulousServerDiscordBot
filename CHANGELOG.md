@@ -6,7 +6,31 @@ for current and recent releases. This document mirrors it for readers on GitHub.
 
 ## 2.9.1 — 2026-08-18
 
+- `!advice` results now show each tip's id, and search matches singular and
+  plural alike.
+- Bugfix for advice search ranking.
 - Internal test-harness improvements.
+
+(Maintainer notes on the advice fixes, from the 2026-08-18 review of the
+command. Ranking: `knowledge.search` tie-broke on entry id alone, and
+community ids (`ca-NNN`) sort ahead of every curated prefix, so an approved
+community submission restating a curated entry scored the same and took its
+place. In production `!advice fpa` served an unstructured copy of `fb-001`
+rather than the curated entry, which is the near-duplicate problem the
+`!advice improve` ticket describes, already happening. Ties now break
+curated-first, then by id. Recall: `tokenize` folds one trailing 's',
+guarded on length so shorthand like `ans` and `vls` survives and on a double
+'s' so `mass` does not become `mas`. Query and corpus both fold, so an
+imperfect stem still matches itself; audited against the full 756-token
+corpus vocabulary, every merge it makes is a real singular/plural pair. The
+alias expansion needed this too, since it emits the singular "accelerator"
+against a corpus that spells "Accelerators". Results now carry their entry
+id, which the `!advice remove` help text already promised. User-supplied
+text (community rule text, display names) is escaped where it reaches a
+markdown-parsed embed value, and the credit label gets a bracket-escaping
+pass of its own: discord.py `escape_markdown` leaves bare brackets alone, so
+a display name containing "](" could hijack the masked link it sits in.
+Curated text contains no markdown, so its rendering is byte-identical.)
 
 (Maintainer notes: `TEST_COMMAND_BOT_IDS` + `TEST_COMMAND_GUILD_IDS` env
 vars, both empty by default and both required (fail closed). When set,

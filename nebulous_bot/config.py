@@ -139,6 +139,8 @@ class Config:
             "version": "2.9.1",
             "date": "2026-08-18",
             "changes": [
+                "!advice results now show each tip's id, and search matches singular and plural alike",
+                "Bugfix for advice search ranking",
                 "Internal test-harness improvements"
             ]
         },

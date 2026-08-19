@@ -18,6 +18,7 @@ import logging
 
 import discord
 from discord.ext import commands
+from discord.utils import escape_markdown
 
 from nebulous_bot.config import Config
 from nebulous_bot import knowledge
@@ -41,6 +42,42 @@ _BALLOT_FOOTER = (
 
 def _truncate(text, limit):
     return text if len(text) <= limit else text[:limit - 1] + '…'
+
+
+# discord.py's escape_markdown leaves bare brackets alone, so a display name
+# containing "](" hijacks the masked link it is rendered inside. Labels get
+# their own pass; plain text uses escape_markdown.
+_LINK_LABEL_ESCAPE = str.maketrans({c: '\\' + c for c in '\\[]`*_~|'})
+
+
+def _link_label(text):
+    """Escape user-supplied text used as the label of a [label](url) link."""
+    return text.translate(_LINK_LABEL_ESCAPE)
+
+
+def format_result_field(entry):
+    """Render one search hit as an embed (field name, field value) pair.
+
+    Every hit carries its id, because `!advice remove <id>` tells people to
+    find ids here. Author names and community rule text are user-supplied,
+    so they are escaped before reaching a markdown-parsed value; curated
+    text contains no markdown, so escaping leaves it untouched.
+    """
+    body = []
+    if entry.get('situation'):
+        body.append(f"*When:* {escape_markdown(entry['situation'])}")
+    if entry.get('reason'):
+        body.append(f"*Why:* {escape_markdown(entry['reason'])}")
+    credit = entry.get('author', 'unknown')
+    if entry.get('source_url'):
+        attribution = f"— [{_link_label(credit)}]({entry['source_url']})"
+    else:
+        attribution = f"— {escape_markdown(credit)}"
+    if entry.get('id'):
+        attribution += f" · `{entry['id']}`"
+    body.append(attribution)
+    name = _truncate(f"💡{knowledge.entry_badges(entry)} {entry.get('rule', '')}", 256)
+    return name, _truncate('\n'.join(body), _FIELD_LIMIT)
 
 
 def validate_advice_text(text):
@@ -228,23 +265,9 @@ class AdviceCog(commands.Cog, name='Advice'):
         )
         any_badges = ''
         for entry in results:
-            body = []
-            if entry.get('situation'):
-                body.append(f"*When:* {entry['situation']}")
-            if entry.get('reason'):
-                body.append(f"*Why:* {entry['reason']}")
-            credit = entry.get('author', 'unknown')
-            if entry.get('source_url'):
-                body.append(f"— [{credit}]({entry['source_url']})")
-            else:
-                body.append(f"— {credit}")
-            badges = knowledge.entry_badges(entry)
-            any_badges += badges
-            embed.add_field(
-                name=_truncate(f"💡{badges} {entry['rule']}", 256),
-                value=_truncate('\n'.join(body), _FIELD_LIMIT),
-                inline=False,
-            )
+            any_badges += knowledge.entry_badges(entry)
+            name, value = format_result_field(entry)
+            embed.add_field(name=name, value=value, inline=False)
         legend = []
         if knowledge.BADGE_CONTESTED in any_badges:
             legend.append(f"{knowledge.BADGE_CONTESTED} contested")
@@ -337,7 +360,7 @@ class AdviceCog(commands.Cog, name='Advice'):
 
             embed = discord.Embed(
                 title="🗳️ New advice proposed — vote!",
-                description=f"> {cleaned}",
+                description=f"> {escape_markdown(cleaned)}",
                 color=_BALLOT_COLOR,
             )
             embed.add_field(name="Proposed by", value=ctx.author.mention, inline=False)
@@ -347,7 +370,7 @@ class AdviceCog(commands.Cog, name='Advice'):
                 r = related[0]
                 embed.add_field(
                     name="Possibly related existing advice",
-                    value=_truncate(f"`{r['id']}` {r['rule']}", _FIELD_LIMIT),
+                    value=_truncate(f"`{r['id']}` {escape_markdown(r['rule'])}", _FIELD_LIMIT),
                     inline=False,
                 )
             embed.add_field(name="How it works", value=self._ballot_rules_text(), inline=False)
@@ -401,7 +424,8 @@ class AdviceCog(commands.Cog, name='Advice'):
             embed = discord.Embed(
                 title=f"🗳️ Removal proposed: {norm} — vote!",
                 description=_truncate(
-                    f"> {entry['rule']}\n— *{entry.get('author', 'unknown')}*", _DESC_LIMIT),
+                    f"> {escape_markdown(entry['rule'])}\n"
+                    f"— *{escape_markdown(entry.get('author', 'unknown'))}*", _DESC_LIMIT),
                 color=_BALLOT_COLOR,
             )
             embed.add_field(name="Proposed by", value=ctx.author.mention, inline=False)
@@ -445,7 +469,7 @@ class AdviceCog(commands.Cog, name='Advice'):
         for row in sorted(self.pending.values(), key=lambda r: r['pk']):
             url = _jump_url(row['guild_id'], row['channel_id'], row['message_id'])
             if row['kind'] == 'add':
-                what = _truncate(row['advice_text'], 120)
+                what = escape_markdown(_truncate(row['advice_text'], 120))
                 lines.append(f"➕ {what} — [vote here]({url})")
             else:
                 lines.append(f"🗑️ remove `{row['target_entry_id']}` — [vote here]({url})")
@@ -481,7 +505,7 @@ class AdviceCog(commands.Cog, name='Advice'):
             selected = corpus if section == 'all' else [e for e in corpus if e['category'] == section]
             title = f"📋 Knowledge pool — {section} ({len(selected)} entries)"
             lines = [
-                _truncate(f"`{e['id']}` {e['rule']}", 150)
+                _truncate(f"`{e['id']}` {escape_markdown(e['rule'])}", 150)
                 for e in sorted(selected, key=lambda e: e['id'])
             ]
             empty = "No entries here yet."
@@ -544,13 +568,15 @@ class AdviceCog(commands.Cog, name='Advice'):
         for entry_id in sorted(self.removed_ids):
             entry = curated_by_id.get(entry_id)
             if entry:
-                lines.append(_truncate(f"`{entry_id}` {entry['rule']} *(removed by vote)*", 150))
+                lines.append(_truncate(
+                    f"`{entry_id}` {escape_markdown(entry['rule'])} *(removed by vote)*", 150))
         for row in removed_community:
             eid = knowledge.community_entry_id(row['pk'])
-            lines.append(_truncate(f"`{eid}` {row['advice_text']} *(removed by vote)*", 150))
+            lines.append(_truncate(
+                f"`{eid}` {escape_markdown(row['advice_text'])} *(removed by vote)*", 150))
         for row in rejected:
             lines.append(_truncate(
-                f"• {row['advice_text']} *(by {row['author_name']}, "
+                f"• {escape_markdown(row['advice_text'])} *(by {escape_markdown(row['author_name'])}, "
                 f"voted down {row['down_votes']}👎/{row['up_votes']}👍)*", 150))
         return lines
 
@@ -656,14 +682,14 @@ class AdviceCog(commands.Cog, name='Advice'):
                 self.community[row['pk']] = entry
                 embed = discord.Embed(
                     title="✅ Advice added to the knowledge pool",
-                    description=f"> {row['advice_text']}",
+                    description=f"> {escape_markdown(row['advice_text'])}",
                     color=Config.EMBED_COLOR,
                 )
                 embed.add_field(name="Entry id", value=f"`{entry['id']}`", inline=True)
             else:
                 embed = discord.Embed(
                     title="❌ Voted incorrect — not added",
-                    description=f"> {row['advice_text']}",
+                    description=f"> {escape_markdown(row['advice_text'])}",
                     color=Config.EMBED_COLOR_NO_SERVERS,
                 )
                 embed.set_footer(text="Recorded in the incorrect pool — !advice list incorrect")
@@ -689,7 +715,7 @@ class AdviceCog(commands.Cog, name='Advice'):
                     color=Config.EMBED_COLOR,
                 )
         embed.add_field(name="Final tally", value=tally, inline=True)
-        embed.add_field(name="Proposed by", value=row['author_name'], inline=True)
+        embed.add_field(name="Proposed by", value=escape_markdown(row['author_name']), inline=True)
         try:
             await message.edit(embed=embed)
         except discord.HTTPException as e:

@@ -262,3 +262,45 @@ def test_entry_badges():
     assert knowledge.entry_badges({'patch_sensitive': True}) == knowledge.BADGE_PATCH_SENSITIVE
     both = knowledge.entry_badges({'status': 'contested', 'patch_sensitive': True})
     assert knowledge.BADGE_CONTESTED in both and knowledge.BADGE_PATCH_SENSITIVE in both
+
+
+# --- plural folding -----------------------------------------------------
+
+def test_plural_and_singular_queries_match_the_same_entry():
+    entry = _entry(rule='stagger your missiles')
+    assert knowledge.score_entry(knowledge.tokenize('missile'), entry) > 0
+    assert knowledge.score_entry(knowledge.tokenize('missiles'), entry) > 0
+
+
+def test_short_shorthand_never_folds():
+    # "ans" and "vls" are live community shorthand; folding them would
+    # merge them into unrelated words.
+    assert knowledge.tokenize('ans vls pd gps') == ['ans', 'vls', 'pd', 'gps']
+
+
+def test_double_s_words_never_fold():
+    assert knowledge.tokenize('mass class') == ['mass', 'class']
+
+
+# --- curated vs community tie-break -------------------------------------
+
+def test_curated_entry_outranks_a_community_duplicate_on_a_tie():
+    curated = _entry(id='fb-001', category='fleet-building',
+                     rule='Take at least 2 Focused Particle Accelerators')
+    duplicate = knowledge.community_entry(
+        37, 'take at least 2 focused particle accelerators', 'someone')
+    results = knowledge.search([duplicate, curated], 'focused particle accelerators')
+    assert [e['id'] for e in results] == ['fb-001', 'ca-037']
+
+
+def test_shorthand_query_ranks_the_curated_entry_first():
+    """Regression: in production a community restatement of fb-001 scored
+    the same and took its place, so !advice fpa served the unstructured
+    copy instead of the curated entry."""
+    entries = knowledge.load_entries()
+    expansions = knowledge.alias_expansions(knowledge.load_catalog())
+    duplicate = knowledge.community_entry(
+        37, 'beams should always have at least two focused particle accelerators', 'someone')
+    corpus = knowledge.active_entries(entries, [duplicate], set())
+    results = knowledge.search(corpus, 'fpa', expansions=expansions)
+    assert results[0]['id'] == 'fb-001'
