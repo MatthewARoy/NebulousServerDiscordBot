@@ -236,6 +236,9 @@ if [[ "$BUILD_ON_VM" =~ ^[Yy]$ ]]; then
                --exclude '*.log.*' \
                --exclude 'node_modules' \
                --exclude '.env' \
+               --exclude '/research/' \
+               --exclude '/scripts/collect_qol_research.py' \
+               --exclude '/scripts/process_qol_research.py' \
                --exclude 'ORACLE_CONNECT.md' \
                --exclude 'ORACLE_SERVER_ISSUES.md' \
                -e "ssh -i $VM_SSH_KEY" \

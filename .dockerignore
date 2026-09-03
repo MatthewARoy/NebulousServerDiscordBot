@@ -83,6 +83,13 @@ steam_debug_report.json
 steam_debug.log
 nebulous_bot.log
 
+# Community research belongs in the separate NebulousCommunityResearch repo.
+# Keep an explicit backstop in case research artifacts or tooling are copied
+# here accidentally.
+/research/
+/scripts/collect_qol_research.py
+/scripts/process_qol_research.py
+
 # Keep these
 !requirements.txt
 !.env.example
