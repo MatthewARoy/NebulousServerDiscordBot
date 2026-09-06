@@ -7,7 +7,10 @@ bootstrap config on guild_id collision. Without these, a guild
 added via Discord's Add-to-Server flow would be visible to the
 bot but would never receive the live status message.
 """
+from typing import Optional
+
 import discord
+from discord import app_commands
 from discord.ext import commands
 
 from nebulous_bot.config import Config
@@ -34,15 +37,26 @@ class SetupCog(commands.Cog, name='Setup'):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    @commands.command(name='setstatuschannel', aliases=['setstatus'])
+    @commands.hybrid_command(
+        name='setstatuschannel',
+        aliases=['setstatus'],
+        description='Choose the channel for live server status updates.',
+    )
+    @app_commands.describe(channel='Channel where live server status should be posted')
     @commands.has_permissions(administrator=True)
     @commands.guild_only()
-    async def set_status_channel(self, ctx, channel: discord.TextChannel = None):
+    async def set_status_channel(
+        self,
+        ctx: commands.Context,
+        channel: Optional[discord.TextChannel] = None,
+    ):
         """Set the channel where the bot posts the live server status (admin only).
 
         With no argument, uses the channel where the command is run.
         """
         target = channel or ctx.channel
+        if ctx.interaction is not None:
+            await ctx.defer()
         await _upsert_guild_config(ctx.guild.id, status_channel_id=target.id)
         embed = discord.Embed(
             title="✅ Status channel set",
@@ -52,29 +66,47 @@ class SetupCog(commands.Cog, name='Setup'):
         embed.set_footer(text="The first status message appears within ~30 seconds.")
         await ctx.send(embed=embed)
 
-    @commands.command(name='setnotificationchannel', aliases=['setnotifchannel'])
+    @commands.hybrid_command(
+        name='setnotificationchannel',
+        aliases=['setnotifchannel'],
+        description='Choose the channel for player-threshold notifications.',
+    )
+    @app_commands.describe(channel='Channel where player-threshold notifications should be posted')
     @commands.has_permissions(administrator=True)
     @commands.guild_only()
-    async def set_notification_channel(self, ctx, channel: discord.TextChannel = None):
+    async def set_notification_channel(
+        self,
+        ctx: commands.Context,
+        channel: Optional[discord.TextChannel] = None,
+    ):
         """Set the channel for player-threshold notifications (admin only).
 
         Optional. Without this, no threshold pings are sent for the guild.
         """
         target = channel or ctx.channel
+        if ctx.interaction is not None:
+            await ctx.defer()
         await _upsert_guild_config(ctx.guild.id, notification_channel_id=target.id)
         embed = discord.Embed(
             title="✅ Notification channel set",
             description=f"Threshold pings will go to {target.mention}.",
             color=Config.EMBED_COLOR,
         )
-        embed.set_footer(text="Use !setnotificationrole to choose which role gets pinged.")
+        embed.set_footer(text="Use /setnotificationrole to choose which role gets pinged.")
         await ctx.send(embed=embed)
 
-    @commands.command(name='setnotificationrole', aliases=['setnotifrole'])
+    @commands.hybrid_command(
+        name='setnotificationrole',
+        aliases=['setnotifrole'],
+        description='Choose the role pinged for threshold notifications.',
+    )
+    @app_commands.describe(role='Role to mention for player-threshold notifications')
     @commands.has_permissions(administrator=True)
     @commands.guild_only()
-    async def set_notification_role(self, ctx, role: discord.Role):
+    async def set_notification_role(self, ctx: commands.Context, role: discord.Role):
         """Set the role to ping for threshold notifications (admin only)."""
+        if ctx.interaction is not None:
+            await ctx.defer()
         await _upsert_guild_config(ctx.guild.id, notification_role_id=role.id)
         embed = discord.Embed(
             title="✅ Notification role set",
@@ -83,24 +115,37 @@ class SetupCog(commands.Cog, name='Setup'):
         )
         await ctx.send(embed=embed)
 
-    @commands.command(name='removestatus', aliases=['unsetstatus'])
+    @commands.hybrid_command(
+        name='removestatus',
+        aliases=['unsetstatus'],
+        description='Stop live server status updates in this server.',
+    )
     @commands.has_permissions(administrator=True)
     @commands.guild_only()
-    async def remove_status(self, ctx):
+    async def remove_status(self, ctx: commands.Context):
         """Stop posting the live server status in this guild (admin only)."""
+        if ctx.interaction is not None:
+            await ctx.defer()
         await _upsert_guild_config(ctx.guild.id, status_channel_id=None)
         embed = discord.Embed(
             title="🛑 Status posting disabled",
-            description="I'll stop posting live status updates here. Run `!setstatuschannel` again to re-enable.",
+            description="I'll stop posting live status updates here. Run `/setstatuschannel` again to re-enable.",
             color=Config.EMBED_COLOR_NO_SERVERS,
         )
         await ctx.send(embed=embed)
 
-    @commands.command(name='showsetup', aliases=['mysetup', 'guildconfig'])
+    @commands.hybrid_command(
+        name='showsetup',
+        aliases=['mysetup', 'guildconfig'],
+        description="Show this server's bot configuration.",
+    )
     @commands.guild_only()
-    async def show_setup(self, ctx):
+    async def show_setup(self, ctx: commands.Context):
         """Show the bot's configuration for this guild."""
         from asgiref.sync import sync_to_async
+
+        if ctx.interaction is not None:
+            await ctx.defer()
 
         @sync_to_async
         def _resolve():
@@ -144,7 +189,7 @@ class SetupCog(commands.Cog, name='Setup'):
         source_text = {
             'db': "set by an admin command",
             'env': "loaded from the bot's bootstrap config",
-            'unset': "not configured — run `!setstatuschannel` to start",
+            'unset': "not configured — run `/setstatuschannel` to start",
         }[source]
 
         embed = discord.Embed(
@@ -155,5 +200,5 @@ class SetupCog(commands.Cog, name='Setup'):
         embed.add_field(name="Live status channel", value=_channel_str(status_id), inline=False)
         embed.add_field(name="Threshold notification channel", value=_channel_str(notif_chan_id), inline=False)
         embed.add_field(name="Threshold ping role", value=_role_str(notif_role_id), inline=False)
-        embed.set_footer(text="Admins: !setstatuschannel · !setnotificationchannel · !setnotificationrole · !removestatus")
+        embed.set_footer(text="Admins: /setstatuschannel · /setnotificationchannel · /setnotificationrole · /removestatus")
         await ctx.send(embed=embed)

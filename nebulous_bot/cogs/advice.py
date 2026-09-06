@@ -17,6 +17,7 @@ import asyncio
 import logging
 
 import discord
+from discord import app_commands
 from discord.ext import commands
 from discord.utils import escape_markdown
 
@@ -99,7 +100,7 @@ def find_existing_advice(entries, community, text):
 def validate_advice_text(text):
     """Return (cleaned_text, error_message); exactly one is None."""
     if not text or not text.strip():
-        return None, "Tell me the advice: `!advice add <the advice>`."
+        return None, "Tell me the advice: use `/advice add` and enter the tip."
     cleaned = ' '.join(text.split())
     if len(cleaned) < ADVICE_MIN_LEN:
         return None, f"That's a bit short — advice needs at least {ADVICE_MIN_LEN} characters."
@@ -326,18 +327,24 @@ class AdviceCog(commands.Cog, name='Advice'):
         if mine >= MAX_OPEN_BALLOTS_PER_GUILD:
             await ctx.send(
                 f"❌ This server already has {mine} open votes — settle some first "
-                f"(`!advice pending`). Votes expire on their own after {BALLOT_TTL_DAYS} days."
+                f"(`/advice pending`). Votes expire on their own after {BALLOT_TTL_DAYS} days."
             )
         else:
             await ctx.send(
                 f"❌ There are already {len(self.pending)} open votes across all servers "
-                "— try again shortly (`!advice pending`)."
+                "— try again shortly (`/advice pending`)."
             )
         return True
 
     # --- search (unchanged behaviour) ------------------------------------
 
-    @commands.group(name='advice', aliases=['tips', 'tip'], invoke_without_command=True)
+    @commands.hybrid_group(
+        name='advice',
+        aliases=['tips', 'tip'],
+        fallback='search',
+        description='Search community-authored NEBULOUS gameplay advice.',
+    )
+    @app_commands.describe(query='Words or topic tags to search for')
     async def advice(self, ctx, *, query: str = None):
         """Search community advice, e.g. `!advice point defense`.
 
@@ -359,7 +366,7 @@ class AdviceCog(commands.Cog, name='Advice'):
                 title="🤷 No advice found",
                 description=(
                     f"Nothing matched **{_truncate(query, 100)}**.\n"
-                    f"Try one of the tags below, or `!advice` for an overview."
+                    f"Try one of the tags below, or `/advice search` for an overview."
                 ),
                 color=Config.EMBED_COLOR_NO_SERVERS,
             )
@@ -385,7 +392,7 @@ class AdviceCog(commands.Cog, name='Advice'):
             legend.append(f"{knowledge.BADGE_CONTESTED} contested")
         if knowledge.BADGE_PATCH_SENSITIVE in any_badges:
             legend.append(f"{knowledge.BADGE_PATCH_SENSITIVE} balance-dependent")
-        footer = "!advice tags for topics • !advice add <tip> to contribute"
+        footer = "/advice search tags for topics • /advice add to contribute"
         if legend:
             footer = ' · '.join(legend) + " • " + footer
         embed.set_footer(text=footer)
@@ -397,7 +404,7 @@ class AdviceCog(commands.Cog, name='Advice'):
             title="📚 Community advice",
             description=(
                 f"{len(corpus)} tips from experienced players.\n"
-                "Search with `!advice <words>`, e.g. `!advice missile defense`."
+                "Search with `/advice search`, e.g. query `missile defense`."
             ),
             color=Config.EMBED_COLOR,
         )
@@ -414,9 +421,9 @@ class AdviceCog(commands.Cog, name='Advice'):
         embed.add_field(
             name="Contribute",
             value=(
-                "`!advice add <tip>` — propose new advice (community votes 👍/👎)\n"
-                "`!advice remove <id>` — propose removing wrong advice\n"
-                "`!advice list` — audit the whole knowledge pool"
+                "`/advice add` — propose new advice (community votes 👍/👎)\n"
+                "`/advice remove` — propose removing wrong advice\n"
+                "`/advice list` — audit the whole knowledge pool"
             ),
             inline=False,
         )
@@ -431,7 +438,8 @@ class AdviceCog(commands.Cog, name='Advice'):
             f"**{t}+ 👎** (more 👎 than 👍) → recorded as incorrect."
         )
 
-    @advice.command(name='add')
+    @advice.command(name='add', description='Propose new advice for a community vote.')
+    @app_commands.describe(text='The gameplay advice to propose')
     @commands.guild_only()
     @commands.cooldown(2, 60, commands.BucketType.user)
     async def advice_add(self, ctx, *, text: str = None):
@@ -443,6 +451,8 @@ class AdviceCog(commands.Cog, name='Advice'):
         if error:
             await ctx.send(f"❌ {error}")
             return
+
+        await ctx.defer()
 
         # The lock serializes duplicate-check -> create, so two simultaneous
         # proposals of the same text can't both pass the checks.
@@ -469,7 +479,7 @@ class AdviceCog(commands.Cog, name='Advice'):
             if await _db(_find_prior_verdict, cleaned):
                 await ctx.send(
                     "❌ That exact advice was previously voted incorrect "
-                    "(see `!advice list incorrect`). Reword it if you think the vote got it wrong."
+                    "(see `/advice list` with section `incorrect`). Reword it if needed."
                 )
                 return
 
@@ -502,7 +512,8 @@ class AdviceCog(commands.Cog, name='Advice'):
         # Catch reactions that landed before the ballot was registered above.
         await self._tally(message.id)
 
-    @advice.command(name='remove')
+    @advice.command(name='remove', description='Propose removing an advice entry by ID.')
+    @app_commands.describe(entry_id='Advice entry ID, such as fb-003')
     @commands.guild_only()
     @commands.cooldown(2, 60, commands.BucketType.user)
     async def advice_remove(self, ctx, entry_id: str = None):
@@ -514,16 +525,17 @@ class AdviceCog(commands.Cog, name='Advice'):
         norm = knowledge.normalize_entry_id(entry_id or '')
         if not norm:
             await ctx.send(
-                "❌ Give me an entry id, e.g. `!advice remove fb-003`. "
-                "Ids are shown by `!advice list`."
+                "❌ Give me an entry id, e.g. `fb-003` in `/advice remove`. "
+                "Ids are shown by `/advice list`."
             )
             return
+        await ctx.defer()
         async with self._propose_lock:
             if await self._ballot_slot_taken(ctx):
                 return
             entry = next((e for e in self._corpus() if e['id'] == norm), None)
             if entry is None:
-                await ctx.send(f"❌ No entry `{norm}` in the knowledge pool — check `!advice list`.")
+                await ctx.send(f"❌ No entry `{norm}` in the knowledge pool — check `/advice list`.")
                 return
             for row in self.pending.values():
                 if row['kind'] == 'remove' and row['target_entry_id'] == norm:
@@ -570,7 +582,7 @@ class AdviceCog(commands.Cog, name='Advice'):
             # discounts the bot's seeds when they actually exist.
             logger.warning("Could not seed ballot reactions on %s: %s", message.id, e)
 
-    @advice.command(name='restore', hidden=True)
+    @advice.command(name='restore', hidden=True, with_app_command=False)
     @commands.is_owner()
     async def advice_restore(self, ctx, entry_id: str = None):
         """Put a voted-out entry back in the knowledge pool (bot owner only).
@@ -582,7 +594,7 @@ class AdviceCog(commands.Cog, name='Advice'):
         if not norm or norm not in self.removed_ids:
             shown = norm or _truncate(entry_id or '?', 50)
             await ctx.send(
-                f"❌ Nothing is tombstoned under `{shown}` — see `!advice list incorrect`."
+                f"❌ Nothing is tombstoned under `{shown}` — see `/advice list` with `incorrect`."
             )
             return
         ballots, row = await _db(_restore_entry, norm, knowledge.community_entry_pk(norm))
@@ -609,7 +621,7 @@ class AdviceCog(commands.Cog, name='Advice'):
         logger.info("Advice entry %s restored by user %s, overturning %d removal ballots",
                     norm, ctx.author.id, len(ballots))
 
-    @advice.command(name='pending')
+    @advice.command(name='pending', description='Show advice proposals currently open for voting.')
     async def advice_pending(self, ctx):
         """Show proposals currently up for a vote."""
         # Other guilds' ballots are not listed: their jump links would go
@@ -618,7 +630,7 @@ class AdviceCog(commands.Cog, name='Advice'):
         guild_id = ctx.guild.id if ctx.guild else 0
         here = [r for r in self.pending.values() if r['guild_id'] == guild_id]
         if not here:
-            await ctx.send("No advice votes are open right now. Start one with `!advice add <tip>`.")
+            await ctx.send("No advice votes are open right now. Start one with `/advice add`.")
             return
         lines = []
         for row in sorted(here, key=lambda r: r['pk']):
@@ -637,13 +649,18 @@ class AdviceCog(commands.Cog, name='Advice'):
 
     # --- audit ------------------------------------------------------------
 
-    @advice.command(name='list', aliases=['audit'])
+    @advice.command(name='list', aliases=['audit'], description='Browse or audit the advice pool.')
+    @app_commands.describe(
+        section='Category, community, incorrect, or all',
+        page='Page number to display',
+    )
     async def advice_list(self, ctx, section: str = None, page: int = 1):
         """Audit the knowledge pool.
 
         `!advice list` — summary. `!advice list <category|community|incorrect|all> [page]`
         — every entry with its id (for `!advice remove <id>`).
         """
+        await ctx.defer()
         if section is None:
             await ctx.send(embed=await self._audit_summary_embed())
             return
@@ -685,7 +702,7 @@ class AdviceCog(commands.Cog, name='Advice'):
             color=Config.EMBED_COLOR,
         )
         if pages > 1:
-            embed.set_footer(text=f"Page {page}/{pages} • !advice list {section} {page + 1} for more")
+            embed.set_footer(text=f"Page {page}/{pages} • use /advice list for page {page + 1}")
         await ctx.send(embed=embed)
 
     async def _audit_summary_embed(self):
@@ -708,12 +725,12 @@ class AdviceCog(commands.Cog, name='Advice'):
         embed.add_field(
             name="Other pools",
             value=(
-                f"🚫 incorrect: {incorrect_count} (`!advice list incorrect`)\n"
-                f"🗳️ open votes: {len(self.pending)} (`!advice pending`)"
+                f"🚫 incorrect: {incorrect_count} (`/advice list`)\n"
+                f"🗳️ open votes: {len(self.pending)} (`/advice pending`)"
             ),
             inline=False,
         )
-        embed.set_footer(text="!advice list <category|community|incorrect|all> [page] for details")
+        embed.set_footer(text="Use /advice list with a section and page for details")
         return embed
 
     async def _incorrect_lines(self):
@@ -855,7 +872,7 @@ class AdviceCog(commands.Cog, name='Advice'):
                     description=f"> {escape_markdown(row['advice_text'])}",
                     color=Config.EMBED_COLOR_NO_SERVERS,
                 )
-                embed.set_footer(text="Recorded in the incorrect pool — !advice list incorrect")
+                embed.set_footer(text="Recorded in the incorrect pool — /advice list section:incorrect")
         else:
             target = row['target_entry_id']
             if verdict == 'approved':
@@ -870,7 +887,7 @@ class AdviceCog(commands.Cog, name='Advice'):
                     description="The community voted this advice incorrect.",
                     color=Config.EMBED_COLOR_NO_SERVERS,
                 )
-                embed.set_footer(text="Recorded in the incorrect pool — !advice list incorrect")
+                embed.set_footer(text="Recorded in the incorrect pool — /advice list section:incorrect")
             else:
                 embed = discord.Embed(
                     title=f"✅ Removal declined: {target} stays",

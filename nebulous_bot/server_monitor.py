@@ -91,15 +91,31 @@ class ServerMonitor:
         return cls.URL_HOST_PATTERN.sub(r'\1 .\2', safe_name)
     
     async def track_message(self, message, metadata: Optional[Dict] = None):
-        """Track a bot message for automatic updates"""
-        channel_id = message.channel.id
+        """Track a bot-authenticated message for automatic updates.
+
+        Interaction responses can be represented by ``InteractionMessage``
+        objects whose edit path depends on the interaction token.  Those
+        tokens expire long before a status message does, so immediately fetch
+        the message through the channel and retain that durable representation.
+        """
+        try:
+            durable_message = await message.channel.fetch_message(message.id)
+        except (discord.HTTPException, discord.NotFound, discord.Forbidden, AttributeError):
+            logger.warning(
+                "Could not fetch message %s through its channel; live updates disabled",
+                getattr(message, "id", "unknown"),
+                exc_info=True,
+            )
+            return False
+
+        channel_id = durable_message.channel.id
         
         if channel_id not in self.tracked_messages:
             self.tracked_messages[channel_id] = []
         
         # Add message to the beginning of the list
         entry = {
-            'message': message,
+            'message': durable_message,
             'created_at': datetime.now(timezone.utc)
         }
         if metadata:
@@ -131,9 +147,10 @@ class ServerMonitor:
                 logger.debug(f"Could not update removed message {removed_message.id}: {e}")
         
         # Keep only the last N messages
-        self.tracked_messages[channel_id] = self.tracked_messages[channel_id][:self.max_tracked_messages]
-        
+            self.tracked_messages[channel_id] = self.tracked_messages[channel_id][:self.max_tracked_messages]
+
         logger.info(f"Now tracking {len(self.tracked_messages[channel_id])} messages in channel {channel_id}")
+        return True
         
     async def start_monitoring(self):
         """Start the server monitoring loop and health check"""
@@ -956,7 +973,7 @@ class ServerMonitor:
             return
 
         alert_text = (
-            f"🎮 **{queue_size} people are in the `!nextgame` queue right now.** "
+            f"🎮 **{queue_size} people are in the `/nextgame` queue right now.** "
             "Looks like enough interest to try getting a game going!"
         )
 
@@ -1322,7 +1339,7 @@ class ServerMonitor:
                 inline=False
             )
 
-        embed.set_footer(text="Use !listservers or !openlobbies to see all servers")
+        embed.set_footer(text="Use /listservers or /openlobbies to see all servers")
         return embed
     
     async def notify_single_user_immediately(self, user_id: int, trigger_servers: List[Dict], ptb_only: bool = False, modded_only: bool = False, newplayer_only: bool = False) -> bool:
@@ -1380,4 +1397,4 @@ class ServerMonitor:
                     return False
         except Exception as e:
             logger.error(f"Error notifying user {user_id}: {e}")
-            return False 
+            return False

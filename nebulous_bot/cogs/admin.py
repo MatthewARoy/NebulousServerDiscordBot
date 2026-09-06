@@ -111,8 +111,12 @@ class AdminCog(commands.Cog, name='Admin'):
 
         await ctx.send("**Monitoring Loop Debug Info:**\n" + "\n".join(info))
 
-    @commands.command(name='status', aliases=['info'])
-    async def show_status(self, ctx):
+    @commands.hybrid_command(
+        name='status',
+        aliases=['info'],
+        description='Show the bot status and server-monitor health.',
+    )
+    async def show_status(self, ctx: commands.Context):
         """Show bot status and information"""
         server_monitor = self.bot.server_monitor
         embed = discord.Embed(
@@ -177,17 +181,17 @@ class AdminCog(commands.Cog, name='Admin'):
         embed.add_field(
             name="🔥 Popular Commands",
             value=(
-                "`!help` - Full command menu\n"
-                "`!listservers` - List all servers\n"
-                "`!openlobbies` - Show available servers\n"
-                "`!stats` - View game statistics\n"
-                "`!mapstats` - View map statistics\n"
-                "`!serverstats` - View server statistics\n"
-                "`!graph` - Display graphs of data over the last week\n"
-                "`!nextgame` - Get notified when a game is ready (options: `ptb`, `modded`, `newplayer`, `lobby`, `--skip`)\n"
-                "`!formation` - Optimize fleet formation file\n"
-                "`!refresh` - Force update\n"
-                "`!version` - Show version and changelog"
+                "Use Discord's `/` command picker for the complete menu.\n"
+                "`/listservers` - List all servers\n"
+                "`/openlobbies` - Show available servers\n"
+                "`/stats` - View game statistics\n"
+                "`/mapstats` - View map statistics\n"
+                "`/serverstats` - View server statistics\n"
+                "`/graph` - Display graphs of data over the last week\n"
+                "`/nextgame` - Get notified when a game is ready\n"
+                "`/formation` - Optimize a fleet formation file\n"
+                "`/refresh` - Force an update\n"
+                "`/version` - Show version and changelog"
             ),
             inline=False
         )
@@ -195,8 +199,12 @@ class AdminCog(commands.Cog, name='Admin'):
         embed.set_footer(text="Bot running smoothly! • Created by Davaned")
         await ctx.send(embed=embed)
 
-    @commands.command(name='version', aliases=['v', 'changelog'])
-    async def show_version(self, ctx):
+    @commands.hybrid_command(
+        name='version',
+        aliases=['v', 'changelog'],
+        description='Show the bot version and recent changes.',
+    )
+    async def show_version(self, ctx: commands.Context):
         """Show bot version and changelog"""
         embed = discord.Embed(
             title=f"🤖 Nebulous Server Bot v{Config.VERSION}",
@@ -236,7 +244,7 @@ class AdminCog(commands.Cog, name='Admin'):
             inline=False
         )
 
-        embed.set_footer(text="Use !help for the command menu • !status for bot information")
+        embed.set_footer(text="Use Discord's / command picker for commands • /status for bot information")
         await ctx.send(embed=embed)
 
     @commands.command(name='commandlogs', aliases=['cmdlogs', 'logs'], hidden=True)

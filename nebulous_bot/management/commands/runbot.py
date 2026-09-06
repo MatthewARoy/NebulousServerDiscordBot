@@ -3,6 +3,7 @@ Django management command to run the Nebulous Discord bot
 """
 
 import discord
+from discord import app_commands
 from discord.ext import commands
 import logging
 import asyncio
@@ -37,11 +38,191 @@ from nebulous_bot.cogs.formation import FormationCog
 
 logger = logging.getLogger("nebulous_bot")
 
+GLOBAL_SYNC_CONFIRMATION = "CONFIRM_GLOBAL_COMMAND_SYNC"
+
+
+class CommandSyncInputError(ValueError):
+    """Raised when a manual command-tree sync request is not safely scoped."""
+
 
 def create_ssl_context():
     """Create SSL context for Discord connections"""
     ssl_context = ssl.create_default_context(cafile=certifi.where())
     return ssl_context
+
+
+def create_bot(*, message_content: bool = True) -> commands.Bot:
+    """Construct the bot without connecting to Discord.
+
+    Message Content deliberately remains enabled for the compatibility release.
+    Keeping construction separate from ``handle`` lets tests inspect the runtime
+    contract without opening a gateway connection.
+    """
+    intents = discord.Intents.default()
+    intents.message_content = message_content
+
+    bot = commands.Bot(
+        command_prefix=commands.when_mentioned_or(Config.COMMAND_PREFIX),
+        intents=intents,
+        help_command=NebulousHelpCommand(),
+    )
+    setup_command_metrics(bot)
+
+    # Shared runtime state the cogs read via the bot object. These stay None
+    # until on_ready fills them in.
+    bot.server_monitor = None
+    bot.formatter = None
+    bot.deployment_time = None
+
+    register_sync_command(bot)
+    register_application_command_error_handler(bot)
+    return bot
+
+
+async def sync_application_commands(
+    bot: commands.Bot,
+    *,
+    scope: str,
+    target: str,
+) -> tuple[list[app_commands.AppCommand], str]:
+    """Perform one explicitly scoped command-tree sync.
+
+    Guild syncs are restricted to the configured test-guild allowlist. Global
+    syncs require a conspicuous confirmation phrase. Nothing calls this helper
+    automatically; it is exposed only by the owner-only prefix command below.
+    """
+    normalized_scope = scope.casefold()
+    if normalized_scope == "guild":
+        try:
+            guild_id = int(target)
+        except (TypeError, ValueError) as exc:
+            raise CommandSyncInputError("The test guild ID must be an integer.") from exc
+
+        if guild_id not in Config.TEST_COMMAND_GUILD_IDS:
+            raise CommandSyncInputError(
+                "That guild is not in TEST_COMMAND_GUILD_IDS; refusing to sync it."
+            )
+
+        guild = discord.Object(id=guild_id)
+        bot.tree.copy_global_to(guild=guild)
+        synced = await bot.tree.sync(guild=guild)
+        return synced, f"test guild {guild_id}"
+
+    if normalized_scope == "global":
+        if target != GLOBAL_SYNC_CONFIRMATION:
+            raise CommandSyncInputError(
+                f"Global sync requires the exact confirmation token {GLOBAL_SYNC_CONFIRMATION}."
+            )
+        synced = await bot.tree.sync()
+        return synced, "GLOBAL application-command scope"
+
+    raise CommandSyncInputError("Scope must be `guild` or `global`.")
+
+
+def register_sync_command(bot: commands.Bot) -> None:
+    """Register the hidden, prefix-only owner operation for deliberate syncs."""
+
+    @bot.command(name="synccommands", hidden=True)
+    @commands.is_owner()
+    async def synccommands(ctx: commands.Context, scope: str, target: str):
+        """Sync app commands: guild <test-guild-id> or global <confirmation>."""
+        try:
+            synced, destination = await sync_application_commands(
+                bot,
+                scope=scope,
+                target=target,
+            )
+        except CommandSyncInputError as exc:
+            await ctx.send(f"❌ {exc}")
+            return
+
+        await ctx.send(f"✅ Synchronized {len(synced)} application commands to {destination}.")
+
+
+async def send_application_error(interaction: discord.Interaction, message: str) -> None:
+    """Send a bounded ephemeral error whether or not the interaction was deferred."""
+    if interaction.response.is_done():
+        await interaction.followup.send(message, ephemeral=True)
+    else:
+        await interaction.response.send_message(message, ephemeral=True)
+
+
+async def handle_application_command_error(
+    interaction: discord.Interaction,
+    error: app_commands.AppCommandError,
+) -> None:
+    """Return safe, user-actionable errors for slash-command failures."""
+    if isinstance(error, app_commands.CommandOnCooldown):
+        message = f"⏳ This command is on cooldown — try again in {error.retry_after:.0f}s."
+    elif isinstance(error, app_commands.MissingPermissions):
+        message = "❌ You don't have permission to use this command."
+    elif isinstance(error, app_commands.CheckFailure):
+        message = "❌ You can't use this command here."
+    elif isinstance(error, (app_commands.TransformerError, app_commands.CommandSignatureMismatch)):
+        message = "❌ Invalid command options. Reopen the command picker and try again."
+    else:
+        command_name = interaction.command.qualified_name if interaction.command else "unknown"
+        logger.error("Application command error in %s: %s", command_name, error, exc_info=error)
+        message = "❌ Something went wrong running that command. The error has been logged."
+
+    await send_application_error(interaction, message)
+
+
+def register_application_command_error_handler(bot: commands.Bot) -> None:
+    """Install the application-command error handler on this bot's tree."""
+    bot.tree.error(handle_application_command_error)
+
+
+async def handle_command_error(ctx: commands.Context, error: commands.CommandError) -> None:
+    """Handle prefix and hybrid-command errors without leaking slash failures."""
+    if isinstance(error, commands.CommandNotFound):
+        return
+
+    response_options = {"ephemeral": True} if ctx.interaction is not None else {}
+    command_name = ctx.command.qualified_name if ctx.command else "command"
+    clean_prefix = getattr(ctx, "clean_prefix", Config.COMMAND_PREFIX)
+
+    if isinstance(error, commands.CommandOnCooldown):
+        label = f"/{command_name}" if ctx.interaction is not None else f"{clean_prefix}{command_name}"
+        await ctx.send(
+            f"⏳ `{label}` is on cooldown — try again in {error.retry_after:.0f}s. "
+            "(Recent results keep updating in place.)",
+            **response_options,
+        )
+        return
+
+    if isinstance(error, (commands.NotOwner, commands.MissingPermissions)):
+        await ctx.send("❌ You don't have permission to use this command.", **response_options)
+        return
+
+    if isinstance(error, commands.NoPrivateMessage):
+        await ctx.send("❌ This command only works in a server, not in DMs.", **response_options)
+        return
+
+    wrapped_app_error = (
+        error.original if isinstance(error, commands.HybridCommandError) else None
+    )
+    if isinstance(error, (commands.BadArgument, commands.MissingRequiredArgument)) or isinstance(
+        wrapped_app_error, app_commands.TransformerError
+    ):
+        if ctx.interaction is not None:
+            message = "❌ Invalid command options. Reopen the command picker and try again."
+        else:
+            message = f"❌ Invalid usage. See `{clean_prefix}help {command_name}` for examples."
+        await ctx.send(message, **response_options)
+        return
+
+    if isinstance(error, commands.CheckFailure):
+        await ctx.send("❌ You can't use this command here.", **response_options)
+        return
+
+    logger.error("Command error in %s: %s", ctx.command, error, exc_info=error)
+    embed = discord.Embed(
+        title="❌ Command Error",
+        description="Something went wrong running that command. The error has been logged.",
+        color=Config.EMBED_COLOR_NO_SERVERS,
+    )
+    await ctx.send(embed=embed, **response_options)
 
 
 class Command(BaseCommand):
@@ -53,28 +234,18 @@ class Command(BaseCommand):
             action="store_true",
             help="Do not automatically start monitoring",
         )
+        parser.add_argument(
+            "--without-message-content",
+            action="store_true",
+            help="Disable Message Content for isolated migration testing.",
+        )
 
     def handle(self, *args, **options):
         """Main command handler"""
         self.stdout.write(self.style.SUCCESS("Starting Nebulous Discord Bot..."))
 
-        # Set up bot
-        intents = discord.Intents.default()
-        intents.message_content = True
-
-        bot = commands.Bot(
-            command_prefix=Config.COMMAND_PREFIX,
-            intents=intents,
-            help_command=NebulousHelpCommand(),
-        )
-        setup_command_metrics(bot)
-
-        # Shared runtime state the cogs read via the bot object. These stay
-        # None until on_ready fills them in — cog commands must keep their
-        # None-guards ("monitoring not initialized yet").
-        bot.server_monitor = None
-        bot.formatter = None
-        bot.deployment_time = None
+        # Set up bot without connecting or synchronizing its command tree.
+        bot = create_bot(message_content=not options["without_message_content"])
 
         # Global variables
         server_monitor = None
@@ -153,8 +324,9 @@ class Command(BaseCommand):
                 else:
                     logger.info("Monitoring loop already running")
 
-            # Daily purge of stored message content older than 30 days
-            # (PRIVACY.md retention commitment). on_ready refires on
+            # Daily purge of legacy command text older than 30 days
+            # (PRIVACY.md retention commitment). New rows leave that column
+            # empty. on_ready refires on
             # reconnect, so only start the task if it isn't running.
             if retention_task is None or retention_task.done():
                 retention_task = asyncio.create_task(run_retention_loop())
@@ -186,10 +358,11 @@ class Command(BaseCommand):
                 description=(
                     f"I monitor live server activity for **{Config.GAME_NAME}**.\n\n"
                     "**To finish setup**, an admin should pick where the live status embed lives:\n"
-                    "`!setstatuschannel #some-channel`\n"
-                    "Or run `!setstatuschannel` (no argument) in the channel you want me to use.\n\n"
-                    "Other commands work in any channel right away: `!listservers`, `!openlobbies`, "
-                    "`!stats`, `!nextgame`, `!graph`, `!formation`. Run `!help` for the full command menu."
+                    "Use `/setstatuschannel` and select a channel, or run it without an option "
+                    "in the channel you want me to use.\n\n"
+                    "Other commands work in any channel right away: `/listservers`, `/openlobbies`, "
+                    "`/stats`, `/nextgame`, `/graph`, and `/formation`. Discord's command picker "
+                    "shows the complete menu."
                 ),
                 color=Config.EMBED_COLOR,
             )
@@ -200,43 +373,7 @@ class Command(BaseCommand):
 
         @bot.event
         async def on_command_error(ctx, error):
-            """Handle command errors with user-friendly messages.
-
-            Raw exception text is logged, never echoed to the channel.
-            """
-            if isinstance(error, commands.CommandNotFound):
-                return  # Ignore unknown commands
-
-            if isinstance(error, commands.CommandOnCooldown):
-                await ctx.send(
-                    f"⏳ `!{ctx.command}` is on cooldown — try again in {error.retry_after:.0f}s. "
-                    "(Recent results keep updating in place.)"
-                )
-                return
-
-            if isinstance(error, (commands.NotOwner, commands.MissingPermissions)):
-                await ctx.send("❌ You don't have permission to use this command.")
-                return
-
-            if isinstance(error, commands.NoPrivateMessage):
-                await ctx.send("❌ This command only works in a server, not in DMs.")
-                return
-
-            if isinstance(error, (commands.BadArgument, commands.MissingRequiredArgument)):
-                await ctx.send(f"❌ Invalid usage. See `!help {ctx.command.qualified_name}` for examples.")
-                return
-
-            if isinstance(error, commands.CheckFailure):
-                await ctx.send("❌ You can't use this command here.")
-                return
-
-            logger.error(f"Command error in {ctx.command}: {error}", exc_info=error)
-            embed = discord.Embed(
-                title="❌ Command Error",
-                description="Something went wrong running that command. The error has been logged.",
-                color=Config.EMBED_COLOR_NO_SERVERS,
-            )
-            await ctx.send(embed=embed)
+            await handle_command_error(ctx, error)
 
         async def run_bot():
             """Main function to run the bot"""

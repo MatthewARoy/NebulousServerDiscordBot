@@ -8,6 +8,7 @@ tuples managed by ServerMonitor — one user can wait in several queue
 modes at once.
 """
 import discord
+from discord import app_commands
 from discord.ext import commands
 import logging
 from datetime import datetime, timezone
@@ -24,6 +25,17 @@ class NextgameArgs(NamedTuple):
     newplayer_only: bool
     lobby_only: bool
     skip_current_lobbies: bool
+
+
+NEXTGAME_FILTER_TOKENS = frozenset({
+    'ptb', 'modded', 'mod', 'mfc', 'newplayer', 'new-player', 'np', 'beginner',
+    'lobby', '--lobby', '-l', '--skip', '-skip', '-s', 'skip',
+})
+
+
+def unknown_nextgame_filters(args: str) -> list[str]:
+    """Return unrecognized filter tokens without changing legacy parsing."""
+    return [token for token in args.lower().split() if token not in NEXTGAME_FILTER_TOKENS]
 
 
 def parse_nextgame_args(args: str) -> NextgameArgs:
@@ -48,9 +60,14 @@ class NextGameCog(commands.Cog, name='Next Game'):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    @commands.command(name='nextgame', aliases=['notify', 'notifyme', 'ng'])
+    @commands.hybrid_command(
+        name='nextgame',
+        aliases=['notify', 'notifyme', 'ng'],
+        description='Get notified when the next matching game is ready.',
+    )
     @commands.cooldown(2, 30, commands.BucketType.user)
-    async def next_game_notify(self, ctx, *, args: str = ""):
+    @app_commands.describe(filters='Optional filters: ptb, modded, newplayer, lobby, and skip')
+    async def next_game_notify(self, ctx, *, filters: str = ""):
         """
         Get notified when the next game is ready to join.
 
@@ -74,12 +91,23 @@ class NextGameCog(commands.Cog, name='Next Game'):
             await ctx.send("❌ Server monitoring not initialized yet.")
             return
 
+        if ctx.interaction is not None:
+            unknown = unknown_nextgame_filters(filters)
+            if unknown:
+                await ctx.send(
+                    f"❌ Unknown filter: `{unknown[0]}`. Use ptb, modded, newplayer, lobby, or skip.",
+                    ephemeral=True,
+                )
+                return
+
+        await ctx.defer()
+
         user_id = ctx.author.id
         channel_id = ctx.channel.id
         username = str(ctx.author)
 
         # Parse arguments
-        ptb_only, modded_only, newplayer_only, lobby_only, skip_current_lobbies = parse_nextgame_args(args)
+        ptb_only, modded_only, newplayer_only, lobby_only, skip_current_lobbies = parse_nextgame_args(filters)
 
         # Check if user is already waiting in this queue mode
         if server_monitor.is_user_waiting_for_next_game(user_id, ptb_only=ptb_only, modded_only=modded_only, newplayer_only=newplayer_only):
@@ -154,7 +182,7 @@ class NextGameCog(commands.Cog, name='Next Game'):
 
             embed.add_field(
                 name="Cancel",
-                value="Use `!cancelnextgame` to cancel your notification",
+                value="Use `/cancelnextgame` to cancel your notification",
                 inline=False
             )
 
@@ -193,7 +221,11 @@ class NextGameCog(commands.Cog, name='Next Game'):
                 newplayer_only=newplayer_only
             )
             if notified:
-                # User was notified, no need for extra confirmation message
+                # The notification is a separate ordinary channel message.
+                # Remove the deferred interaction placeholder so it cannot
+                # remain stuck in Discord's "thinking" state.
+                if ctx.interaction is not None:
+                    await ctx.interaction.delete_original_response()
                 return
 
         # No matching servers found, show confirmation message
@@ -311,17 +343,23 @@ class NextGameCog(commands.Cog, name='Next Game'):
         )
 
         waiters_count = server_monitor.get_next_game_waiters_count()
-        embed.set_footer(text=f"{waiters_count} user(s) waiting for next game • Use !cancelnextgame to cancel")
+        embed.set_footer(text=f"{waiters_count} user(s) waiting for next game • Use /cancelnextgame to cancel")
 
         await ctx.send(embed=embed)
 
-    @commands.command(name='cancelnextgame', aliases=['nextgamecancel'])
+    @commands.hybrid_command(
+        name='cancelnextgame',
+        aliases=['nextgamecancel'],
+        description='Cancel all of your next-game notifications.',
+    )
     async def cancel_next_game_notify(self, ctx):
         """Cancel your next game notification"""
         server_monitor = self.bot.server_monitor
         if not server_monitor:
             await ctx.send("❌ Server monitoring not initialized yet.")
             return
+
+        await ctx.defer()
 
         user_id = ctx.author.id
 
@@ -335,7 +373,7 @@ class NextGameCog(commands.Cog, name='Next Game'):
         else:
             embed = discord.Embed(
                 title="❌ Not on Waitlist",
-                description="You're not currently waiting for a notification. Use `!nextgame` to sign up!",
+                description="You're not currently waiting for a notification. Use `/nextgame` to sign up!",
                 color=Config.EMBED_COLOR_NO_SERVERS
             )
             await ctx.send(embed=embed)
