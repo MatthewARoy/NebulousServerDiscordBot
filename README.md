@@ -25,11 +25,11 @@ Cloud's Always Free tier.
 
 ![Live server status embed](docs/images/live-status.png)
 
-**`!graph players online`** — 7-day activity at a glance:
+**`/graph` with `players online`** — 7-day activity at a glance:
 
 ![Players online over the last 7 days](docs/images/graph-players.png)
 
-**`!mapstats`** — most-played maps with averages:
+**`/mapstats`** — most-played maps with averages:
 
 ![Map play frequency top 10](docs/images/mapstats.png)
 
@@ -40,19 +40,19 @@ Cloud's Always Free tier.
   active servers, player counts, maps, and game modes — across any Discord
   guild that adds the bot.
 - **Self-service per-guild setup.** Admins of any guild that adds the bot
-  pick the channel for the live status with `!setstatuschannel`. No
+  pick the channel for the live status with `/setstatuschannel`. No
   redeploy needed.
-- **Self-refreshing command output.** When someone runs `!listservers` or
-  `!openlobbies`, the response message keeps refreshing in place. The last
+- **Self-refreshing command output.** When someone runs `/listservers` or
+  `/openlobbies`, the response message keeps refreshing in place. The last
   10 messages per channel stay current so people don't spam the command.
-- **`!nextgame` waitlist.** Opt in to a one-shot ping when a lobby reaches
+- **`/nextgame` waitlist.** Opt in to a one-shot ping when a lobby reaches
   3+ players or a game enters debrief. Supports PTB-only mode and "skip
   current lobbies".
 - **Real statistics.** Every detected game (lobby → in-game ≥5 min →
   debrief) is persisted with map, duration, server, and player count.
-  `!stats`, `!mapstats`, `!serverstats`, and a 7-day `!graph` aggregate from
+  `/stats`, `/mapstats`, `/serverstats`, and a 7-day `/graph` aggregate from
   that history.
-- **Fleet formation optimizer.** `!formation` accepts a `.fleet` XML file
+- **Fleet formation optimizer.** `/formation` accepts a `.fleet` XML file
   and returns a compacted version (with planar / symmetrical / clear-arcs
   variants) plus an optional GIF of the optimization run.
 - **Production setup, not a toy.** Django for ORM/migrations/admin, Gunicorn
@@ -108,7 +108,7 @@ View Channel, Send Messages, Embed Links, Read Message History,
 Use External Emojis). Once it's in your server, an admin runs:
 
 ```
-!setstatuschannel #channel-name
+/setstatuschannel channel:#channel-name
 ```
 
 Full walkthrough: [`docs/QUICKSTART.md`](docs/QUICKSTART.md).

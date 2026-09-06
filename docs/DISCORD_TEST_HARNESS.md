@@ -1,74 +1,105 @@
-# Discord test harness: driving the bot from a Claude session
+# Discord migration test harness
 
-Lets a Claude Code session run deploy smoke tests end to end in the test
-Discord servers: post `!advice fpa` as a puppet bot, read the production
-bot's reply, assert on it. Two pieces make it work.
+The migration has two complementary test lanes. A human tester validates the
+real application-command UI on a separate Discord application. The existing
+puppet bot continues automated smoke checks through mention-prefixed commands.
+Discord bots cannot invoke another application's slash commands, so the puppet
+lane is useful but is not slash-command acceptance testing.
 
-## Piece 1: a Discord MCP server (session side)
+## Test application and test guild
 
-The session talks to Discord through the community `mcp-discord` MCP
-server (https://github.com/barryyip0625/mcp-discord, runs via npx), using
-a dedicated puppet bot account. One-time setup:
+Use a separate Discord application and token for migration testing. Do not
+change the production application's intents or synchronize its global command
+tree during this phase.
 
-1. In the Discord developer portal (https://discord.com/developers/applications)
-   create a new application, e.g. "Neb Test Puppet", and add a bot to it.
-   This is a separate application from the production bot.
-2. Under Bot, enable the Message Content intent (required to read command
-   output; the MCP server also wants Server Members and Presence).
-3. Invite it to the TEST servers only, never the main Nebulous server.
-   Needed permissions: View Channels, Send Messages, Read Message
-   History, Add Reactions.
-4. Put the bot token in a user-level environment variable named
-   `DISCORD_TEST_BOT_TOKEN` (do not commit it anywhere, and do not reuse
-   the production token).
-5. Create `.mcp.json` at the repo root with exactly:
+1. Invite the test application to a guild listed in
+   `TEST_COMMAND_GUILD_IDS`, with the `bot` and `applications.commands`
+   scopes.
+2. In that test application's Bot settings, disable Message Content before
+   the intent-off acceptance pass.
+3. Run the migration branch against the test token and database/configuration
+   intended for testing with `python manage.py runbot --without-message-content`.
+   The compatibility default remains enabled for production until the later
+   cutoff release.
+4. As the bot owner, directly mention the bot:
+   `@Bot synccommands guild <test-guild-id>`. Mention content remains available
+   without the privileged intent. The command rejects guilds outside
+   `TEST_COMMAND_GUILD_IDS`.
+5. Never use `synccommands global` during test-guild validation. Global sync
+   requires the exact confirmation token `CONFIRM_GLOBAL_COMMAND_SYNC` and is
+   reserved for the separately approved production release step.
 
-   ```json
-   {
-     "mcpServers": {
-       "discord-test": {
-         "command": "npx",
-         "args": ["-y", "mcp-discord"],
-         "env": {
-           "DISCORD_TOKEN": "${DISCORD_TEST_BOT_TOKEN}"
-         }
-       }
-     }
-   }
-   ```
+Command synchronization is deliberately manual. Startup and reconnect paths
+do not synchronize the tree.
 
-   `.mcp.json` is project-scoped; approve the server when Claude Code
-   prompts. The token stays in your environment, the file only references
-   it.
+## Human slash-command acceptance pass
 
-## Piece 2: the command allowlist (bot side)
+With Message Content disabled on the test application, use Discord's command
+picker and verify:
 
-discord.py ignores every bot-authored message before command processing,
-so out of the box the production bot would never answer the puppet. The
-bot now has a gated bypass driven by two `.env` values that must BOTH be
-set (either one empty means the harness is fully off, fail closed):
+- Every intended public command and advice subcommand appears with clear
+  descriptions and option names.
+- Administrative maintenance commands do not appear.
+- `/version`, `/status`, `/listservers`, `/openlobbies`, and `/refresh`
+  complete successfully.
+- `/stats` and `/graph` acknowledge within three seconds and eventually
+  return their result.
+- `/formation` accepts an uploaded fleet attachment, acknowledges promptly,
+  and returns a result; invalid XML, excessive size/depth, and invalid radius
+  produce a bounded user-facing error.
+- `/advice search`, `/advice search query:tags`, `/advice add`, `/advice remove`,
+  `/advice pending`, and `/advice list` preserve their permissions, voting
+  behavior, and useful error messages.
+- `/nextgame` and its related commands preserve waitlist behavior.
+- Server-list/status messages still update after the original interaction
+  token has expired; tracked messages must be edited through the bot-authenticated
+  channel message.
+- Cooldowns, permission failures, and malformed options return a private,
+  actionable error rather than timing out.
 
-- `TEST_COMMAND_BOT_IDS`: comma-separated puppet bot user ids.
-- `TEST_COMMAND_GUILD_IDS`: the guilds where the bypass applies. The
-  designated test guild is Davaned's server, `1400973312963645551`; the
-  harness is deliberately scoped so bot-driven commands work there and
-  nowhere else, even if the puppet ever ends up in another guild.
+Record the application ID, guild ID, branch commit, Python version, command
+count, and pass/fail evidence. This is the gate before any production global
+sync or Message Content change.
 
-Get the puppet's user id from the developer portal, or right-click it in
-Discord with developer mode on. The deploy script copies `.env` to the
-VM, so the settings reach production on the next deploy.
+## Automated puppet smoke lane
 
-Safety properties, in case this ever needs auditing: both allowlists are
-empty by default, ids are explicit, DMs never qualify, the bot never
-processes its own messages, and the puppet holds no command handlers of
-its own, so a message loop cannot form. The guard is the pure function
-`harness_command_allowed` in `nebulous_bot/config.py`, covered by tests.
+A Codex session can use the community `mcp-discord` server with a dedicated
+puppet bot in test guilds. The puppet needs View Channels, Send Messages, Read
+Message History, and Add Reactions. Keep its token in the user-level
+`DISCORD_TEST_BOT_TOKEN` environment variable and never commit or reuse the
+production token.
 
-## The smoke-test loop a session runs after a deploy
+Project-scoped `.mcp.json` example:
 
-1. `!version` in a test channel, read the embed, assert the new version.
-2. `!advice fpa` (or whatever the release changed), read the reply embed.
-3. `!status` to confirm monitoring is up.
+```json
+{
+  "mcpServers": {
+    "discord-test": {
+      "command": "npx",
+      "args": ["-y", "mcp-discord"],
+      "env": {
+        "DISCORD_TOKEN": "${DISCORD_TEST_BOT_TOKEN}"
+      }
+    }
+  }
+}
+```
 
-The production bot must be in the test guild too (it already is, that is
-what the test servers are for).
+discord.py normally ignores bot-authored messages. The harness bypass is
+enabled only when both fail-closed allowlists are populated:
+
+- `TEST_COMMAND_BOT_IDS`: explicit puppet bot user IDs.
+- `TEST_COMMAND_GUILD_IDS`: explicit test guild IDs.
+
+DMs never qualify, the bot never processes its own messages, and the bypass is
+covered by tests. After Message Content is disabled, use the production/test
+bot mention rather than `!`, because Discord continues to deliver messages
+that directly mention the application:
+
+1. `<@BOT_ID> version`
+2. `<@BOT_ID> advice fpa`
+3. `<@BOT_ID> status`
+
+This lane proves the fallback and response surface remain alive. It cannot
+prove slash registration, option transformation, interaction deferral, or
+ephemeral errors; those remain part of the human acceptance pass.

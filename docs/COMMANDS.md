@@ -1,12 +1,14 @@
 # Commands
 
-All commands use the `!` prefix. Most are usable in DMs as well as guilds.
-Run `!help` to see the same reference in Discord.
+Public commands use Discord's `/` command picker. During the compatibility
+release, the legacy `!` prefix and its short aliases continue to work. After
+Message Content is removed, the same prefix commands remain available in DMs
+and when the bot is directly mentioned (for example, `@NebulousBot status`).
 
 ## Help
 
-### `!help [command|category]` — alias `!commands`
-The in-Discord command menu, grouped by category:
+Discord's command picker is the primary menu. The legacy/mention command
+`!help [command|category]` (alias `!commands`) provides an embed reference:
 
 - `!help` — every command you can run, one line each, grouped by category
   (Servers, Statistics, Next Game, Formation, Advice, Setup, Admin).
@@ -34,8 +36,10 @@ Visibility rules:
 
 ## Server discovery
 
-### `!listservers [filters]` — aliases `!ls`, `!servers`
+### `/listservers [filters]`
 Lists active Nebulous servers. Filters can be combined.
+The slash surface rejects unknown filter words instead of silently returning an
+unfiltered list; legacy prefix parsing retains its historical behavior.
 
 | Filter | Effect |
 |---|---|
@@ -47,17 +51,20 @@ Lists active Nebulous servers. Filters can be combined.
 | `competitive` / `casual` | Filter by game mode |
 | `all` | Include empty, password-protected, and bot-populated servers |
 
-Examples: `!listservers`, `!listservers ptb open`, `!ls lobby us`.
+Examples: `/listservers`, `/listservers filters:ptb open`. Legacy aliases:
+`!ls`, `!servers`.
 
-### `!openlobbies` — aliases `!open`, `!available`
+### `/openlobbies`
 Shows servers with at least one open slot, sorted by most open first.
+Legacy aliases: `!open`, `!available`.
 
-### `!refresh` — alias `!update`
+### `/refresh`
 Force-fetches fresh data from Steam, bypassing the 30-second poll interval.
+Legacy alias: `!update`.
 
 ## Notifications
 
-### `!nextgame [ptb] [modded] [newplayer] [lobby] [--skip]` — aliases `!notify`, `!notifyme`, `!ng`
+### `/nextgame [filters]`
 Pings you once when a game looks ready. Triggers on:
 
 - a lobby reaching 3+ players (and not full), or
@@ -74,47 +81,55 @@ Modifiers (stackable — each one you add narrows the queue further):
   when you opted in.
 
 Each modifier combination is its own queue: you can wait for a modded game
-and a new-player game at the same time. `!cancelnextgame` clears all of them.
+and a new-player game at the same time. `/cancelnextgame` clears all of them.
+Enter modifiers together in the `filters` option. Legacy aliases: `!notify`,
+`!notifyme`, `!ng`. The slash surface rejects misspelled filters so it cannot
+silently enroll you in a broader queue.
 
-### `!cancelnextgame` — alias `!nextgamecancel`
+### `/cancelnextgame`
 Removes you from the waitlist.
 
 ## Statistics
 
-### `!stats [timeframe]` — alias `!statistics`
+### `/stats [timeframe]`
 Game statistics overview. `timeframe` ∈ {`all`, `today`, `week`, `month`}
 (default `all`).
 
-### `!mapstats [limit]` — alias `!maps`
-Most-played maps with averages. Default `limit` = 10.
+### `/mapstats [limit]`
+Most-played maps with averages. Default `limit` = 10; valid range 1–25.
 
-### `!serverstats [limit]` — alias `!serverinfo`
-Most-active servers ranked by games hosted. Default `limit` = 10.
+### `/serverstats [limit]`
+Most-active servers ranked by games hosted. Default `limit` = 10; valid range
+1–25.
 
-### `!graph [metric]`
+### `/graph [metric]`
 Renders a 7-day graph of the requested metric. Metrics:
 `players online` (default), `servers`, `lobbies`, `games in progress`.
 
 ## Fleet tools
 
-### `!formation [min_radius] [-skip] [-planar] [-symmetrical] [-arcs]` — aliases `!form`, `!optimize`
-Optimize a `.fleet` XML file. Attach the file to your message.
+### `/formation attachment:<fleet> [options]`
+Optimize a `.fleet` XML file using the typed attachment option.
 
-- `min_radius` — minimum spacing in meters (default `350`).
+- radius — minimum spacing in meters (default `350`), entered first in the
+  optional `options` string.
 - `-skip` — skip animation generation (faster).
 - `-planar` — flat formation facing forward.
 - `-symmetrical` — symmetrize the result.
 - `-arcs` — preserve forward firing arcs for armed ships.
 
 The bot replies with the optimized fleet file and (unless `-skip`) a GIF of
-the optimization process.
+the optimization process. Legacy aliases: `!form`, `!optimize`; for a prefix
+invocation, attach the fleet to the message and put the options in its text.
+Only one fleet is processed at a time; additional requests fail fast and can be
+retried shortly rather than queuing large files in memory.
 
 ## Bot status
 
-### `!status` — alias `!info`
+### `/status`
 Bot health, deployment time, monitoring task state, and a command summary.
 
-### `!version` — aliases `!v`, `!changelog`
+### `/version`
 Current version and recent changelog entries (mirrors `nebulous_bot/config.py`).
 
 ## Per-guild setup (admin)
@@ -123,28 +138,55 @@ These let an admin in any guild the bot has joined point it at the right
 channels. Settings are stored per-guild in the database and override the
 maintainer's bootstrap config (see [CONFIGURATION.md](CONFIGURATION.md)).
 
-### `!setstatuschannel [#channel]` — alias `!setstatus`
+### `/setstatuschannel [channel]`
 Sets the channel where the bot posts the live, auto-updating server
 status embed. With no argument, defaults to the channel the command is
 run in. Admin-only.
 
-### `!setnotificationchannel [#channel]` — alias `!setnotifchannel`
+### `/setnotificationchannel [channel]`
 Sets the channel for player-threshold pings. Optional — without it, no
 threshold pings are sent for this guild. Admin-only.
 
-### `!setnotificationrole @role` — alias `!setnotifrole`
+### `/setnotificationrole role`
 Sets which role the bot pings on threshold notifications. Admin-only.
 
-### `!removestatus` — alias `!unsetstatus`
+### `/removestatus`
 Stops the live status embed in this guild. Admin-only.
 
-### `!showsetup` — aliases `!mysetup`, `!guildconfig`
+### `/showsetup`
 Shows the current setup for this guild and indicates whether it's coming
-from a `!set...` command, the bootstrap config, or unset.
+from a setup command, the bootstrap config, or unset.
+
+Legacy aliases for setup remain available only on the prefix/mention surface:
+`!setstatus`, `!setnotifchannel`, `!setnotifrole`, `!unsetstatus`, `!mysetup`,
+and `!guildconfig`.
+
+## Community advice
+
+### `/advice search [query]`
+Search the curated and community knowledge pool. Omitting the query shows the
+available topics and search guidance.
+
+### `/advice add [text]`
+Propose advice for a community vote. Guild-only; the existing user cooldown
+and reaction-ballot flow apply.
+
+### `/advice remove [entry_id]`
+Propose removing an incorrect entry by its displayed ID. Guild-only; the
+existing user cooldown and reaction-ballot flow apply.
+
+### `/advice pending`
+Show advice votes currently open.
+
+### `/advice list [section] [page]`
+Audit the pool by category or with `community`, `incorrect`, or `all`.
+
+The owner-only `advice restore` operation remains prefix/mention-only and is
+not published in the application-command picker.
 
 ## Admin (operations)
 
-These are hidden from `!help` for everyone but the bot owner (see
+These are prefix/mention-only and hidden from `!help` for everyone but the bot owner (see
 [Help](#help)); the permission checks below are what gate running them.
 
 ### `!restartmonitor` — alias `!restart`

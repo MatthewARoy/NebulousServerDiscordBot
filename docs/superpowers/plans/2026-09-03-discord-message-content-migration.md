@@ -157,14 +157,14 @@ At `f2ce4a6`, using a clean isolated dependency environment:
 
 ## Track 1 exit checklist
 
-- [ ] All 18 public entries and intended advice subcommands are registered.
-- [ ] Operational commands are absent from the public slash picker.
-- [ ] No startup path automatically synchronizes the command tree.
-- [ ] Slow commands defer and tracked responses survive webhook-token expiry.
-- [ ] Formation limits and worker serialization are tested.
-- [ ] New command logging stores no raw invocation text.
-- [ ] Help, privacy, deployment, and test-harness documentation are current.
-- [ ] Full lint and test suites pass on Python 3.11.
+- [x] All 18 public entries and intended advice subcommands are registered.
+- [x] Operational commands are absent from the public slash picker.
+- [x] No startup path automatically synchronizes the command tree.
+- [x] Slow commands defer and tracked responses use bot-authenticated channel messages.
+- [x] Formation limits and worker serialization are tested.
+- [x] New command logging stores no raw invocation text.
+- [x] Help, privacy, deployment, and test-harness documentation are current.
+- [x] Full lint and test suites pass on Python 3.11.
 - [ ] Test application passes with Message Content disabled.
 - [ ] Release A has a verified rollback artifact.
 - [ ] Global command propagation is confirmed before the intent cutoff.

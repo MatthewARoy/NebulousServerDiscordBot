@@ -37,7 +37,7 @@ Edit `.env` and fill in at minimum:
 `SERVER_CONFIGS` is optional. You can either pre-seed it with the guilds
 you're deploying for (see [CONFIGURATION.md](CONFIGURATION.md)), or leave
 it unset and let admins of each guild set themselves up at runtime with
-`!setstatuschannel` — see [COMMANDS.md](COMMANDS.md#per-guild-setup-admin).
+`/setstatuschannel` — see [COMMANDS.md](COMMANDS.md#per-guild-setup-admin).
 
 See [CONFIGURATION.md](CONFIGURATION.md) for the full set of variables.
 
@@ -52,7 +52,8 @@ needs (sessions, snapshots, command logs, etc.).
 
 ## 4. Invite the bot to your Discord server
 
-In the Developer Portal, build an OAuth2 URL with the `bot` scope and these
+In the Developer Portal, build an OAuth2 URL with the `bot` and
+`applications.commands` scopes and these
 permissions: Read Messages, Send Messages, Embed Links, Use External Emojis,
 Read Message History, and (optionally) Mention Roles. Open the URL and add
 the bot to your server.
@@ -67,16 +68,22 @@ You should see `✅ Bot connected as ...` and `✅ Server monitoring started`
 in the console. The configured channel will get a live-updating status
 embed within ~30 seconds.
 
+Application commands are never synchronized automatically during startup.
+After validating the command tree in a test guild, the bot owner can publish
+it for this application once with the mention/prefix command
+`@Bot synccommands global CONFIRM_GLOBAL_COMMAND_SYNC`. See
+[DISCORD_TEST_HARNESS.md](DISCORD_TEST_HARNESS.md) for the safer test-guild
+workflow first.
+
 ## Try it out
 
 In your Discord server:
 
 ```
-!help
-!status
-!listservers
-!openlobbies
-!stats
+/status
+/listservers
+/openlobbies
+/stats
 ```
 
 See [COMMANDS.md](COMMANDS.md) for the full command reference.
