@@ -191,9 +191,11 @@ class ServerMonitor:
                 iteration += 1
                 logger.debug(f"Monitoring loop iteration {iteration} starting...")
 
-                await self._update_server_list()
+                observed = await self._update_server_list()
                 logger.debug(f"Server list updated: {len(self.cached_servers)} servers")
 
+                # Display keeps refreshing either way — a stale embed whose
+                # timestamp is visibly ageing is the intended failure mode.
                 await self._update_status_message()
                 logger.debug("📤 Status message update cycle completed")
                 
@@ -201,7 +203,16 @@ class ServerMonitor:
                     self.tracked_update_task = asyncio.create_task(self._update_tracked_messages())
                 else:
                     logger.debug("Tracked message update already running")
-                
+
+                # Everything below *acts* on server state — pings people,
+                # writes rows. Re-running it against the previous sweep's
+                # cache would announce players as "currently online" on the
+                # strength of data we failed to refresh, so skip the cycle.
+                if not observed:
+                    logger.debug("No live observation this cycle; skipping notifications and statistics")
+                    await asyncio.sleep(Config.UPDATE_INTERVAL)
+                    continue
+
                 await self._check_and_send_notifications()
                 logger.debug("Notifications checked")
                 
@@ -265,8 +276,13 @@ class ServerMonitor:
                 logger.error(f"Error in health check loop: {e}", exc_info=True)
                 await asyncio.sleep(60)
     
-    async def _update_server_list(self):
-        """Fetch latest server information from Steam API with server rules"""
+    async def _update_server_list(self) -> bool:
+        """Fetch latest server information from Steam API with server rules.
+
+        Returns True when this cycle actually observed the servers. False
+        means the caches still hold the previous sweep's data, and callers
+        that *act* on server state must sit this cycle out.
+        """
         try:
             logger.debug("Fetching servers from Steam API...")
             # Single sweep: fetch every server (with A2S rules) once, then
@@ -285,7 +301,7 @@ class ServerMonitor:
                     f"({len(self.cached_servers)} servers, "
                     f"{'never updated' if age is None else f'{int(age)}s old'})"
                 )
-                return
+                return False
 
             servers = [s for s in all_servers if self.steam_api.passes_default_filter(s)]
 
@@ -314,9 +330,11 @@ class ServerMonitor:
             in_game = len([s for s in servers if s.get('status') == 'in_game'])
 
             logger.debug(f"✅ Updated server list at {self.last_update.strftime('%H:%M:%S')}: {total_servers} servers, {active_players} players, {open_lobbies} open lobbies, {in_game} in-game")
+            return True
 
         except Exception as e:
             logger.error(f"❌ Failed to update server list: {e}", exc_info=True)
+            return False
     
     async def _track_game_start_times(self, servers: List[Dict]):
         """Track when servers transition from lobby to in-game and record game start times"""
@@ -634,6 +652,9 @@ class ServerMonitor:
             log(f"No permission to edit message {message.id} in channel {channel_id} (streak {streak})")
             return {'channel_id': channel_id, 'idx': idx, 'updated': False}
         except Exception as e:
+            # A non-403 failure breaks the streak: ten 403s spread around a
+            # transient 500 are not evidence of a permanent permission loss.
+            msg_info['forbidden_streak'] = 0
             logger.error(f"Error updating tracked message {message.id}: {e}")
             return {'channel_id': channel_id, 'idx': idx, 'updated': False}
     

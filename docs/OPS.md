@@ -200,6 +200,31 @@ already written are still there. A cleanup pass wants to look for pairs on
 the same `server_name` where one session ends and the next starts within
 about two minutes, on stall nights.
 
+### Known gaps after 2.9.3
+
+An adversarial review of 2.9.3 surfaced four real problems that predate it
+and were deliberately left alone rather than widen the change:
+
+- **Ongoing sessions are never reconciled while the process lives.**
+  `_recover_ongoing_games` runs once, on the first statistics update, so its
+  `STALE_RECOVERY_AGE` sweep only fires at startup. A server that vanishes
+  from the listing — or, since 2.9.3, goes permanently rules-blind mid-game —
+  keeps `is_ongoing=True` until a restart happens after it has aged out.
+- **Cold start with Steam down still looks confident.**
+  `create_status_embed` does `last_update or datetime.now(timezone.utc)`, so
+  before the first successful sweep the embed shows "No active servers
+  found" with a fresh relative timestamp. 2.9.3 fixed the steady-state case
+  (the cache ages visibly) but not this one.
+- **`ensure_fresh_cache` doesn't collapse callers on failure.** Each queued
+  command re-checks the still-cold cache after acquiring the lock and starts
+  its own failing sweep, so N commands during an outage serialize into N
+  timeouts. It also reports an unavailable cache as `0.0` seconds old.
+- **`PlayerSnapshot` counts rules-blind servers as open lobbies.** It reads
+  `status` directly, which is the `lobby` default for a server whose rules
+  didn't answer.
+
+
+
 ## When this isn't enough
 
 If wedges return despite all of the above and the journal shows OOM kills

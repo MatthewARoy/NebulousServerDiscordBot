@@ -116,9 +116,9 @@ class Config:
     # itself (~10 s, capped at 15 s), so a healthy cache is never older than
     # ~45 s; 90 s leaves 2x headroom and fires only when the loop has stalled.
     COMMAND_CACHE_MAX_AGE = 90  # seconds
-    # Hard deadline on the Steam Web GetServerList call. aiohttp waits
-    # forever by default, so a hung connection stalls the monitoring loop
-    # indefinitely; with this plus the 15 s A2S cap a sweep is bounded.
+    # Hard deadline on the Steam Web GetServerList call. aiohttp's own
+    # default total is 300 s, which would stall five minutes of a 30 s poll
+    # loop; with this plus the 15 s A2S cap a sweep is bounded at ~35 s.
     STEAM_API_TIMEOUT = int(os.getenv('STEAM_API_TIMEOUT', 20))  # seconds
     STATUS_MESSAGE_REFRESH_INTERVAL = int(os.getenv('STATUS_MESSAGE_REFRESH_INTERVAL', 86400))  # seconds - create new message daily (86400 = 24 hours)
     MAX_SERVERS_DISPLAY = 20

@@ -212,3 +212,53 @@ def test_unknown_status_does_not_finalize_an_active_session():
     )
     assert result is None
     assert tracker.active_sessions == {'s1': 42}
+
+
+# --- rules that answered but told us nothing -----------------------------
+
+def test_nonempty_rules_without_inprogress_are_not_an_observation():
+    # _query_server_rules_sync falls back to the raw A2S_RULES dict when the
+    # embedded Nebulous payload won't parse. Non-empty but stateless, so
+    # bool(rules) would have called this a confidently observed lobby.
+    assert _enhanced({'rules': '{malformed'})['status_known'] is False
+    assert _enhanced({'somethingelse': '1'})['status_known'] is False
+
+
+def test_unrecognised_inprogress_value_is_not_an_observation():
+    assert _enhanced({'inprogress': ''})['status_known'] is False
+    assert _enhanced({'inprogress': '7'})['status_known'] is False
+
+
+def test_every_valid_inprogress_value_is_an_observation():
+    for value, status in (('0', 'lobby'), ('1', 'in_game'), ('2', 'debrief')):
+        server = _enhanced({'inprogress': value})
+        assert server['status_known'] is True, value
+        assert server['status'] == status
+
+
+# --- _update_server_list reports whether it observed anything ------------
+
+def test_update_reports_failure_when_the_sweep_failed():
+    monitor = _monitor_with_cache([{'id': 's1', 'players': 4}], 30, None)
+    assert asyncio.run(monitor._update_server_list()) is False
+
+
+def test_update_reports_success_on_a_live_sweep():
+    monitor = _monitor_with_cache([], 30, [{'id': 's1', 'players': 4}])
+    monitor._recalculate_test_branch_flags = lambda: None
+    monitor.get_open_lobbies = lambda: []
+    assert asyncio.run(monitor._update_server_list()) is True
+
+
+# --- a non-403 failure breaks the forbidden streak -----------------------
+
+def test_an_unrelated_error_resets_the_forbidden_streak(forbidden_monitor):
+    monitor, message = forbidden_monitor
+    msg_info = {'message': message, 'forbidden_streak': 9}
+
+    async def boom(**kwargs):
+        raise RuntimeError("Discord 500")
+
+    message.edit = boom
+    asyncio.run(monitor._refresh_tracked_message(None, 9, 0, msg_info))
+    assert msg_info['forbidden_streak'] == 0
