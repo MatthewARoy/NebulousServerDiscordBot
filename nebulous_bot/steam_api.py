@@ -25,7 +25,7 @@ class SteamAPI:
             await self.session.close()
         self.session = None
 
-    async def get_game_servers(self) -> List[Dict]:
+    async def get_game_servers(self) -> Optional[List[Dict]]:
         """
         Get ALL game servers for Nebulous: Fleet Command using Steam Web API,
         enriched per server with live A2S info (map, player count) and A2S
@@ -35,11 +35,23 @@ class SteamAPI:
         set (no empty/bot/private servers) filter with passes_default_filter.
         The HTTP session is created lazily and reused across calls — one
         session for the life of the bot instead of one per poll cycle.
+
+        Returns **None** when the Steam call itself failed (non-200 or an
+        exception). That is not the same as an empty list: `[]` means Steam
+        answered and there genuinely are no servers (which happens at 4am),
+        while None means we don't know. Callers must not install None as a
+        fresh result — see ServerMonitor._update_server_list.
         """
         if not self.session or self.session.closed:
             ssl_context = ssl.create_default_context(cafile=certifi.where())
             connector = aiohttp.TCPConnector(ssl=ssl_context)
-            self.session = aiohttp.ClientSession(connector=connector)
+            # Without an explicit timeout aiohttp waits indefinitely, so a
+            # hung Steam connection stalls the whole monitoring loop. The
+            # per-server A2S sweep is separately capped at 15s.
+            self.session = aiohttp.ClientSession(
+                connector=connector,
+                timeout=aiohttp.ClientTimeout(total=Config.STEAM_API_TIMEOUT),
+            )
 
         try:
             url = "https://api.steampowered.com/IGameServersService/GetServerList/v1/"
@@ -55,11 +67,11 @@ class SteamAPI:
                     return servers
                 else:
                     logger.error(f"Steam API request failed with status {response.status}")
-                    return []
+                    return None
 
         except Exception as e:
             logger.error(f"Error fetching server data: {e}")
-            return []
+            return None
 
     def passes_default_filter(self, server: Dict) -> bool:
         """Default visibility filter: hide empty, bot-hosting, and private
@@ -363,6 +375,14 @@ class SteamAPI:
             'has_password': False,
             'ping': 0,
             
+            # Whether `status` below reflects a real A2S rules answer. Only
+            # the rules carry `inprogress`, so with rules=None the 'lobby'
+            # default is a guess, not an observation. Display treats it as a
+            # lobby (harmless); anything that acts on *transitions* must skip
+            # it, or an A2S timeout fabricates a lobby -> in_game round trip
+            # and with it a bogus GameSession row.
+            'status_known': bool(rules),
+
             # Default values that may be overridden by rules
             'game_mode': self._determine_game_mode(server_name, map_name),
             'status': 'lobby',  # Default to lobby

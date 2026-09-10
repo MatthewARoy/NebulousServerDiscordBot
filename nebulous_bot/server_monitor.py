@@ -19,6 +19,11 @@ logger = logging.getLogger(__name__)
 class ServerMonitor:
     URL_HOST_PATTERN = re.compile(r'(?<!@)\b([a-z0-9][a-z0-9-]{0,62})\.([a-z]{2,24})(?=(?:/|\b))', re.IGNORECASE)
 
+    # Consecutive 403s on a tracked message before we stop retrying it.
+    # At one tracked-update pass per monitoring cycle this is ~5-10 minutes,
+    # long enough to ride out a role change propagating.
+    FORBIDDEN_EVICT_AFTER = 10
+
     def __init__(self, bot):
         self.bot = bot
         self.steam_api = SteamAPI()  # Using real Steam API now
@@ -268,6 +273,20 @@ class ServerMonitor:
             # derive the default-filtered view locally. Previously this was
             # two GetServerList calls + two full rules sweeps per cycle.
             all_servers = await self.steam_api.get_game_servers()
+
+            # None means the Steam call failed outright. Installing that as
+            # an empty list would publish "0 servers" with a fresh timestamp
+            # and, worse, walk every tracked game to a lobby transition. Keep
+            # the last known good cache and let it visibly age instead.
+            if all_servers is None:
+                age = self.cache_age_seconds()
+                logger.warning(
+                    "Steam sweep failed; keeping last known server list "
+                    f"({len(self.cached_servers)} servers, "
+                    f"{'never updated' if age is None else f'{int(age)}s old'})"
+                )
+                return
+
             servers = [s for s in all_servers if self.steam_api.passes_default_filter(s)]
 
             logger.debug(f"Received {len(all_servers)} servers from Steam API ({len(servers)} after default filter)")
@@ -307,7 +326,13 @@ class ServerMonitor:
             server_id = server.get('id', server.get('address', ''))
             if not server_id:
                 continue
-                
+
+            # A2S rules didn't answer, so `status` is the 'lobby' default
+            # rather than an observation. Leave this server's tracked state
+            # untouched until we can see it again.
+            if not server.get('status_known', True):
+                continue
+
             current_status = server.get('status', 'lobby')
             previous_info = self.game_start_times.get(server_id, {})
             previous_status = previous_info.get('previous_status', 'lobby')
@@ -585,12 +610,28 @@ class ServerMonitor:
                 return {'channel_id': channel_id, 'idx': idx, 'updated': False}
 
             await message.edit(embed=new_embed)
+            msg_info['forbidden_streak'] = 0
             return {'channel_id': channel_id, 'idx': idx, 'updated': True}
 
         except discord.NotFound:
             return {'channel_id': channel_id, 'idx': idx, 'removed': True}
         except discord.Forbidden:
-            logger.warning(f"No permission to edit message {message.id} in channel {channel_id}")
+            # A 403 can be transient (a role edit being propagated), so one
+            # is not grounds for dropping the message. A sustained streak
+            # means the permission is really gone — keep retrying forever and
+            # the bot burns a REST call per message per cycle indefinitely,
+            # which is how three messages in a channel it had been removed
+            # from went on being edited for six days.
+            streak = msg_info.get('forbidden_streak', 0) + 1
+            msg_info['forbidden_streak'] = streak
+            if streak >= self.FORBIDDEN_EVICT_AFTER:
+                logger.info(
+                    f"Untracking message {message.id} in channel {channel_id}: "
+                    f"no edit permission for {streak} consecutive cycles"
+                )
+                return {'channel_id': channel_id, 'idx': idx, 'removed': True}
+            log = logger.warning if streak == 1 else logger.debug
+            log(f"No permission to edit message {message.id} in channel {channel_id} (streak {streak})")
             return {'channel_id': channel_id, 'idx': idx, 'updated': False}
         except Exception as e:
             logger.error(f"Error updating tracked message {message.id}: {e}")

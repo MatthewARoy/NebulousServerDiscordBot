@@ -88,7 +88,14 @@ class GameSessionTracker:
         server_id = server.get('id', server.get('address', ''))
         if not server_id:
             return None
-        
+
+        # Without an A2S rules answer `status` falls back to 'lobby', which
+        # this state machine would read as "the game ended" and then, on the
+        # next successful sweep, as "a new game started" — splitting one real
+        # game into two rows. Hold the existing session instead.
+        if not server.get('status_known', True):
+            return None
+
         current_status = server.get('status', 'lobby')
         current_time = django_timezone.now()
         
