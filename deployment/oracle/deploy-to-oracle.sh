@@ -267,7 +267,10 @@ services:
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/').read()"]
-      interval: 30s
+      # 120s, not the compose default 30s: each probe starts a fresh
+      # Python interpreter, and on the 503 MiB Oracle box those cold
+      # page-ins are a measurable share of container block I/O.
+      interval: 120s
       timeout: 10s
       retries: 3
       start_period: 40s

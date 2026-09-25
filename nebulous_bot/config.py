@@ -116,6 +116,10 @@ class Config:
     # itself (~10 s, capped at 15 s), so a healthy cache is never older than
     # ~45 s; 90 s leaves 2x headroom and fires only when the loop has stalled.
     COMMAND_CACHE_MAX_AGE = 90  # seconds
+    # Hard deadline on the Steam Web GetServerList call. aiohttp's own
+    # default total is 300 s, which would stall five minutes of a 30 s poll
+    # loop; with this plus the 15 s A2S cap a sweep is bounded at ~35 s.
+    STEAM_API_TIMEOUT = int(os.getenv('STEAM_API_TIMEOUT', 20))  # seconds
     STATUS_MESSAGE_REFRESH_INTERVAL = int(os.getenv('STATUS_MESSAGE_REFRESH_INTERVAL', 86400))  # seconds - create new message daily (86400 = 24 hours)
     MAX_SERVERS_DISPLAY = 20
     
@@ -138,8 +142,16 @@ class Config:
     TEST_COMMAND_GUILD_IDS = parse_id_set(os.getenv('TEST_COMMAND_GUILD_IDS', ''))
 
     # Version Information
-    VERSION = "2.9.2"
+    VERSION = "2.9.3"
     CHANGELOG = [
+        {
+            "version": "2.9.3",
+            "date": "2026-09-10",
+            "changes": [
+                "Bugfix for games being counted twice when a server briefly stops responding",
+                "Bugfix for the server list showing empty when Steam is unreachable"
+            ]
+        },
         {
             "version": "2.9.2",
             "date": "2026-08-18",

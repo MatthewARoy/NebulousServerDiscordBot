@@ -124,6 +124,107 @@ curl -s http://localhost:8000/health/
 docker stats --no-stream nebulous-discord-bot
 ```
 
+## The second trigger: PCP + mlocate nightly cluster (2026-09-10)
+
+Same class as `dnf-makecache`, different unit, and no OOM kill this time —
+just sustained swap thrash. Reported as "the bot is taking a long time to
+update server lists".
+
+Four timers fire in a ten-minute window every night, all in GMT:
+
+| Time (GMT) | Unit |
+|---|---|
+| 00:00 | `logrotate.timer`, `mlocate-updatedb.timer` |
+| 00:08 | `pmie_daily.timer` |
+| 00:10 | `pmlogger_daily.timer` |
+
+Plus the permanently resident Performance Co-Pilot stack (`pmcd`, `pmie`,
+`pmie_farm`, `pmlogger`, `pmlogger_farm`, `pmdaproc`) and four
+`*_check.timer`s re-firing every 30 minutes.
+
+Measured on 2026-09-10 inside the window: `pmlogger_daily.service` ran
+**33m32s**, consumed **7m59s CPU**, and exited 1. `vmstat` showed
+`si`/`so` at 1200-3500 KB/s sustained, `wa` 35-59%, steal 30-51%, 10 MiB
+free. The bot container itself was 27 MiB RSS at 10% CPU throughout — it
+is the victim, not the cause. Since-boot averages over 132 days are
+`id 94, st 3`, so this is strictly episodic.
+
+What it looks like from the bot side (all timestamps PST, window is 17:00):
+
+```
+gateway Can't keep up, shard ID None websocket is 49.7s behind
+server_monitor Error updating tracked message ...: Server disconnected
+steam_api Server rules queries timed out, using basic server data
+http We are being rate limited. PATCH .../messages/... responded with 429
+```
+
+Bucket them by hour to confirm it's this and not a chronic problem:
+
+```bash
+docker logs --since 96h nebulous-discord-bot 2>&1 |
+  grep -E "Can't keep up|behind|Server disconnected|Broken pipe|rules queries timed out" |
+  grep -oE "[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}" | sort | uniq -c
+```
+
+On 2026-09-09 that gave 1 / 7 / 12 hits on three consecutive days, every
+one of them in the 17:00 PST hour, and rising.
+
+### The fix
+
+```bash
+sudo systemctl disable --now pmlogger_daily.timer pmie_daily.timer mlocate-updatedb.timer
+```
+
+**Status: proposed, not yet applied.** Verify with `systemctl is-enabled`
+on each (should say `disabled`), then re-run the hourly bucket after a
+night and confirm the 17:00 cluster is gone.
+
+Deliberately *not* done: disabling the resident PCP collectors as well.
+They cost ~40-60 MiB, but killing them removes the instrumentation needed
+to prove the fix worked. Revisit once a couple of clean nights are on
+record — and only if PCP is genuinely unused here.
+
+Note this incident is a correlation, not a smoking gun: unlike
+`dnf-makecache` there is no OOM line naming the culprit. If the 17:00
+cluster survives disabling these three, the timers were not the driver and
+the answer is the shape bump below.
+
+### Fallout in the data
+
+The stall also corrupted statistics until 2.9.3. An expired A2S rules
+sweep rebuilt every server with `rules=None`, whose `status` defaults to
+`lobby`, which the game-session state machine reads as "the game ended" —
+so one real game became two rows, both long enough to pass the 5-minute
+validity gate. 2.9.3 added `status_known` to gate that, but the rows
+already written are still there. A cleanup pass wants to look for pairs on
+the same `server_name` where one session ends and the next starts within
+about two minutes, on stall nights.
+
+### Known gaps after 2.9.3
+
+An adversarial review of 2.9.3 surfaced four real problems that predate it
+and were deliberately left alone rather than widen the change:
+
+- **Ongoing sessions are never reconciled while the process lives.**
+  `_recover_ongoing_games` runs once, on the first statistics update, so its
+  `STALE_RECOVERY_AGE` sweep only fires at startup. A server that vanishes
+  from the listing — or, since 2.9.3, goes permanently rules-blind mid-game —
+  keeps `is_ongoing=True` until a restart happens after it has aged out.
+- **Cold start with Steam down still looks confident.**
+  `create_status_embed` does `last_update or datetime.now(timezone.utc)`, so
+  before the first successful sweep the embed shows "No active servers
+  found" with a fresh relative timestamp. 2.9.3 fixed the steady-state case
+  (the cache ages visibly) but not this one.
+- **`ensure_fresh_cache` doesn't collapse callers on failure.** Each queued
+  command re-checks the still-cold cache after acquiring the lock and starts
+  its own failing sweep, so N commands during an outage serialize into N
+  timeouts. It also reports an unavailable cache as `0.0` seconds old.
+- **`PlayerSnapshot` counts rules-blind servers as open lobbies.** It reads
+  `status` directly, which is the `lobby` default for a server whose rules
+  didn't answer.
+
+
+
 ## When this isn't enough
 
 If wedges return despite all of the above and the journal shows OOM kills

@@ -25,7 +25,7 @@ class SteamAPI:
             await self.session.close()
         self.session = None
 
-    async def get_game_servers(self) -> List[Dict]:
+    async def get_game_servers(self) -> Optional[List[Dict]]:
         """
         Get ALL game servers for Nebulous: Fleet Command using Steam Web API,
         enriched per server with live A2S info (map, player count) and A2S
@@ -35,11 +35,24 @@ class SteamAPI:
         set (no empty/bot/private servers) filter with passes_default_filter.
         The HTTP session is created lazily and reused across calls — one
         session for the life of the bot instead of one per poll cycle.
+
+        Returns **None** when the Steam call itself failed (non-200 or an
+        exception). That is not the same as an empty list: `[]` means Steam
+        answered and there genuinely are no servers (which happens at 4am),
+        while None means we don't know. Callers must not install None as a
+        fresh result — see ServerMonitor._update_server_list.
         """
         if not self.session or self.session.closed:
             ssl_context = ssl.create_default_context(cafile=certifi.where())
             connector = aiohttp.TCPConnector(ssl=ssl_context)
-            self.session = aiohttp.ClientSession(connector=connector)
+            # aiohttp's default total is 300s — fine for a script, far too
+            # long for a 30s poll loop, where a hung Steam connection would
+            # stall five minutes of cycles. The per-server A2S sweep is
+            # capped separately at 15s, outside this budget.
+            self.session = aiohttp.ClientSession(
+                connector=connector,
+                timeout=aiohttp.ClientTimeout(total=Config.STEAM_API_TIMEOUT),
+            )
 
         try:
             url = "https://api.steampowered.com/IGameServersService/GetServerList/v1/"
@@ -49,17 +62,35 @@ class SteamAPI:
             }
 
             async with self.session.get(url, params=params) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    servers = await self._parse_server_data_with_rules(data)
-                    return servers
-                else:
+                if response.status != 200:
                     logger.error(f"Steam API request failed with status {response.status}")
-                    return []
+                    return None
+                data = await response.json()
+
+            # Enrichment runs OUTSIDE the request context on purpose: the
+            # session's total timeout covers everything inside `async with`,
+            # and the A2S sweep has its own 15s cap. Nesting them would let
+            # the HTTP budget kill a slow-but-working sweep.
+            return await self._parse_server_data_with_rules(data)
 
         except Exception as e:
             logger.error(f"Error fetching server data: {e}")
-            return []
+            return None
+
+    # The three values `inprogress` can take, per the Nebulous rules payload.
+    VALID_IN_PROGRESS = {'0', '1', '2'}
+
+    @classmethod
+    def has_usable_state(cls, rules: Optional[Dict]) -> bool:
+        """True when `rules` actually tells us the server's game state.
+
+        Anything else — no reply, an empty dict, or a reply whose
+        `inprogress` is missing or unrecognised — means we did not observe
+        the state, whatever else the dict happens to contain.
+        """
+        if not rules:
+            return False
+        return str(rules.get('inprogress', '')).strip() in cls.VALID_IN_PROGRESS
 
     def passes_default_filter(self, server: Dict) -> bool:
         """Default visibility filter: hide empty, bot-hosting, and private
@@ -363,6 +394,20 @@ class SteamAPI:
             'has_password': False,
             'ping': 0,
             
+            # Whether `status` below reflects a real A2S rules answer. Only
+            # the rules carry `inprogress`, so without a usable one the
+            # 'lobby' default is a guess, not an observation. Display treats
+            # it as a lobby (harmless); anything that acts on *transitions*
+            # must skip it, or an A2S timeout fabricates a lobby -> in_game
+            # round trip and with it a bogus GameSession row.
+            #
+            # Test the field, not the dict: _query_server_rules_sync falls
+            # back to the raw A2S_RULES reply, which can be non-empty and
+            # still carry no usable `inprogress` (a malformed embedded
+            # payload, or a non-Nebulous rules set). bool(rules) would read
+            # that as a confidently observed lobby.
+            'status_known': self.has_usable_state(rules),
+
             # Default values that may be overridden by rules
             'game_mode': self._determine_game_mode(server_name, map_name),
             'status': 'lobby',  # Default to lobby

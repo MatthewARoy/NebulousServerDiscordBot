@@ -4,6 +4,66 @@ The bot reads its own changelog from `nebulous_bot/config.py` (`Config.CHANGELOG
 to power the in-Discord `!version` command, so that file is the source of truth
 for current and recent releases. This document mirrors it for readers on GitHub.
 
+## 2.9.3 — 2026-09-10
+
+- Bugfix for games being counted twice when a server briefly stops responding.
+- Bugfix for the server list showing empty when Steam is unreachable.
+
+(Maintainer notes: both bugs share one root cause — a failed query being
+served as if it were an observation. Only the per-server A2S *rules* reply
+carries `inprogress`, so when the 15 s rules sweep expired,
+`_create_enhanced_server_data` rebuilt every server with `rules=None` and its
+`status: 'lobby'` default. `GameSessionTracker.update_server_state` reads
+lobby as "the game ended", finalizes the `GameSession`, and then re-creates it
+on the next successful sweep. Production evidence from 2026-09-09 17:32 PST:
+a "Server rules queries timed out" warning, then games #24302 (744 s) and
+#24300 (1887 s) finalized 21 s later, then #24303 and #24304 created on the
+same two servers 80 s after that. Both halves clear the 5-minute validity
+gate, so the statistics table has fabricated rows from every stall — worth a
+cleanup pass. Enhanced server dicts now carry `status_known` (True only when
+rules answered), and the two transition consumers —
+`GameSessionTracker.update_server_state` and
+`ServerMonitor._track_game_start_times` — skip servers without it. Display is
+deliberately untouched: embeds and `get_open_lobbies` still read the 'lobby'
+default, so a rules-blind server looks the same as before. `status_known` is derived from a valid
+`inprogress` value rather than from the rules dict being non-empty:
+`_query_server_rules_sync` falls back to the raw A2S_RULES reply, which can
+be non-empty and still carry no usable state, and that would have read as a
+confidently observed lobby. Residual: a `!nextgame` waiter can still be
+pinged by a rules-blind server showing as a lobby, and a server that goes
+permanently rules-blind mid-game keeps `is_ongoing=True` until a restart
+happens after it has aged past `STALE_RECOVERY_AGE` — `_recover_ongoing_games`
+runs once per process, not periodically, so there is no sweep while the bot
+stays up. That is the same reconciliation gap a vanished server already fell
+through, now with one more way in.
+
+Separately, `SteamAPI.get_game_servers` returned `[]` for both "Steam said
+there are no servers" and "the call failed", and `_update_server_list`
+installed that empty list *and* advanced `last_update`, so an outage rendered
+as a confidently-fresh empty list and walked every tracked game to a lobby
+transition. It now returns `None` on non-200 or exception, and the monitoring
+loop keeps the last known good cache and lets its timestamp visibly age. The
+session also gained an explicit `ClientTimeout` (`Config.STEAM_API_TIMEOUT`,
+20 s): aiohttp's own default total is 300 s, long enough for one hung Steam
+connection to stall five minutes of a 30 s poll loop. The A2S enrichment
+moved out of the `async with session.get(...)` block so it runs on its own
+15 s budget rather than inside the HTTP one. And the monitoring loop now
+skips notifications and statistics on a cycle that failed to observe
+anything: display keeps refreshing from cache, but nothing pings a waiter or
+writes a row on the strength of data we could not refresh.
+
+Two ops-side changes in the same pass. Tracked messages now evict after
+`FORBIDDEN_EVICT_AFTER` (10) consecutive 403s instead of retrying forever:
+`discord.NotFound` already marked a message for removal but `discord.Forbidden`
+only logged, so three `!listservers` replies in a channel the bot had lost
+View Channel access to on 2026-09-03 were still being edited six days later,
+one REST call each per cycle. A streak rather than a single 403 rides out a
+role change propagating, and only the first is logged at warning. And the
+container healthcheck interval went 30 s → 120 s: each probe starts a fresh
+Python interpreter, and on the 503 MiB box those cold page-ins are a
+measurable share of the container's block I/O — 637 GB read over three weeks
+for a process with a 27 MiB RSS.)
+
 ## 2.9.2 — 2026-08-18
 
 - `!listservers`, `!openlobbies` and `!nextgame` reply straight away from the

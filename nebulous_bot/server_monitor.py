@@ -19,6 +19,11 @@ logger = logging.getLogger(__name__)
 class ServerMonitor:
     URL_HOST_PATTERN = re.compile(r'(?<!@)\b([a-z0-9][a-z0-9-]{0,62})\.([a-z]{2,24})(?=(?:/|\b))', re.IGNORECASE)
 
+    # Consecutive 403s on a tracked message before we stop retrying it.
+    # At one tracked-update pass per monitoring cycle this is ~5-10 minutes,
+    # long enough to ride out a role change propagating.
+    FORBIDDEN_EVICT_AFTER = 10
+
     def __init__(self, bot):
         self.bot = bot
         self.steam_api = SteamAPI()  # Using real Steam API now
@@ -203,9 +208,11 @@ class ServerMonitor:
                 iteration += 1
                 logger.debug(f"Monitoring loop iteration {iteration} starting...")
 
-                await self._update_server_list()
+                observed = await self._update_server_list()
                 logger.debug(f"Server list updated: {len(self.cached_servers)} servers")
 
+                # Display keeps refreshing either way — a stale embed whose
+                # timestamp is visibly ageing is the intended failure mode.
                 await self._update_status_message()
                 logger.debug("📤 Status message update cycle completed")
                 
@@ -213,7 +220,16 @@ class ServerMonitor:
                     self.tracked_update_task = asyncio.create_task(self._update_tracked_messages())
                 else:
                     logger.debug("Tracked message update already running")
-                
+
+                # Everything below *acts* on server state — pings people,
+                # writes rows. Re-running it against the previous sweep's
+                # cache would announce players as "currently online" on the
+                # strength of data we failed to refresh, so skip the cycle.
+                if not observed:
+                    logger.debug("No live observation this cycle; skipping notifications and statistics")
+                    await asyncio.sleep(Config.UPDATE_INTERVAL)
+                    continue
+
                 await self._check_and_send_notifications()
                 logger.debug("Notifications checked")
                 
@@ -277,14 +293,33 @@ class ServerMonitor:
                 logger.error(f"Error in health check loop: {e}", exc_info=True)
                 await asyncio.sleep(60)
     
-    async def _update_server_list(self):
-        """Fetch latest server information from Steam API with server rules"""
+    async def _update_server_list(self) -> bool:
+        """Fetch latest server information from Steam API with server rules.
+
+        Returns True when this cycle actually observed the servers. False
+        means the caches still hold the previous sweep's data, and callers
+        that *act* on server state must sit this cycle out.
+        """
         try:
             logger.debug("Fetching servers from Steam API...")
             # Single sweep: fetch every server (with A2S rules) once, then
             # derive the default-filtered view locally. Previously this was
             # two GetServerList calls + two full rules sweeps per cycle.
             all_servers = await self.steam_api.get_game_servers()
+
+            # None means the Steam call failed outright. Installing that as
+            # an empty list would publish "0 servers" with a fresh timestamp
+            # and, worse, walk every tracked game to a lobby transition. Keep
+            # the last known good cache and let it visibly age instead.
+            if all_servers is None:
+                age = self.cache_age_seconds()
+                logger.warning(
+                    "Steam sweep failed; keeping last known server list "
+                    f"({len(self.cached_servers)} servers, "
+                    f"{'never updated' if age is None else f'{int(age)}s old'})"
+                )
+                return False
+
             servers = [s for s in all_servers if self.steam_api.passes_default_filter(s)]
 
             logger.debug(f"Received {len(all_servers)} servers from Steam API ({len(servers)} after default filter)")
@@ -312,9 +347,11 @@ class ServerMonitor:
             in_game = len([s for s in servers if s.get('status') == 'in_game'])
 
             logger.debug(f"✅ Updated server list at {self.last_update.strftime('%H:%M:%S')}: {total_servers} servers, {active_players} players, {open_lobbies} open lobbies, {in_game} in-game")
+            return True
 
         except Exception as e:
             logger.error(f"❌ Failed to update server list: {e}", exc_info=True)
+            return False
     
     async def _track_game_start_times(self, servers: List[Dict]):
         """Track when servers transition from lobby to in-game and record game start times"""
@@ -324,7 +361,13 @@ class ServerMonitor:
             server_id = server.get('id', server.get('address', ''))
             if not server_id:
                 continue
-                
+
+            # A2S rules didn't answer, so `status` is the 'lobby' default
+            # rather than an observation. Leave this server's tracked state
+            # untouched until we can see it again.
+            if not server.get('status_known', True):
+                continue
+
             current_status = server.get('status', 'lobby')
             previous_info = self.game_start_times.get(server_id, {})
             previous_status = previous_info.get('previous_status', 'lobby')
@@ -602,14 +645,33 @@ class ServerMonitor:
                 return {'channel_id': channel_id, 'idx': idx, 'updated': False}
 
             await message.edit(embed=new_embed)
+            msg_info['forbidden_streak'] = 0
             return {'channel_id': channel_id, 'idx': idx, 'updated': True}
 
         except discord.NotFound:
             return {'channel_id': channel_id, 'idx': idx, 'removed': True}
         except discord.Forbidden:
-            logger.warning(f"No permission to edit message {message.id} in channel {channel_id}")
+            # A 403 can be transient (a role edit being propagated), so one
+            # is not grounds for dropping the message. A sustained streak
+            # means the permission is really gone — keep retrying forever and
+            # the bot burns a REST call per message per cycle indefinitely,
+            # which is how three messages in a channel it had been removed
+            # from went on being edited for six days.
+            streak = msg_info.get('forbidden_streak', 0) + 1
+            msg_info['forbidden_streak'] = streak
+            if streak >= self.FORBIDDEN_EVICT_AFTER:
+                logger.info(
+                    f"Untracking message {message.id} in channel {channel_id}: "
+                    f"no edit permission for {streak} consecutive cycles"
+                )
+                return {'channel_id': channel_id, 'idx': idx, 'removed': True}
+            log = logger.warning if streak == 1 else logger.debug
+            log(f"No permission to edit message {message.id} in channel {channel_id} (streak {streak})")
             return {'channel_id': channel_id, 'idx': idx, 'updated': False}
         except Exception as e:
+            # A non-403 failure breaks the streak: ten 403s spread around a
+            # transient 500 are not evidence of a permanent permission loss.
+            msg_info['forbidden_streak'] = 0
             logger.error(f"Error updating tracked message {message.id}: {e}")
             return {'channel_id': channel_id, 'idx': idx, 'updated': False}
     
