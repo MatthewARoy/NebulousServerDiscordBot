@@ -241,6 +241,7 @@ def test_complete_public_application_command_tree_is_test_ready(monkeypatch):
     monkeypatch.setattr(advice_module, "_db", AsyncMock(return_value=([], [], set())))
     bot = asyncio.run(_build_complete_bot())
     expected = {
+        "guide",
         "status",
         "version",
         "formation",

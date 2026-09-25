@@ -162,7 +162,8 @@ class Config:
             "changes": [
                 "Use slash commands to browse servers, get advice, track games, and optimize fleets",
                 "Mention the bot or send it a DM to use familiar commands and help",
-                "Upload fleet files directly with /formation"
+                "Upload fleet files directly with /formation",
+                "Read the quick guide with /guide without leaving Discord"
             ]
         },
         {

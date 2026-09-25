@@ -16,7 +16,7 @@ def _commands_by_name(cog_type):
 def test_public_admin_commands_are_hybrid_but_maintenance_commands_are_not():
     admin_commands = _commands_by_name(AdminCog)
 
-    for name in ("status", "version"):
+    for name in ("status", "version", "guide"):
         command = admin_commands[name]
         assert isinstance(command, commands.HybridCommand)
         assert command.app_command is not None

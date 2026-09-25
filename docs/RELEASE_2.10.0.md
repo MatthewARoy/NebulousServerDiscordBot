@@ -6,6 +6,11 @@ Current operational checklist: [rollout plan and remaining test gates](releases/
 Communications are [drafts awaiting owner review](releases/2.10.0-user-messages.md);
 nothing is scheduled or sent automatically.
 
+Follow-up: the user guide now ships inside the bot as `/guide` (19th top-level
+command). The 18-command live evidence below describes the previous candidate.
+Rebuild the image and verify `/guide` registration and its response after copy
+approval. User-facing notices contain no repository links or external guide.
+
 ## Baselines and boundaries
 
 - Branch: `claude/discord-intent-denial-f7a07e`.

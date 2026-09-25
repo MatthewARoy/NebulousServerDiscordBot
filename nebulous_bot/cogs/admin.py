@@ -14,6 +14,7 @@ from datetime import datetime, timezone
 from typing import Optional
 
 from nebulous_bot.config import Config
+from nebulous_bot.user_guide import build_user_guide
 
 logger = logging.getLogger('nebulous_bot')
 
@@ -23,6 +24,21 @@ class AdminCog(commands.Cog, name='Admin'):
 
     def __init__(self, bot: commands.Bot):
         self.bot = bot
+
+    @commands.hybrid_command(
+        name='guide',
+        description='Read the quick guide to commands, fleet uploads, and help here in Discord.',
+    )
+    async def show_guide(self, ctx: commands.Context):
+        """Read the quick-start guide without leaving Discord.
+
+        Usage: !guide
+        Examples: !guide
+        """
+        await ctx.send(
+            embed=build_user_guide(message_content=self.bot.intents.message_content),
+            ephemeral=ctx.interaction is not None,
+        )
 
     def get_deployment_time(self) -> Optional[datetime]:
         """Get deployment time from environment variable or tracked bot start time"""
@@ -182,6 +198,7 @@ class AdminCog(commands.Cog, name='Admin'):
             name="🔥 Popular Commands",
             value=(
                 "Use Discord's `/` command picker for the complete menu.\n"
+                "`/guide` - Read the quick-start guide here in Discord\n"
                 "`/listservers` - List all servers\n"
                 "`/openlobbies` - Show available servers\n"
                 "`/stats` - View game statistics\n"
@@ -244,7 +261,7 @@ class AdminCog(commands.Cog, name='Admin'):
             inline=False
         )
 
-        embed.set_footer(text="Use Discord's / command picker for commands • /status for bot information")
+        embed.set_footer(text="/guide for help getting started • /status for bot information")
         await ctx.send(embed=embed)
 
     @commands.command(name='commandlogs', aliases=['cmdlogs', 'logs'], hidden=True)

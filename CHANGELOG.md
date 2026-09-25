@@ -9,6 +9,7 @@ for current and recent releases. This document mirrors it for readers on GitHub.
 - Use slash commands to browse servers, get advice, track games, and optimize fleets.
 - Mention the bot or send it a DM to use familiar commands and help.
 - Upload fleet files directly with /formation.
+- Read the quick guide with /guide without leaving Discord.
 
 (Maintainer notes: release candidate; production rollout is gated by
 intent-off Discord acceptance. Includes the 2.9.2/2.9.3 monitoring fixes.

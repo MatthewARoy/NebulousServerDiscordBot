@@ -1,6 +1,13 @@
 # Commands
 
-New to slash commands? Start with the [quick user guide](SLASH_COMMAND_GUIDE.md).
+New to slash commands? Run `/guide` to read the quick guide directly in Discord.
+
+### `/guide`
+
+Shows a self-contained guide to commands, options, fleet uploads, mention/DM
+fallbacks, next-game subscriptions, and troubleshooting. Slash responses are
+visible only to the person asking. Mention the bot followed by `guide`, or DM
+`!guide`, for the same content. No website or external document is required.
 
 Public commands use Discord's `/` command picker. During the compatibility
 release, the legacy `!` prefix and its short aliases continue to work. After
