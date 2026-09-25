@@ -2,6 +2,10 @@
 
 Owner: current migration task. Date: 2026-09-25.
 
+Current operational checklist: [rollout plan and remaining test gates](releases/2.10.0-rollout-plan.md).
+Communications are [drafts awaiting owner review](releases/2.10.0-user-messages.md);
+nothing is scheduled or sent automatically.
+
 ## Baselines and boundaries
 
 - Branch: `claude/discord-intent-denial-f7a07e`.
@@ -36,6 +40,10 @@ Owner: current migration task. Date: 2026-09-25.
 - CI builds a Linux image from the exact candidate commit, checks packaged
   runtime imports and database migrations without network access, and exports
   its image ID, source revision and SHA-256 checksum as a seven-day artifact.
+- [CI run 36195089189](https://github.com/MatthewARoy/NebulousServerDiscordBot/actions/runs/36195089189)
+  passed for runtime candidate `c25c29a`. Its downloaded Linux/amd64 image,
+  source revision and checksum were verified; the rollout plan records them.
+  Live packaged startup and notification delivery remain explicit gates.
 
 ## Live acceptance
 

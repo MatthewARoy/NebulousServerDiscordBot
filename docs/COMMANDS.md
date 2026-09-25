@@ -1,5 +1,7 @@
 # Commands
 
+New to slash commands? Start with the [quick user guide](SLASH_COMMAND_GUIDE.md).
+
 Public commands use Discord's `/` command picker. During the compatibility
 release, the legacy `!` prefix and its short aliases continue to work. After
 Message Content is removed, the same prefix commands remain available in DMs
