@@ -56,6 +56,7 @@ SERVER_CONFIGS=[{"guild_id": 111, "status_channel_id": 222}, {"guild_id": 333, "
 
 | Variable | Default | Description |
 |---|---|---|
+| `DISCORD_MESSAGE_CONTENT` | `true` | Compatibility release only. Set `false` for the intent cutoff, then recreate the container. `--without-message-content` forces false for local testing. Startup logs the effective setting. |
 | `UPDATE_INTERVAL` | `30` | Seconds between Steam server polls. |
 | `STATUS_MESSAGE_REFRESH_INTERVAL` | `86400` | Seconds before posting a fresh status message (defaults to once per day). |
 | `MAX_SERVERS_DISPLAY` | `20` | Maximum servers shown in the status embed. |

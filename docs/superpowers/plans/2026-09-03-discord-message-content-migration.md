@@ -2,11 +2,14 @@
 
 **Date:** 2026-09-03
 
-**Status:** Track 0 complete; Track 1 ready to implement.
+**Status:** Track 0 complete; Track 1 implemented. Release candidate integration
+and live acceptance in progress as of September 25. See
+[`../../RELEASE_2.10.0.md`](../../RELEASE_2.10.0.md) for current evidence.
 
 **Development branch:** `claude/discord-intent-denial-f7a07e`
 
-**Track 1 baseline:** `f2ce4a6` (`main` and the development branch are identical)
+**Track 1 baseline:** `f2ce4a6`. The September 25 integration commit `bd25c92`
+includes all three subsequent `main` commits through `9e7ecab`.
 
 ## Objective
 
@@ -124,7 +127,8 @@ Each slice should be a reviewable commit and leave the full suite green.
    command with Message Content disabled on the test application, then deploy
    the compatibility release with production Message Content still enabled.
 9. **Release B cutoff:** deliberately perform global sync, allow propagation,
-   disable Message Content in code and the Developer Portal, restart, and run
+   set `DISCORD_MESSAGE_CONTENT=false` in the deployment environment and disable
+   it in the Developer Portal, recreate the container, and run
    the production smoke/health checks.
 
 ## Safety gates

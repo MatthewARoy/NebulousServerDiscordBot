@@ -5,6 +5,15 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
+def parse_bool(raw: str) -> bool:
+    """Reject mistyped rollout flags instead of silently enabling an intent."""
+    value = raw.strip().lower()
+    if value in {'true', '1', 'yes', 'on'}:
+        return True
+    if value in {'false', '0', 'no', 'off'}:
+        return False
+    raise ValueError('Boolean settings must be true/false, 1/0, yes/no, or on/off')
+
 def parse_id_set(raw):
     """Comma/space-separated Discord ids -> frozenset of ints.
 
@@ -32,6 +41,9 @@ class Config:
     # Discord Configuration
     DISCORD_TOKEN = os.getenv('DISCORD_TOKEN')
     APPLICATION_ID = os.getenv('APPLICATION_ID')
+    # Release A retains legacy commands. Release B sets this false in the
+    # deployment environment; the same tested image supports both stages.
+    DISCORD_MESSAGE_CONTENT = parse_bool(os.getenv('DISCORD_MESSAGE_CONTENT', 'true'))
     
     # Multi-server configuration
     # Format: [{"guild_id": 123, "status_channel_id": 456, "notification_channel_id": 789, "notification_role_id": 101112}, ...]
@@ -142,8 +154,17 @@ class Config:
     TEST_COMMAND_GUILD_IDS = parse_id_set(os.getenv('TEST_COMMAND_GUILD_IDS', ''))
 
     # Version Information
-    VERSION = "2.9.3"
+    VERSION = "2.10.0"
     CHANGELOG = [
+        {
+            "version": "2.10.0",
+            "date": "2026-09-25",
+            "changes": [
+                "Use slash commands to browse servers, get advice, track games, and optimize fleets",
+                "Mention the bot or send it a DM to use familiar commands and help",
+                "Upload fleet files directly with /formation"
+            ]
+        },
         {
             "version": "2.9.3",
             "date": "2026-09-10",

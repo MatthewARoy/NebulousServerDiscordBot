@@ -51,7 +51,7 @@ def create_ssl_context():
     return ssl_context
 
 
-def create_bot(*, message_content: bool = True) -> commands.Bot:
+def create_bot(*, message_content: Optional[bool] = None) -> commands.Bot:
     """Construct the bot without connecting to Discord.
 
     Message Content deliberately remains enabled for the compatibility release.
@@ -59,7 +59,7 @@ def create_bot(*, message_content: bool = True) -> commands.Bot:
     contract without opening a gateway connection.
     """
     intents = discord.Intents.default()
-    intents.message_content = message_content
+    intents.message_content = Config.DISCORD_MESSAGE_CONTENT if message_content is None else message_content
 
     bot = commands.Bot(
         command_prefix=commands.when_mentioned_or(Config.COMMAND_PREFIX),
@@ -237,7 +237,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--without-message-content",
             action="store_true",
-            help="Disable Message Content for isolated migration testing.",
+            help="Disable Message Content, overriding DISCORD_MESSAGE_CONTENT.",
         )
 
     def handle(self, *args, **options):
@@ -245,7 +245,8 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS("Starting Nebulous Discord Bot..."))
 
         # Set up bot without connecting or synchronizing its command tree.
-        bot = create_bot(message_content=not options["without_message_content"])
+        bot = create_bot(message_content=False if options["without_message_content"] else None)
+        logger.info("Message Content intent requested: %s", bot.intents.message_content)
 
         # Global variables
         server_monitor = None

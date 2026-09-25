@@ -28,6 +28,10 @@ STEAM_API_KEY=your_steam_api_key_here
 
 # --- Optional ---
 
+# DISCORD_MESSAGE_CONTENT=false          # slash/mention/DM mode; true retains
+#                                        # legacy guild ! commands only while
+#                                        # Discord still permits the intent.
+
 # UPDATE_INTERVAL=30                     # seconds between Steam polls
 # STATUS_MESSAGE_REFRESH_INTERVAL=86400  # seconds between fresh status messages (1 day)
 # MAX_SERVERS_DISPLAY=20                 # max servers shown in the status embed

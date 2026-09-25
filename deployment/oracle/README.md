@@ -181,8 +181,15 @@ Content migration, keep those as separate, deliberate release gates:
    enabled, then smoke-test legacy and mention-prefixed commands.
 4. Only after an explicit production go/no-go, invoke the guarded global
    command sync and allow Discord's propagation window.
-5. In a later release, disable Message Content in both code and the Developer
-   Portal, restart, and run the no-intent smoke checks.
+5. For the cutoff stage, set `DISCORD_MESSAGE_CONTENT=false` in the production
+   environment and **recreate** the container (a restart does not reload its
+   environment). Disable Message Content in the Developer Portal and run the
+   no-intent smoke checks. Both stages use the same tested image.
+
+The deploy script retains the currently running image under a timestamped
+rollback tag and uses SQLite's online backup API plus an integrity check.
+After Discord revokes the intent, an older intent-dependent image alone is
+not a working rollback: retain the tested 2.10.0 image with the intent off.
 
 Never add command synchronization to startup, reconnect, or this deployment
 script.

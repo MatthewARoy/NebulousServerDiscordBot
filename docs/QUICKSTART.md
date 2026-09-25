@@ -33,6 +33,7 @@ Edit `.env` and fill in at minimum:
 - `DISCORD_TOKEN`
 - `APPLICATION_ID`
 - `STEAM_API_KEY`
+- `DISCORD_MESSAGE_CONTENT=false` (leave all privileged intents off for new installations)
 
 `SERVER_CONFIGS` is optional. You can either pre-seed it with the guilds
 you're deploying for (see [CONFIGURATION.md](CONFIGURATION.md)), or leave
@@ -54,8 +55,8 @@ needs (sessions, snapshots, command logs, etc.).
 
 In the Developer Portal, build an OAuth2 URL with the `bot` and
 `applications.commands` scopes and these
-permissions: Read Messages, Send Messages, Embed Links, Use External Emojis,
-Read Message History, and (optionally) Mention Roles. Open the URL and add
+permissions: View Channels, Send Messages, Embed Links, Attach Files, Add
+Reactions, Use External Emojis, Read Message History, and (optionally) Mention Roles. Open the URL and add
 the bot to your server.
 
 ## 5. Run

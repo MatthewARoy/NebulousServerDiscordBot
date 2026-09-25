@@ -56,6 +56,15 @@ def test_bot_can_disable_message_content_for_isolated_acceptance_testing():
     asyncio.run(bot.close())
 
 
+def test_production_environment_can_disable_intent_without_changing_entrypoint(monkeypatch):
+    monkeypatch.setattr(Config, "DISCORD_MESSAGE_CONTENT", False)
+    bot = create_bot()
+    assert bot.intents.message_content is False
+    assert bot.intents.members is False
+    assert bot.intents.presences is False
+    asyncio.run(bot.close())
+
+
 def test_sync_command_is_owner_only_hidden_and_prefix_only():
     bot = create_bot()
     command = bot.get_command("synccommands")
@@ -186,6 +195,31 @@ def test_hybrid_command_errors_are_ephemeral_and_slash_worded():
         "❌ Invalid command options. Reopen the command picker and try again.",
         ephemeral=True,
     )
+
+
+@pytest.mark.parametrize("name", [
+    "setstatuschannel", "setnotificationchannel", "setnotificationrole", "removestatus",
+])
+def test_admin_slash_checks_reject_non_admin_and_allow_admin(name):
+    async def exercise():
+        bot = create_bot()
+        await bot.add_cog(SetupCog(bot))
+        command = bot.tree.get_command(name)
+        ctx = Mock(guild=Mock(), permissions=discord.Permissions.none())
+        ctx.interaction = Mock(client=bot, _baton=ctx)
+        ctx.command = bot.get_command(name)
+        ctx.send = AsyncMock()
+        try:
+            with pytest.raises(commands.MissingPermissions) as denied:
+                await command._check_can_run(ctx.interaction)
+            await handle_command_error(ctx, denied.value)
+            assert ctx.send.await_args.kwargs["ephemeral"] is True
+            ctx.permissions.administrator = True
+            assert await command._check_can_run(ctx.interaction)
+        finally:
+            await bot.close()
+
+    asyncio.run(exercise())
 
 
 async def _build_complete_bot():

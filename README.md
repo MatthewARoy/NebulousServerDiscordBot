@@ -104,8 +104,8 @@ python manage.py runbot
 
 Invite the bot to your Discord server using the Developer Portal's
 OAuth2 URL Generator (scopes: `bot` + `applications.commands`; permissions:
-View Channel, Send Messages, Embed Links, Read Message History,
-Use External Emojis). Once it's in your server, an admin runs:
+View Channel, Send Messages, Embed Links, Attach Files, Add Reactions,
+Read Message History, Use External Emojis). Once it's in your server, an admin runs:
 
 ```
 /setstatuschannel channel:#channel-name
