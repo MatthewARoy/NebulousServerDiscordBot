@@ -4,6 +4,19 @@ The bot reads its own changelog from `nebulous_bot/config.py` (`Config.CHANGELOG
 to power the in-Discord `!version` command, so that file is the source of truth
 for current and recent releases. This document mirrors it for readers on GitHub.
 
+## 2.10.0 — 2026-09-25
+
+- Use slash commands to browse servers, get advice, track games, and optimize fleets.
+- Mention the bot or send it a DM to use familiar commands and help.
+- Upload fleet files directly with /formation.
+- Read the quick guide with /guide without leaving Discord.
+
+(Maintainer notes: release candidate; production rollout is gated by
+intent-off Discord acceptance. Includes the 2.9.2/2.9.3 monitoring fixes.
+The same image supports compatibility and cutoff stages via
+`DISCORD_MESSAGE_CONTENT=true/false`. Command synchronization remains an
+explicit owner operation. Invocation text is no longer recorded.)
+
 ## 2.9.3 — 2026-09-10
 
 - Bugfix for games being counted twice when a server briefly stops responding.

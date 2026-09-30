@@ -1,7 +1,7 @@
 [tool.ruff]
 line-length = 120
 target-version = "py311"
-extend-exclude = ["docs/archive", ".venv", "staging"]
+extend-exclude = ["docs/archive", ".venv", ".venv-*", ".uv-cache", ".migration-test", "staging"]
 
 [tool.ruff.lint]
 # Bug-focused, not style-focused. CI flags real problems (undefined names,

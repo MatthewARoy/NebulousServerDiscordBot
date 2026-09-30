@@ -17,7 +17,7 @@ this document drifts, that file wins.
 Pre-seed a list of guilds the bot should immediately know about — useful
 when you (the maintainer) deploy the bot for a known set of servers. Any
 guild *not* listed here can still set itself up at runtime via the
-[`!setstatuschannel` admin command](COMMANDS.md#per-guild-setup-admin),
+[`/setstatuschannel` admin command](COMMANDS.md#per-guild-setup-admin),
 which writes to the database.
 
 DB rows take precedence over env entries on `guild_id` collision, so a
@@ -25,7 +25,7 @@ guild admin can override the maintainer's bootstrap setting if they want.
 
 If you don't need pre-seeded guilds, leave `SERVER_CONFIGS` unset. The bot
 will start with no configured guilds and onboard each new join via
-`!setstatuschannel`.
+`/setstatuschannel`.
 
 Format: a JSON array on a single line. Each entry maps one Discord server to:
 
@@ -56,13 +56,16 @@ SERVER_CONFIGS=[{"guild_id": 111, "status_channel_id": 222}, {"guild_id": 333, "
 
 | Variable | Default | Description |
 |---|---|---|
+| `DISCORD_MESSAGE_CONTENT` | `true` | Compatibility release only. Set `false` for the intent cutoff, then recreate the container. `--without-message-content` forces false for local testing. Startup logs the effective setting. |
 | `UPDATE_INTERVAL` | `30` | Seconds between Steam server polls. |
 | `STATUS_MESSAGE_REFRESH_INTERVAL` | `86400` | Seconds before posting a fresh status message (defaults to once per day). |
 | `MAX_SERVERS_DISPLAY` | `20` | Maximum servers shown in the status embed. |
 | `PLAYER_THRESHOLD` | `40` | Player count required to trigger a threshold notification. |
 | `NOTIFICATION_INTERVAL` | `3600` | Minimum seconds between threshold notifications. |
 | `DB_PATH` | unset | Override the SQLite path. Useful when mounting persistent storage (e.g. `/mnt/data/db.sqlite3` in production). |
-| `DEPLOYMENT_TIME` | unset | ISO-8601 or Unix timestamp recorded as the deployment time, displayed by `!status`. Set this in the deploy script. |
+| `DEPLOYMENT_TIME` | unset | ISO-8601 or Unix timestamp recorded as the deployment time, displayed by `/status`. Set this in the deploy script. |
+| `TEST_COMMAND_BOT_IDS` | unset | Comma-separated puppet bot IDs allowed to run mention-prefixed smoke commands. Has no effect unless the guild allowlist also matches. |
+| `TEST_COMMAND_GUILD_IDS` | unset | Comma-separated test guild IDs for the puppet harness and owner-triggered guild command sync. See [DISCORD_TEST_HARNESS.md](DISCORD_TEST_HARNESS.md). |
 
 ## Threshold notifications
 

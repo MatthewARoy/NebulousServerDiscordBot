@@ -6,6 +6,7 @@ filter-argument parsing, which is extracted into the pure
 (the one allowed refactor in the cog-split plan).
 """
 import discord
+from discord import app_commands
 from discord.ext import commands
 import logging
 from datetime import datetime, timezone
@@ -21,6 +22,19 @@ class ListserversFilters(NamedTuple):
     filters: dict
     show_all: bool
     ptb_only: bool
+
+
+LISTSERVER_FILTER_TOKENS = frozenset({
+    'ptb', 'all', 'open', 'lobby', 'ingame', 'us', 'eu', 'competitive', 'casual',
+})
+
+
+def unknown_listserver_filters(filter_args: str) -> list[str]:
+    """Return unrecognized filter tokens without changing legacy parsing."""
+    return [
+        token for token in filter_args.lower().split()
+        if token not in LISTSERVER_FILTER_TOKENS
+    ]
 
 
 def parse_listservers_filters(filter_args: str) -> ListserversFilters:
@@ -64,9 +78,15 @@ class ServersCog(commands.Cog, name='Servers'):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    @commands.command(name='listservers', aliases=['ls', 'servers'])
+    @commands.hybrid_command(
+        name='listservers',
+        aliases=['ls', 'servers'],
+        description='List active servers with optional filters.',
+    )
+    @app_commands.rename(filter_args='filters')
+    @app_commands.describe(filter_args='Space-separated filters such as ptb, open, lobby, us, or all')
     @commands.cooldown(1, 15, commands.BucketType.channel)
-    async def list_servers(self, ctx, *, filter_args: str = ""):
+    async def list_servers(self, ctx: commands.Context, *, filter_args: str = ""):
         """
         List all active servers with optional filtering
 
@@ -79,6 +99,18 @@ class ServersCog(commands.Cog, name='Servers'):
         if not server_monitor or not formatter:
             await ctx.send("❌ Server monitoring not initialized yet. Please wait a moment.")
             return
+
+        if ctx.interaction is not None:
+            unknown = unknown_listserver_filters(filter_args)
+            if unknown:
+                await ctx.send(
+                    f"❌ Unknown filter: `{unknown[0]}`. Reopen `/listservers` for valid filters.",
+                    ephemeral=True,
+                )
+                return
+
+        if ctx.interaction is not None:
+            await ctx.defer()
 
         # Serve the monitoring loop's cache (refreshed every
         # Config.UPDATE_INTERVAL) instead of making the user wait out a live
@@ -114,7 +146,7 @@ class ServersCog(commands.Cog, name='Servers'):
         )
 
         # Add filter help
-        footer_text = "Filters: ptb, open, lobby, ingame, us, eu, competitive, casual, all • Use !openlobbies for joinable servers"
+        footer_text = "Filters: ptb, open, lobby, ingame, us, eu, competitive, casual, all • Use /openlobbies for joinable servers"
         embed.set_footer(text=footer_text)
         message = await ctx.send(embed=embed)
         metadata = {
@@ -125,15 +157,22 @@ class ServersCog(commands.Cog, name='Servers'):
         }
         await server_monitor.track_message(message, metadata=metadata)
 
-    @commands.command(name='openlobbies', aliases=['open', 'available'])
+    @commands.hybrid_command(
+        name='openlobbies',
+        aliases=['open', 'available'],
+        description='List servers with open player slots.',
+    )
     @commands.cooldown(1, 15, commands.BucketType.channel)
-    async def open_lobbies(self, ctx):
+    async def open_lobbies(self, ctx: commands.Context):
         """List servers with available player slots"""
         server_monitor = self.bot.server_monitor
         formatter = self.bot.formatter
         if not server_monitor or not formatter:
             await ctx.send("❌ Server monitoring not initialized yet. Please wait a moment.")
             return
+
+        if ctx.interaction is not None:
+            await ctx.defer()
 
         # Cached data plus in-place refresh, same as !listservers.
         await server_monitor.ensure_fresh_cache()
@@ -143,9 +182,13 @@ class ServersCog(commands.Cog, name='Servers'):
         message = await ctx.send(embed=embed)
         await server_monitor.track_message(message)
 
-    @commands.command(name='refresh', aliases=['update'])
+    @commands.hybrid_command(
+        name='refresh',
+        aliases=['update'],
+        description='Refresh the cached server list now.',
+    )
     @commands.cooldown(1, 30, commands.BucketType.channel)
-    async def refresh_servers(self, ctx):
+    async def refresh_servers(self, ctx: commands.Context):
         """Force refresh the server list"""
         server_monitor = self.bot.server_monitor
         if not server_monitor:

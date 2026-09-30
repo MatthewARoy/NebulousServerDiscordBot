@@ -6,6 +6,7 @@ Command bodies are moved verbatim from runbot.py; each method rebinds
 and wording stay identical.
 """
 import discord
+from discord import app_commands
 from discord.ext import commands
 import logging
 import asyncio
@@ -23,13 +24,26 @@ class StatsCog(commands.Cog, name='Statistics'):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    @commands.command(name='stats', aliases=['statistics'])
+    @commands.hybrid_command(
+        name='stats',
+        aliases=['statistics'],
+        description='Show game and player activity statistics.',
+    )
+    @app_commands.choices(timeframe=[
+        app_commands.Choice(name='All time', value='all'),
+        app_commands.Choice(name='Today', value='today'),
+        app_commands.Choice(name='Past week', value='week'),
+        app_commands.Choice(name='Past month', value='month'),
+    ])
+    @app_commands.describe(timeframe='Time range: all, today, week, or month')
     async def show_statistics(self, ctx, timeframe: str = "all"):
         """Show general game statistics"""
         server_monitor = self.bot.server_monitor
         if not server_monitor:
             await ctx.send("❌ Server monitoring not initialized yet.")
             return
+
+        await ctx.defer()
 
         from nebulous_bot.models import GameSession, PlayerSnapshot
         from django.db.models import Count, Avg, Sum
@@ -206,16 +220,31 @@ class StatsCog(commands.Cog, name='Statistics'):
                 inline=False
             )
 
-        embed.set_footer(text="Use !mapstats for detailed map statistics • !serverstats for server statistics • Reach out to Davaned for more info")
+        embed.set_footer(text="Use /mapstats for map details • /serverstats for server details • Reach out to Davaned for more info")
         await ctx.send(embed=embed)
 
-    @commands.command(name='mapstats', aliases=['maps'])
-    async def show_map_statistics(self, ctx, limit: int = 10):
+    @commands.hybrid_command(
+        name='mapstats',
+        aliases=['maps'],
+        description='Show the most frequently played maps.',
+    )
+    @app_commands.describe(limit='Maximum number of maps to show')
+    async def show_map_statistics(
+        self,
+        ctx,
+        limit: commands.Range[int, 1, 25] = 10,
+    ):
         """Show map play frequency statistics (calculated from games in real-time)"""
         server_monitor = self.bot.server_monitor
         if not server_monitor:
             await ctx.send("❌ Server monitoring not initialized yet.")
             return
+
+        if not 1 <= limit <= 25:
+            await ctx.send("❌ Limit must be between 1 and 25.")
+            return
+
+        await ctx.defer()
 
         from nebulous_bot.models import GameSession
         from django.db.models import Count, Avg, Max
@@ -265,13 +294,28 @@ class StatsCog(commands.Cog, name='Statistics'):
         embed.set_footer(text="Only valid games (5+ minutes) are counted • Calculated in real-time")
         await ctx.send(embed=embed)
 
-    @commands.command(name='serverstats', aliases=['serverinfo'])
-    async def show_server_statistics(self, ctx, limit: int = 10):
+    @commands.hybrid_command(
+        name='serverstats',
+        aliases=['serverinfo'],
+        description='Show historical game-server usage statistics.',
+    )
+    @app_commands.describe(limit='Maximum number of servers to show')
+    async def show_server_statistics(
+        self,
+        ctx,
+        limit: commands.Range[int, 1, 25] = 10,
+    ):
         """Show server usage statistics (calculated from games in real-time)"""
         server_monitor = self.bot.server_monitor
         if not server_monitor:
             await ctx.send("❌ Server monitoring not initialized yet.")
             return
+
+        if not 1 <= limit <= 25:
+            await ctx.send("❌ Limit must be between 1 and 25.")
+            return
+
+        await ctx.defer()
 
         from nebulous_bot.models import GameSession
         from django.db.models import Count, Avg, Max, Sum, F
@@ -332,8 +376,13 @@ class StatsCog(commands.Cog, name='Statistics'):
         embed.set_footer(text="Only valid games (5+ minutes) are counted • Calculated in real-time")
         await ctx.send(embed=embed)
 
-    @commands.command(name='graph')
+    @commands.hybrid_command(
+        name='graph',
+        description='Graph player or server activity from the past week.',
+    )
+    @app_commands.rename(graph_args='metric')
     @commands.cooldown(1, 15, commands.BucketType.channel)
+    @app_commands.describe(graph_args='Metric to graph, such as players online, servers, or lobbies')
     async def show_graph(self, ctx, *, graph_args: str = "players online"):
         """
         Display a graph of data over the last week.
@@ -349,6 +398,8 @@ class StatsCog(commands.Cog, name='Statistics'):
         if not server_monitor:
             await ctx.send("❌ Server monitoring not initialized yet.")
             return
+
+        await ctx.defer()
 
         from nebulous_bot.models import PlayerSnapshot
         from nebulous_bot.graph_generator import GraphGenerator

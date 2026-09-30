@@ -168,6 +168,32 @@ docker-compose pull
 docker-compose up -d
 ```
 
+### Discord command migration rollout
+
+Deploying the container does not synchronize Discord application commands and
+does not change privileged intents in the Developer Portal. For the Message
+Content migration, keep those as separate, deliberate release gates:
+
+1. Validate the branch on the separate test application and an allowlisted
+   test guild using [`docs/DISCORD_TEST_HARNESS.md`](../../docs/DISCORD_TEST_HARNESS.md).
+2. Build and retain a rollback image before the compatibility deployment.
+3. Deploy the compatibility release while production Message Content remains
+   enabled, then smoke-test legacy and mention-prefixed commands.
+4. Only after an explicit production go/no-go, invoke the guarded global
+   command sync and allow Discord's propagation window.
+5. For the cutoff stage, set `DISCORD_MESSAGE_CONTENT=false` in the production
+   environment and **recreate** the container (a restart does not reload its
+   environment). Disable Message Content in the Developer Portal and run the
+   no-intent smoke checks. Both stages use the same tested image.
+
+The deploy script retains the currently running image under a timestamped
+rollback tag and uses SQLite's online backup API plus an integrity check.
+After Discord revokes the intent, an older intent-dependent image alone is
+not a working rollback: retain the tested 2.10.0 image with the intent off.
+
+Never add command synchronization to startup, reconnect, or this deployment
+script.
+
 ## 🐛 Troubleshooting
 
 See `ORACLE_CLOUD_MIGRATION_GUIDE.md` for detailed troubleshooting steps.

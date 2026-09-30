@@ -7,6 +7,10 @@ __pycache__/
 env/
 venv/
 .venv/
+.venv-*/
+.uv-cache/
+.ruff_cache/
+.migration-test/
 ENV/
 build/
 develop-eggs/
@@ -33,12 +37,17 @@ wheels/
 **/*.log.*
 logs/
 db.sqlite3
+*.sqlite3
+*.sqlite3-*
+database-backups/
+staging/
 db.sqlite3-journal
 staticfiles/
 media/
 
 # Environment
 .env
+.env.*
 .env.local
 .env.*.local
 
@@ -55,10 +64,14 @@ Thumbs.db
 
 # Git
 .git/
+.git
 .gitignore
 
 # Claude Code
 .claude/
+ORACLE_CONNECT.md
+ORACLE_SERVER_ISSUES.md
+deployment/oracle/oci-config.local.sh
 
 # Documentation
 README.md

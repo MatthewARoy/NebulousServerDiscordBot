@@ -5,7 +5,7 @@ these tests pin down the existing behavior, including the quirks (later
 status/region/mode tokens overwrite earlier ones, unknown tokens are
 ignored).
 """
-from nebulous_bot.cogs.servers import parse_listservers_filters
+from nebulous_bot.cogs.servers import parse_listservers_filters, unknown_listserver_filters
 
 
 def test_empty_args():
@@ -69,6 +69,10 @@ def test_unknown_tokens_ignored():
     assert filters == {}
     assert show_all is False
     assert ptb_only is False
+
+
+def test_unknown_tokens_can_be_rejected_by_the_slash_surface():
+    assert unknown_listserver_filters("open banana us") == ["banana"]
 
 
 def test_combined_ptb_all():

@@ -38,3 +38,55 @@ jobs:
 
       - name: Run tests
         run: pytest -v
+
+      - name: Import the production runtime with privileged intents disabled
+        env:
+          DJANGO_SETTINGS_MODULE: nebulous_project.settings
+          DISCORD_TOKEN: stub-token-for-ci
+          APPLICATION_ID: "0"
+          STEAM_API_KEY: stub-key-for-ci
+          DISCORD_MESSAGE_CONTENT: "false"
+        run: |
+          python -c "import django; django.setup(); from nebulous_bot.management.commands.runbot import create_bot; bot = create_bot(); assert not bot.intents.message_content; assert not bot.intents.members; assert not bot.intents.presences"
+          bash -n start-server.sh deployment/oracle/deploy-to-oracle.sh
+
+  container:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Build the release image
+        run: |
+          revision=$(git rev-parse HEAD)
+          docker build -f deployment/docker/Dockerfile --label "org.opencontainers.image.revision=$revision" -t nebulous-bot:candidate .
+
+      - name: Check the packaged runtime and database migrations
+        run: |
+          docker run --rm --network none \
+            -e DISCORD_TOKEN=ci-stub -e APPLICATION_ID=0 -e STEAM_API_KEY=ci-stub \
+            -e DISCORD_MESSAGE_CONTENT=false -e DB_PATH=/tmp/acceptance.sqlite3 \
+            nebulous-bot:candidate bash -ec '
+              python manage.py check
+              python manage.py migrate --noinput
+              python -c "import asyncio, django; django.setup(); from nebulous_bot.management.commands.runbot import create_bot; from nebulous_bot import server_monitor, steam_api, server_formatter, statistics_tracker, command_logging, graph_generator; bot = create_bot(); assert not bot.intents.message_content; assert not bot.intents.members; assert not bot.intents.presences; asyncio.run(bot.close())"
+            '
+
+      - name: Export verified image
+        run: |
+          mkdir -p release-artifact
+          docker image inspect nebulous-bot:candidate > release-artifact/image-inspect.json
+          git rev-parse HEAD > release-artifact/source-revision.txt
+          docker save nebulous-bot:candidate | gzip > release-artifact/nebulous-bot.tar.gz
+          cd release-artifact
+          sha256sum nebulous-bot.tar.gz > SHA256SUMS
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nebulous-bot-image
+          path: release-artifact/
+          retention-days: 7
+          compression-level: 0

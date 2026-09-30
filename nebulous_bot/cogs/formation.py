@@ -1,33 +1,223 @@
-"""Fleet formation optimizer command: !formation.
+"""Fleet formation optimizer command exposed through prefix and slash UI."""
 
-The command body is moved verbatim from runbot.py.
-"""
-import discord
-from discord.ext import commands
-import logging
 import asyncio
 import io
+import logging
+import math
 import os
 import tempfile
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
+from pathlib import Path
+from typing import NamedTuple, Optional
+
+import discord
+from discord import app_commands
+from discord.ext import commands
 
 from nebulous_bot.config import Config
 
 # DELIBERATELY EAGER: this import pulls numpy + matplotlib (~100+ MiB RSS)
 # at startup, BEFORE the event loop exists. Do NOT make it lazy to save
 # memory — v2.3.4 tried exactly that, and the deferred import ran for
-# minutes on the 1/8-OCPU VM at first !graph/!formation, starving the event
-# loop (blocked heartbeats, gateway resets, every command hung). Paying the
-# cost at boot, when nobody is connected, is the stable configuration.
-# runbot.py imports this module at module scope for the same reason — the
-# cost must land during process startup, not when the cog is added.
-from formation_optimizer import (
-    optimize_fleet_file,
-    create_formation_animation,
-)
+# minutes on the 1/8-OCPU VM while holding the GIL.
+from formation_optimizer import create_formation_animation, optimize_fleet_file
 
 logger = logging.getLogger('nebulous_bot')
+
+MAX_FLEET_BYTES = 2 * 1024 * 1024
+MAX_XML_DEPTH = 64
+MAX_XML_ELEMENTS = 100_000
+MAX_SHIPS = 100
+MAX_HULL_SOCKETS = 10_000
+MAX_OUTPUT_BYTES = 8 * 1024 * 1024
+MAX_ANIMATION_STATES = 5
+ANIMATION_FPS = 2
+MIN_RADIUS_METERS = 1.0
+MAX_RADIUS_METERS = 5_000.0
+
+
+class FormationOptions(NamedTuple):
+    min_radius_meters: float
+    skip_images: bool
+    planar: bool
+    symmetrical: bool
+    clear_arcs: bool
+
+
+class FormationResult(NamedTuple):
+    optimized_content: bytes
+    gif_bytes: Optional[bytes]
+    ship_count: int
+
+
+def parse_formation_options(raw: Optional[str]) -> FormationOptions:
+    """Parse the legacy free-form flags retained for prefix compatibility."""
+    min_radius_meters = 350.0
+    flags = {
+        '-skip': False,
+        '-planar': False,
+        '-symmetrical': False,
+        '-arcs': False,
+    }
+    radius_seen = False
+
+    for token in (raw or '').lower().split():
+        canonical = {'-symmetric': '-symmetrical', '-cleararcs': '-arcs'}.get(token, token)
+        if canonical in flags:
+            flags[canonical] = True
+            continue
+        if radius_seen:
+            raise ValueError(f"Unknown formation option: {token}")
+        try:
+            min_radius_meters = float(token)
+        except ValueError as exc:
+            raise ValueError(f"Unknown formation option: {token}") from exc
+        radius_seen = True
+
+    if not MIN_RADIUS_METERS <= min_radius_meters <= MAX_RADIUS_METERS:
+        raise ValueError(
+            f"Minimum radius must be between {MIN_RADIUS_METERS:.0f} and "
+            f"{MAX_RADIUS_METERS:.0f} meters."
+        )
+    return FormationOptions(
+        min_radius_meters=min_radius_meters,
+        skip_images=flags['-skip'],
+        planar=flags['-planar'],
+        symmetrical=flags['-symmetrical'],
+        clear_arcs=flags['-arcs'],
+    )
+
+
+def validate_fleet_xml(content: bytes) -> int:
+    """Validate a bounded fleet document and return its ship count."""
+    if not content:
+        raise ValueError("Fleet file is empty.")
+    if len(content) > MAX_FLEET_BYTES:
+        raise ValueError(f"Fleet file exceeds the {MAX_FLEET_BYTES // (1024 * 1024)} MiB limit.")
+
+    # XML declarations use ASCII code points even in UTF-16/32. Remove the
+    # interleaved NUL bytes before checking so an encoding change cannot
+    # bypass the explicit DTD/entity ban.
+    lowered = content.lower().replace(b'\x00', b'')
+    if b'<!doctype' in lowered or b'<!entity' in lowered:
+        raise ValueError("Fleet XML declarations and entities are not supported.")
+
+    depth = 0
+    element_count = 0
+    ship_count = 0
+    socket_count = 0
+    try:
+        parser = ET.iterparse(io.BytesIO(content), events=('start', 'end'))
+        for event, element in parser:
+            if event == 'start':
+                depth += 1
+                element_count += 1
+                if depth > MAX_XML_DEPTH:
+                    raise ValueError(f"Fleet XML exceeds the maximum depth of {MAX_XML_DEPTH}.")
+                if element_count > MAX_XML_ELEMENTS:
+                    raise ValueError(f"Fleet XML exceeds the {MAX_XML_ELEMENTS:,}-element limit.")
+                local_name = element.tag.rsplit('}', 1)[-1]
+                if local_name == 'Ship':
+                    ship_count += 1
+                    if ship_count > MAX_SHIPS:
+                        raise ValueError(f"Fleet contains more than {MAX_SHIPS} ships.")
+                elif local_name == 'HullSocket':
+                    socket_count += 1
+                    if socket_count > MAX_HULL_SOCKETS:
+                        raise ValueError(f"Fleet contains more than {MAX_HULL_SOCKETS:,} hull sockets.")
+            else:
+                depth -= 1
+        root = parser.root
+    except ET.ParseError as exc:
+        raise ValueError(f"Invalid fleet XML: {exc}") from exc
+
+    if root.find('Name') is None:
+        raise ValueError("Fleet file is missing its <Name> element.")
+    ships = list(root.iter('Ship'))
+    if not ships:
+        raise ValueError("Fleet file contains no <Ship> elements.")
+    if not any(ship.find('InitialFormation') is not None for ship in ships):
+        raise ValueError("Fleet file contains no <InitialFormation> elements.")
+    return ship_count
+
+
+def _unlink(path: Optional[str]) -> None:
+    if path and os.path.exists(path):
+        try:
+            os.unlink(path)
+        except OSError as exc:
+            logger.warning("Failed to clean up temporary file %s: %s", path, exc)
+
+
+def _sample_animation_states(states: list, limit: int = MAX_ANIMATION_STATES) -> list:
+    """Keep animation memory bounded while retaining its first and last state."""
+    if len(states) <= limit:
+        return states
+    step = math.ceil((len(states) - 1) / (limit - 1))
+    sampled = states[::step]
+    if sampled[-1] is not states[-1]:
+        sampled.append(states[-1])
+    return sampled[:limit - 1] + [states[-1]] if len(sampled) > limit else sampled
+
+
+def process_formation(content: bytes, options: FormationOptions) -> FormationResult:
+    """Run validation, optimization, and optional rendering off the event loop."""
+    ship_count = validate_fleet_xml(content)
+    input_path = None
+    optimized_path = None
+    gif_path = None
+    try:
+        with tempfile.NamedTemporaryFile(mode='wb', suffix='.fleet', delete=False) as temp_input:
+            temp_input.write(content)
+            input_path = temp_input.name
+
+        optimization_result = optimize_fleet_file(
+            input_path,
+            min_distance_meters=options.min_radius_meters,
+            capture_animation=not options.skip_images,
+            planar=options.planar,
+            symmetrical=options.symmetrical,
+            clear_arcs=options.clear_arcs,
+        )
+        if len(optimization_result) == 5:
+            optimized_path, before, _after, ship_names, states = optimization_result
+        else:
+            optimized_path, before, _after, ship_names = optimization_result
+            states = None
+
+        optimized_content = Path(optimized_path).read_bytes()
+        if len(optimized_content) > MAX_OUTPUT_BYTES:
+            raise ValueError("Optimized fleet exceeds Discord's safe upload limit.")
+
+        gif_bytes = None
+        if not options.skip_images and states:
+            animation_states = _sample_animation_states(states)
+            with tempfile.NamedTemporaryFile(suffix='.gif', delete=False) as gif_temp:
+                gif_path = gif_temp.name
+            try:
+                create_formation_animation(
+                    before,
+                    animation_states,
+                    ship_names,
+                    options.min_radius_meters,
+                    output_path=gif_path,
+                    fps=ANIMATION_FPS,
+                    duration_ms=100,
+                )
+                rendered = Path(gif_path).read_bytes()
+                if len(optimized_content) + len(rendered) <= MAX_OUTPUT_BYTES:
+                    gif_bytes = rendered
+                else:
+                    logger.warning("Formation attachments exceeded the safe upload limit; omitting GIF")
+            except Exception as exc:
+                logger.warning("Failed to generate formation GIF: %s", exc)
+
+        return FormationResult(optimized_content, gif_bytes, ship_count)
+    finally:
+        _unlink(gif_path)
+        _unlink(optimized_path)
+        _unlink(input_path)
 
 
 class FormationCog(commands.Cog, name='Formation'):
@@ -35,12 +225,41 @@ class FormationCog(commands.Cog, name='Formation'):
 
     def __init__(self, bot: commands.Bot):
         self.bot = bot
+        self._optimization_lock = asyncio.Lock()
 
-    @commands.command(name='formation', aliases=['form', 'optimize'])
+    def _finish_cancelled_worker(self, worker: asyncio.Task) -> None:
+        """Observe a detached worker's result and release its capacity."""
+        try:
+            error = worker.exception()
+            if error is not None:
+                logger.error(
+                    "Cancelled formation request's worker failed",
+                    exc_info=(type(error), error, error.__traceback__),
+                )
+        except asyncio.CancelledError:
+            logger.warning("Formation worker task was cancelled during shutdown")
+        finally:
+            if self._optimization_lock.locked():
+                self._optimization_lock.release()
+
+    @commands.hybrid_command(
+        name='formation',
+        aliases=['form', 'optimize'],
+        description='Compact ship positions in an attached NEBULOUS fleet file.',
+    )
+    @app_commands.describe(
+        attachment='The .fleet file to optimize',
+        options='Optional radius and flags: 350 -skip -planar -symmetrical -arcs',
+    )
     @commands.cooldown(1, 30, commands.BucketType.user)
-    async def optimize_formation(self, ctx, *, args: str = None):
-        """
-        Optimize a fleet formation file by compacting ships while maintaining minimum distance.
+    async def optimize_formation(
+        self,
+        ctx,
+        attachment: Optional[discord.Attachment] = None,
+        *,
+        options: Optional[str] = None,
+    ):
+        """Optimize an attached fleet formation while maintaining minimum distance.
 
         Usage: !formation [min_radius_meters] [-skip] [-planar] [-symmetrical] [-arcs]
         - Attach a .fleet XML file to your message
@@ -49,301 +268,136 @@ class FormationCog(commands.Cog, name='Formation'):
         - Optional: use -planar for flat formation facing forward
         - Optional: use -symmetrical for more symmetrical formation
         - Optional: use -arcs to keep forward firing arcs clear for armed ships
-        - Returns the optimized fleet file
 
-        Example: !formation 350  (for 350 meters)
-        Example: !formation 500 -planar  (planar formation)
-        Example: !formation 350 -symmetrical -skip  (symmetrical, skip images)
-        Example: !formation 350 -arcs  (keep firing arcs clear)
+        Example: !formation 350
+        Example: !formation 500 -planar
         """
-        # Parse arguments
-        skip_images = False
-        planar = False
-        symmetrical = False
-        clear_arcs = False
-        min_radius_meters = 350.0
-
-        if args:
-            args_lower = args.lower()
-
-            # Check for flags
-            if '-skip' in args_lower:
-                skip_images = True
-                args_lower = args_lower.replace('-skip', '')
-            if '-planar' in args_lower:
-                planar = True
-                args_lower = args_lower.replace('-planar', '')
-            if '-symmetrical' in args_lower or '-symmetric' in args_lower:
-                symmetrical = True
-                args_lower = args_lower.replace('-symmetrical', '').replace('-symmetric', '')
-            if '-arcs' in args_lower or '-cleararcs' in args_lower:
-                clear_arcs = True
-                args_lower = args_lower.replace('-arcs', '').replace('-cleararcs', '')
-
-            # Clean up and parse min_radius_meters
-            args_clean = args_lower.strip()
-            if args_clean:
-                try:
-                    min_radius_meters = float(args_clean)
-                except ValueError:
-                    # If parsing fails, use default
-                    pass
-        # Check for attachments
-        if not ctx.message.attachments:
-            embed = discord.Embed(
-                title="❌ No File Attached",
-                description="Please attach a fleet (.fleet) XML file to your message.",
-                color=Config.EMBED_COLOR_NO_SERVERS
+        if attachment is None:
+            await ctx.send(
+                embed=discord.Embed(
+                    title="❌ No File Attached",
+                    description="Attach a `.fleet` XML file and try `/formation` again.",
+                    color=Config.EMBED_COLOR_NO_SERVERS,
+                )
             )
-            embed.add_field(
-                name="Usage",
-                value="`!formation [min_radius] [-skip] [-planar] [-symmetrical] [-arcs]`\nAttach a .fleet file to optimize it.\n- `-skip`: Skip image generation\n- `-planar`: Flat formation facing forward\n- `-symmetrical`: More symmetrical formation\n- `-arcs`: Keep forward firing arcs clear for armed ships",
-                inline=False
-            )
-            await ctx.send(embed=embed)
             return
 
-        # Get the first attachment
-        attachment = ctx.message.attachments[0]
-
-        # Validate file extension
-        if not attachment.filename.lower().endswith('.fleet'):
-            embed = discord.Embed(
-                title="❌ Invalid File Type",
-                description=f"Expected a .fleet file, got: {attachment.filename}",
-                color=Config.EMBED_COLOR_NO_SERVERS
+        safe_filename = Path(attachment.filename).name[:100]
+        if not safe_filename.lower().endswith('.fleet'):
+            await ctx.send(
+                embed=discord.Embed(
+                    title="❌ Invalid File Type",
+                    description=f"Expected a `.fleet` file, got `{safe_filename}`.",
+                    color=Config.EMBED_COLOR_NO_SERVERS,
+                )
             )
-            await ctx.send(embed=embed)
             return
-
-        # Validate min_radius_meters (user input is in meters)
-        if min_radius_meters <= 0:
-            embed = discord.Embed(
-                title="❌ Invalid Minimum Radius",
-                description="Minimum radius must be greater than 0 meters.",
-                color=Config.EMBED_COLOR_NO_SERVERS
+        if attachment.size > MAX_FLEET_BYTES:
+            await ctx.send(
+                f"❌ Fleet files are limited to {MAX_FLEET_BYTES // (1024 * 1024)} MiB."
             )
-            await ctx.send(embed=embed)
             return
-
-        # Show processing message
-        processing_msg = await ctx.send("🔄 Processing fleet file...")
 
         try:
-            # Download the file
-            file_content = await attachment.read()
+            parsed = parse_formation_options(options)
+        except ValueError as exc:
+            await ctx.send(f"❌ {exc}")
+            return
 
-            # Create temporary file for input
-            with tempfile.NamedTemporaryFile(mode='wb', suffix='.fleet', delete=False) as temp_input:
-                temp_input.write(file_content)
-                temp_input_path = temp_input.name
+        # Fail fast instead of retaining one attachment per waiting user on
+        # the small production VM. The check and uncontended acquire execute
+        # without an intervening event-loop suspension.
+        if self._optimization_lock.locked():
+            await ctx.send(
+                "⏳ Another fleet is being optimized. Please try again shortly.",
+                ephemeral=ctx.interaction is not None,
+            )
+            return
+        await self._optimization_lock.acquire()
 
+        processing_msg = None
+        worker = None
+        release_in_callback = False
+
+        try:
+            await ctx.defer()
+            if ctx.interaction is None:
+                processing_msg = await ctx.send("🔄 Processing fleet file...")
+
+            content = await attachment.read()
+            if len(content) > MAX_FLEET_BYTES:
+                raise ValueError(
+                    f"Fleet file exceeds the {MAX_FLEET_BYTES // (1024 * 1024)} MiB limit."
+                )
+            worker = asyncio.create_task(asyncio.to_thread(process_formation, content, parsed))
             try:
-                # Validate XML structure before processing
-                try:
-                    tree = ET.parse(temp_input_path)
-                    root = tree.getroot()
+                result = await asyncio.shield(worker)
+            except asyncio.CancelledError:
+                # Cancelling to_thread only cancels its awaiter; the worker
+                # keeps running. Transfer lock release to its completion so a
+                # reconnect/cancel cannot start a second optimizer alongside it.
+                if not worker.done():
+                    worker.add_done_callback(self._finish_cancelled_worker)
+                    release_in_callback = True
+                raise
 
-                    # Check for required elements
-                    if root.find("Name") is None:
-                        raise ValueError("Fleet file missing <Name> element")
+            stem = safe_filename[:-6]
+            optimized_name = f'{stem}_Optimized_{int(parsed.min_radius_meters)}m.fleet'
+            files = [discord.File(io.BytesIO(result.optimized_content), filename=optimized_name)]
+            if result.gif_bytes:
+                gif_name = f'{stem}_animation_{int(parsed.min_radius_meters)}m.gif'
+                files.append(discord.File(io.BytesIO(result.gif_bytes), filename=gif_name))
 
-                    # Check for at least one Ship element
-                    ships = list(root.iter("Ship"))
-                    if not ships:
-                        raise ValueError("Fleet file contains no <Ship> elements")
-
-                    # Check for InitialFormation elements
-                    formations_found = False
-                    for ship in ships:
-                        if ship.find("InitialFormation") is not None:
-                            formations_found = True
-                            break
-
-                    if not formations_found:
-                        raise ValueError("Fleet file contains no <InitialFormation> elements")
-
-                except ET.ParseError as e:
-                    raise ValueError(f"Invalid XML format: {str(e)}") from e
-
-                # Optimize the fleet file
-                # Only capture animation if we're generating images
-                # min_radius_meters is already in meters (user-facing)
-                optimization_result = optimize_fleet_file(
-                    temp_input_path,
-                    min_distance_meters=min_radius_meters,
-                    capture_animation=not skip_images,
-                    planar=planar,
-                    symmetrical=symmetrical,
-                    clear_arcs=clear_arcs
-                )
-
-                # Unpack results (with or without animation states)
-                if len(optimization_result) == 5:
-                    optimized_path, before_positions, after_positions, ship_names, intermediate_states = optimization_result
-                else:
-                    optimized_path, before_positions, after_positions, ship_names = optimization_result
-                    intermediate_states = None
-
-                # Generate GIF animation only if not skipping images
-                gif_bytes = None
-                gif_path = None
-
-                if not skip_images:
-                    # Generate GIF animation (run in executor to avoid blocking)
-                    def generate_gif():
-                        # Generate GIF animation if we have intermediate states
-                        gif_path = None
-                        gif_bytes = None
-                        if intermediate_states:
-                            try:
-                                # Create temporary file for GIF
-                                gif_temp = tempfile.NamedTemporaryFile(suffix='.gif', delete=False)
-                                gif_path = gif_temp.name
-                                gif_temp.close()
-
-                                # Generate GIF from intermediate states (all positions already in meters)
-                                create_formation_animation(
-                                    before_positions,
-                                    intermediate_states,
-                                    ship_names,
-                                    min_radius_meters,
-                                    output_path=gif_path,
-                                    fps=10,
-                                    duration_ms=100
-                                )
-
-                                # Read GIF bytes
-                                with open(gif_path, 'rb') as f:
-                                    gif_bytes = f.read()
-                            except Exception as gif_error:
-                                logger.warning(f"Failed to generate GIF animation: {gif_error}")
-                                # Continue without GIF if generation fails
-                        else:
-                            logger.warning("No intermediate states available for GIF generation")
-
-                        return gif_bytes, gif_path
-
-                    import concurrent.futures
-                    loop = asyncio.get_event_loop()
-                    with concurrent.futures.ThreadPoolExecutor() as executor:
-                        gif_bytes, gif_path = await loop.run_in_executor(executor, generate_gif)
-
-                # Read the optimized file
-                with open(optimized_path, 'rb') as f:
-                    optimized_content = f.read()
-
-                # Create Discord file objects
-                optimized_filename = attachment.filename.replace('.fleet', f'_Optimized_{int(min_radius_meters)}m.fleet')
-                discord_file = discord.File(
-                    io.BytesIO(optimized_content),
-                    filename=optimized_filename
-                )
-
-                # Prepare files list
-                files_to_send = [discord_file]
-
-                # Add GIF if generated successfully and not skipping images
-                discord_gif_file = None
-                if not skip_images:
-                    if gif_bytes:
-                        gif_filename = attachment.filename.replace('.fleet', f'_animation_{int(min_radius_meters)}m.gif')
-                        discord_gif_file = discord.File(
-                            io.BytesIO(gif_bytes),
-                            filename=gif_filename
-                        )
-                        files_to_send.append(discord_gif_file)
-                    else:
-                        # If GIF generation failed, send error message
-                        embed_error = discord.Embed(
-                            title="⚠️ Optimization Complete",
-                            description="Fleet optimized but animation generation failed.",
-                            color=Config.EMBED_COLOR_NO_SERVERS
-                        )
-                        await processing_msg.edit(content="", embed=embed_error)
-                        return
-
-                # Create success embed
-                variant_info = []
-                if planar:
-                    variant_info.append("Planar")
-                if symmetrical:
-                    variant_info.append("Symmetrical")
-                variant_text = f" ({', '.join(variant_info)})" if variant_info else ""
-
-                embed = discord.Embed(
-                    title="✅ Formation Optimized",
-                    description=f"Fleet formation optimized with minimum radius of **{min_radius_meters:.0f} meters**{variant_text}.",
-                    color=Config.EMBED_COLOR,
-                    timestamp=datetime.now(timezone.utc)
-                )
-                embed.add_field(
-                    name="Original File",
-                    value=attachment.filename,
-                    inline=True
-                )
-                embed.add_field(
-                    name="Minimum Radius",
-                    value=f"{min_radius_meters:.0f} meters",
-                    inline=True
-                )
-                embed.add_field(
-                    name="Ships Processed",
-                    value=str(len(ships)),
-                    inline=True
-                )
-                if variant_info:
-                    embed.add_field(
-                        name="Formation Variant",
-                        value=", ".join(variant_info),
-                        inline=False
-                    )
-
-                # Set GIF as image in embed (only if not skipping)
-                if not skip_images and gif_bytes:
-                    gif_filename = attachment.filename.replace('.fleet', f'_animation_{int(min_radius_meters)}m.gif')
-                    embed.set_image(url=f"attachment://{gif_filename}")
-
-                # Update footer based on whether images were generated
-                if skip_images:
-                    embed.set_footer(text="The optimized fleet file is attached below")
-                else:
-                    embed.set_footer(text="The optimized fleet file and animation GIF are attached below")
-
-                # Delete processing message and send result
+            variants = []
+            if parsed.planar:
+                variants.append('Planar')
+            if parsed.symmetrical:
+                variants.append('Symmetrical')
+            if parsed.clear_arcs:
+                variants.append('Clear firing arcs')
+            embed = discord.Embed(
+                title="✅ Formation Optimized",
+                description=(
+                    f"Fleet formation optimized with a minimum radius of "
+                    f"**{parsed.min_radius_meters:.0f} meters**."
+                ),
+                color=Config.EMBED_COLOR,
+                timestamp=datetime.now(timezone.utc),
+            )
+            embed.add_field(name="Original File", value=safe_filename, inline=True)
+            embed.add_field(name="Ships Processed", value=str(result.ship_count), inline=True)
+            if variants:
+                embed.add_field(name="Formation Variant", value=', '.join(variants), inline=False)
+            if result.gif_bytes:
+                embed.set_image(url=f"attachment://{files[1].filename}")
+            embed.set_footer(
+                text="Optimized fleet and animation attached"
+                if result.gif_bytes else "Optimized fleet attached"
+            )
+            if processing_msg:
                 await processing_msg.delete()
-                await ctx.send(embed=embed, files=files_to_send)
-
-                # Clean up temporary GIF file
-                if gif_path and os.path.exists(gif_path):
-                    try:
-                        os.unlink(gif_path)
-                    except Exception as cleanup_error:
-                        logger.warning(f"Failed to cleanup GIF temp file: {cleanup_error}")
-
-            finally:
-                # Clean up temporary files
-                try:
-                    os.unlink(temp_input_path)
-                    if os.path.exists(optimized_path):
-                        os.unlink(optimized_path)
-                except Exception as cleanup_error:
-                    logger.warning(f"Failed to cleanup temp files: {cleanup_error}")
-
-        except ValueError as e:
-            # Validation errors
-            embed = discord.Embed(
+            await ctx.send(embed=embed, files=files)
+        except ValueError as exc:
+            error = discord.Embed(
                 title="❌ Invalid Fleet File",
-                description=str(e),
-                color=Config.EMBED_COLOR_NO_SERVERS
+                description=str(exc)[:500],
+                color=Config.EMBED_COLOR_NO_SERVERS,
             )
-            await processing_msg.edit(content="", embed=embed)
-        except Exception as e:
-            # Other errors
-            logger.error(f"Error optimizing formation: {e}", exc_info=True)
-            embed = discord.Embed(
+            if processing_msg:
+                await processing_msg.edit(content="", embed=error)
+            else:
+                await ctx.send(embed=error)
+        except Exception as exc:
+            logger.error("Error optimizing formation: %s", exc, exc_info=True)
+            error = discord.Embed(
                 title="❌ Processing Error",
-                description=f"Failed to optimize fleet file: {str(e)}",
-                color=Config.EMBED_COLOR_NO_SERVERS
+                description="The fleet could not be optimized. Check the file and try again.",
+                color=Config.EMBED_COLOR_NO_SERVERS,
             )
-            await processing_msg.edit(content="", embed=embed)
+            if processing_msg:
+                await processing_msg.edit(content="", embed=error)
+            else:
+                await ctx.send(embed=error)
+        finally:
+            if not release_in_callback and self._optimization_lock.locked():
+                self._optimization_lock.release()

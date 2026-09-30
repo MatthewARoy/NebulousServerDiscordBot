@@ -41,6 +41,15 @@ BACKUP_KEEP="${BACKUP_KEEP:-2}"  # Keep last 2 deployment backups
 REMOTE_BACKUP_DIR="${REMOTE_BACKUP_DIR:-/home/opc/nebulous-data/backups}"
 PERSISTENT_DB_PATH="/home/opc/nebulous-data/db.sqlite3"
 
+# Deploy only committed source. Virtual environments and local secrets are
+# ignored by Git and excluded from transfer below.
+if ! git -C "$PROJECT_ROOT" diff --quiet ||
+   ! git -C "$PROJECT_ROOT" diff --cached --quiet ||
+   [ -n "$(git -C "$PROJECT_ROOT" ls-files --others --exclude-standard)" ]; then
+    echo "Refusing to deploy an uncommitted working tree."
+    exit 1
+fi
+
 echo "🚀 Deploying Nebulous Discord Bot to Oracle Cloud"
 echo "=================================================="
 
@@ -87,6 +96,18 @@ if ! ssh -i "$VM_SSH_KEY" "$VM_USER@$VM_HOST" "command -v docker" &> /dev/null; 
     exit 1
 fi
 echo "✅ Docker is installed"
+
+# Preserve the exact running image before a build can replace its tag.
+ROLLBACK_TAG="nebulous-bot:rollback-$(date -u +%Y%m%d-%H%M%S)"
+ssh -i "$VM_SSH_KEY" "$VM_USER@$VM_HOST" "CONTAINER_NAME=$CONTAINER_NAME ROLLBACK_TAG=$ROLLBACK_TAG bash -s" <<'ROLLBACK_EOF'
+set -euo pipefail
+if docker inspect "$CONTAINER_NAME" >/dev/null 2>&1; then
+    running_image=$(docker inspect --format '{{.Image}}' "$CONTAINER_NAME")
+    docker image tag "$running_image" "$ROLLBACK_TAG"
+    test "$(docker image inspect --format '{{.Id}}' "$ROLLBACK_TAG")" = "$running_image"
+    echo "Rollback image retained: $ROLLBACK_TAG ($running_image)"
+fi
+ROLLBACK_EOF
 
 # Detect Docker Compose command on remote (v2 uses 'docker compose', v1 uses 'docker-compose')
 echo "🔍 Detecting Docker Compose version..."
@@ -140,10 +161,33 @@ mkdir -p "$BACKUP_DIR" || {
 
 # Create backup with timestamp
 BACKUP_FILE="$BACKUP_DIR/db-deploy-$TIMESTAMP.sqlite3"
-cp "$DB_FILE" "$BACKUP_FILE" || {
-    echo "   ❌ Error: Failed to copy database to $BACKUP_FILE"
-    exit 1
-}
+# A byte copy can omit committed WAL pages or race an active transaction.
+# SQLite's online backup API takes a consistent snapshot while the bot runs.
+python3 - "$DB_FILE" "$BACKUP_FILE" <<'SQLITE_BACKUP_PY'
+from pathlib import Path
+from contextlib import closing
+import sqlite3
+import sys
+import time
+
+source, destination = map(Path, sys.argv[1:])
+if not source.is_file() or destination.exists():
+    raise SystemExit("Backup requires an existing source and a new destination")
+deadline = time.monotonic() + 120
+def progress(status, remaining, total):
+    if time.monotonic() > deadline:
+        raise TimeoutError("SQLite backup exceeded 120 seconds")
+try:
+    with closing(sqlite3.connect(source.resolve().as_uri() + "?mode=ro", uri=True, timeout=10)) as src:
+        with closing(sqlite3.connect(destination)) as dst:
+            src.backup(dst, pages=256, progress=progress, sleep=0.1)
+            if dst.execute("PRAGMA integrity_check").fetchone() != ("ok",):
+                raise RuntimeError("Backup integrity check failed")
+except BaseException:
+    destination.unlink(missing_ok=True)
+    raise
+print("   Consistent SQLite backup verified")
+SQLITE_BACKUP_PY
 
 # Verify backup was created successfully
 if [ ! -f "$BACKUP_FILE" ]; then
@@ -152,9 +196,8 @@ if [ ! -f "$BACKUP_FILE" ]; then
 fi
 
 BACKUP_SIZE=$(stat -f%z "$BACKUP_FILE" 2>/dev/null || stat -c%s "$BACKUP_FILE" 2>/dev/null || echo "0")
-if [ "$BACKUP_SIZE" -ne "$DB_SIZE" ]; then
-    echo "   ⚠️  Warning: Backup size ($BACKUP_SIZE) differs from source ($DB_SIZE)"
-fi
+# Online backups include committed WAL pages; their size can legitimately
+# differ from the main source file. PRAGMA integrity_check above is the gate.
 
 echo "   ✅ Backup created: $BACKUP_FILE ($(numfmt --to=iec-i --suffix=B $BACKUP_SIZE 2>/dev/null || echo ${BACKUP_SIZE}B))"
 
@@ -228,6 +271,11 @@ if [[ "$BUILD_ON_VM" =~ ^[Yy]$ ]]; then
                --exclude '.git' \
                --exclude '/.claude/worktrees' \
                --exclude '.venv' \
+               --exclude '.venv-*' \
+               --exclude '.uv-cache' \
+               --exclude '.migration-test' \
+               --exclude '.pytest_cache' \
+               --exclude '.ruff_cache' \
                --exclude 'venv' \
                --exclude 'db.sqlite3' \
                --exclude 'db.*.sqlite3' \
@@ -236,6 +284,10 @@ if [[ "$BUILD_ON_VM" =~ ^[Yy]$ ]]; then
                --exclude '*.log.*' \
                --exclude 'node_modules' \
                --exclude '.env' \
+               --exclude '.env.*' \
+               --exclude '*.sqlite3*' \
+               --exclude 'database-backups' \
+               --exclude 'oci-config.local.sh' \
                --exclude '/research/' \
                --exclude '/scripts/collect_qol_research.py' \
                --exclude '/scripts/process_qol_research.py' \
@@ -323,4 +375,3 @@ echo "   View logs: ssh $VM_USER@$VM_HOST 'cd $REMOTE_DIR && docker compose logs
 echo "   Check status: ssh $VM_USER@$VM_HOST 'cd $REMOTE_DIR && docker compose ps'"
 echo "   Restart: ssh $VM_USER@$VM_HOST 'cd $REMOTE_DIR && docker compose restart'"
 echo "   Stop: ssh $VM_USER@$VM_HOST 'cd $REMOTE_DIR && docker compose down'"
-

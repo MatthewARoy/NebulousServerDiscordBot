@@ -6,7 +6,7 @@ alias (the `-skip` alias was added in 2.4.x and regressed once before).
 """
 import pytest
 
-from nebulous_bot.cogs.nextgame import parse_nextgame_args
+from nebulous_bot.cogs.nextgame import parse_nextgame_args, unknown_nextgame_filters
 
 
 def test_empty_args():
@@ -67,3 +67,7 @@ def test_case_insensitive_and_whitespace():
 def test_unknown_tokens_ignored():
     parsed = parse_nextgame_args("banana --frobnicate")
     assert parsed == parse_nextgame_args("")
+
+
+def test_unknown_tokens_can_be_rejected_by_the_slash_surface():
+    assert unknown_nextgame_filters("ptb banana --skip") == ["banana"]

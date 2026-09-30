@@ -7,10 +7,6 @@ from discord.ext import commands
 from nebulous_bot.config import Config
 from nebulous_bot.models import CommandLog
 
-# Limit how much of the message we store to avoid huge rows
-MAX_ARGUMENT_LENGTH = 500
-
-
 def _detect_context_type(ctx: commands.Context) -> str:
     """Return a simple label for where the command was invoked."""
     if ctx.guild is None:
@@ -20,14 +16,6 @@ def _detect_context_type(ctx: commands.Context) -> str:
         if channel.type.name.endswith("thread"):
             return "thread"
     return "guild"
-
-
-def _truncate(text: Optional[str], max_len: int = MAX_ARGUMENT_LENGTH) -> str:
-    if not text:
-        return ""
-    if len(text) <= max_len:
-        return text
-    return text[: max_len - 3] + "..."
 
 
 class CommandMetricsLogger:
@@ -46,6 +34,8 @@ class CommandMetricsLogger:
         ctx._command_start_time = time.perf_counter()  # type: ignore[attr-defined]
 
     async def _log_success(self, ctx: commands.Context) -> None:
+        if getattr(ctx, "command_failed", False):
+            return
         await self._create_log(ctx, success=True, error_type=None)
 
     async def _log_error(self, ctx: commands.Context, error: Exception) -> None:
@@ -63,6 +53,9 @@ class CommandMetricsLogger:
         """Persist a CommandLog entry via Django's ORM in a thread."""
         if not getattr(ctx, "command", None):
             return
+        if getattr(ctx, "_command_log_written", False):
+            return
+        ctx._command_log_written = True  # type: ignore[attr-defined]
 
         start_time = getattr(ctx, "_command_start_time", None)
         duration_ms = None
@@ -74,11 +67,8 @@ class CommandMetricsLogger:
         message = getattr(ctx, "message", None)
 
         command_name = ctx.command.qualified_name or ctx.command.name
-        full_command = ctx.invoked_with or command_name
-
-        arguments = ""
-        if message and getattr(message, "content", None):
-            arguments = _truncate(message.content)
+        invocation_type = "slash" if getattr(ctx, "interaction", None) else "prefix"
+        full_command = f"{invocation_type}:{command_name}"
 
         context_type = _detect_context_type(ctx)
 
@@ -94,7 +84,9 @@ class CommandMetricsLogger:
             channel_name=getattr(channel, "name", "") if channel else "",
             context_type=context_type,
             message_id=message.id if message and getattr(message, "id", None) else None,
-            arguments=arguments,
+            # The column remains for schema compatibility and expiry of
+            # legacy rows, but new invocations never store message content.
+            arguments="",
             success=success,
             error_type=error_type or "",
             latency_ms=duration_ms,

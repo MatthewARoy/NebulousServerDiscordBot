@@ -376,6 +376,7 @@ class NebulousHelpCommand(commands.HelpCommand):
             '📖 Command Guide',
             (
                 f'Live server tracking and stats for **{Config.GAME_NAME}**.\n'
+                '`/guide` for a quick start with slash commands and fleet uploads.\n'
                 f'`{prefix}help <command>` for usage and examples • '
                 f'`{prefix}help <category>` for everything in one group.'
             ),

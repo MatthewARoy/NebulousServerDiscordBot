@@ -28,7 +28,7 @@ from formation_optimizer.formation_optimizer import (
 )
 
 
-def test_visualization(fleet_file=None, min_radius_meters=350.0, open_image=False, create_gif=False):
+def run_visualization(fleet_file=None, min_radius_meters=350.0, open_image=False, create_gif=False):
     """
     Test formation visualization and save images.
     
@@ -179,6 +179,10 @@ def test_visualization(fleet_file=None, min_radius_meters=350.0, open_image=Fals
         return False
 
 
+def test_visualization():
+    assert run_visualization(), "Formation visualization failed; see captured output"
+
+
 def main():
     """Main entry point"""
     import argparse
@@ -228,7 +232,7 @@ Examples:
     
     args = parser.parse_args()
     
-    success = test_visualization(
+    success = run_visualization(
         fleet_file=args.fleet_file,
         min_radius_meters=args.min_radius,
         open_image=args.open,

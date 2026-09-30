@@ -14,6 +14,7 @@ from datetime import datetime, timezone
 from typing import Optional
 
 from nebulous_bot.config import Config
+from nebulous_bot.user_guide import build_user_guide
 
 logger = logging.getLogger('nebulous_bot')
 
@@ -23,6 +24,21 @@ class AdminCog(commands.Cog, name='Admin'):
 
     def __init__(self, bot: commands.Bot):
         self.bot = bot
+
+    @commands.hybrid_command(
+        name='guide',
+        description='Read the quick guide to commands, fleet uploads, and help here in Discord.',
+    )
+    async def show_guide(self, ctx: commands.Context):
+        """Read the quick-start guide without leaving Discord.
+
+        Usage: !guide
+        Examples: !guide
+        """
+        await ctx.send(
+            embed=build_user_guide(message_content=self.bot.intents.message_content),
+            ephemeral=ctx.interaction is not None,
+        )
 
     def get_deployment_time(self) -> Optional[datetime]:
         """Get deployment time from environment variable or tracked bot start time"""
@@ -111,8 +127,12 @@ class AdminCog(commands.Cog, name='Admin'):
 
         await ctx.send("**Monitoring Loop Debug Info:**\n" + "\n".join(info))
 
-    @commands.command(name='status', aliases=['info'])
-    async def show_status(self, ctx):
+    @commands.hybrid_command(
+        name='status',
+        aliases=['info'],
+        description='Show the bot status and server-monitor health.',
+    )
+    async def show_status(self, ctx: commands.Context):
         """Show bot status and information"""
         server_monitor = self.bot.server_monitor
         embed = discord.Embed(
@@ -177,17 +197,18 @@ class AdminCog(commands.Cog, name='Admin'):
         embed.add_field(
             name="🔥 Popular Commands",
             value=(
-                "`!help` - Full command menu\n"
-                "`!listservers` - List all servers\n"
-                "`!openlobbies` - Show available servers\n"
-                "`!stats` - View game statistics\n"
-                "`!mapstats` - View map statistics\n"
-                "`!serverstats` - View server statistics\n"
-                "`!graph` - Display graphs of data over the last week\n"
-                "`!nextgame` - Get notified when a game is ready (options: `ptb`, `modded`, `newplayer`, `lobby`, `--skip`)\n"
-                "`!formation` - Optimize fleet formation file\n"
-                "`!refresh` - Force update\n"
-                "`!version` - Show version and changelog"
+                "Use Discord's `/` command picker for the complete menu.\n"
+                "`/guide` - Read the quick-start guide here in Discord\n"
+                "`/listservers` - List all servers\n"
+                "`/openlobbies` - Show available servers\n"
+                "`/stats` - View game statistics\n"
+                "`/mapstats` - View map statistics\n"
+                "`/serverstats` - View server statistics\n"
+                "`/graph` - Display graphs of data over the last week\n"
+                "`/nextgame` - Get notified when a game is ready\n"
+                "`/formation` - Optimize a fleet formation file\n"
+                "`/refresh` - Force an update\n"
+                "`/version` - Show version and changelog"
             ),
             inline=False
         )
@@ -195,8 +216,12 @@ class AdminCog(commands.Cog, name='Admin'):
         embed.set_footer(text="Bot running smoothly! • Created by Davaned")
         await ctx.send(embed=embed)
 
-    @commands.command(name='version', aliases=['v', 'changelog'])
-    async def show_version(self, ctx):
+    @commands.hybrid_command(
+        name='version',
+        aliases=['v', 'changelog'],
+        description='Show the bot version and recent changes.',
+    )
+    async def show_version(self, ctx: commands.Context):
         """Show bot version and changelog"""
         embed = discord.Embed(
             title=f"🤖 Nebulous Server Bot v{Config.VERSION}",
@@ -236,7 +261,7 @@ class AdminCog(commands.Cog, name='Admin'):
             inline=False
         )
 
-        embed.set_footer(text="Use !help for the command menu • !status for bot information")
+        embed.set_footer(text="/guide for help getting started • /status for bot information")
         await ctx.send(embed=embed)
 
     @commands.command(name='commandlogs', aliases=['cmdlogs', 'logs'], hidden=True)

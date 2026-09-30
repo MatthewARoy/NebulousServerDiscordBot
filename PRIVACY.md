@@ -1,6 +1,6 @@
 # NebulousServerBot Privacy Policy
 
-_Last updated: August 1, 2026_
+_Last updated: September 6, 2026_
 
 NebulousServerBot ("the bot") is an open-source Discord bot that shows live
 multiplayer server activity for the game **Nebulous: Fleet Command**. This
@@ -9,10 +9,13 @@ source code is public: <https://github.com/MatthewARoy/NebulousServerDiscordBot>
 
 ## What the bot reads
 
-- **Discord messages.** The bot receives message content through Discord's
-  Message Content intent for the sole purpose of detecting and parsing its
-  own text commands (messages starting with the `!` prefix). Messages that
-  are not bot commands are ignored — they are never stored, analyzed, or
+- **Discord interactions and commands.** The bot processes the command and
+  options you explicitly submit through Discord's application-command UI.
+  During the compatibility migration, the bot also receives message content
+  solely to recognize legacy `!` commands. After that privileged intent is
+  removed, mention-prefixed commands, replies to the bot, and direct messages
+  may still include message content supplied to the bot by Discord. Messages
+  that are not commands are ignored — they are never stored, analyzed, or
   shared.
 - **Game server data.** Server names, maps, player counts, game modes, and
   versions are polled from the Steam Web API and the game servers' public
@@ -21,15 +24,16 @@ source code is public: <https://github.com/MatthewARoy/NebulousServerDiscordBot>
 ## What the bot stores
 
 - **Command usage logs.** When you invoke a bot command, the bot records the
-  command text (truncated to 500 characters), your Discord user ID and
-  username, the guild/channel ID and name where the command was used, a
-  timestamp, and whether the command succeeded. This is used for debugging
-  and understanding which features are used.
+  command name and invocation type (application or legacy prefix), your
+  Discord user ID and username, the guild/channel ID and name where the
+  command was used, a timestamp, latency, and whether the command succeeded.
+  It does not store the command's free-form text or option values. This is
+  used for debugging and understanding which features are used.
 - **Guild configuration.** Guild, channel, and role IDs configured by server
   admins (for example, the status channel).
 - **Game statistics.** Aggregate server statistics (player counts, maps,
   session lengths) derived from Steam data. No Discord data is included.
-- **`!nextgame` waitlist.** Your user ID and chosen queue mode are held in
+- **`/nextgame` waitlist.** Your user ID and chosen queue mode are held in
   memory until you are notified or the waitlist is cleared.
 
 ## What the bot does not do
@@ -44,9 +48,10 @@ source code is public: <https://github.com/MatthewARoy/NebulousServerDiscordBot>
 
 Data is stored in a private database on a single server operated by the
 maintainer and is not accessible to third parties; the server's storage is
-encrypted at rest. Stored message content (the text of command invocations)
-is automatically deleted after 30 days. Other data is retained only to
-provide the features described above.
+encrypted at rest. Command text retained by older bot versions is
+automatically deleted after 30 days. New command-log records do not contain
+command text or option values. Other data is retained only to provide the
+features described above.
 
 ## Opting out and data removal
 

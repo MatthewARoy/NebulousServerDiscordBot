@@ -1,5 +1,23 @@
 """Pure-logic tests for config helpers: env parsing + test-harness gate."""
-from nebulous_bot.config import parse_id_set, harness_command_allowed
+import pytest
+
+from nebulous_bot.config import parse_bool, parse_id_set, harness_command_allowed
+
+
+@pytest.mark.parametrize('value', ['false', 'FALSE', '0', 'no', ' off '])
+def test_rollout_flag_disables_intent(value):
+    assert parse_bool(value) is False
+
+
+@pytest.mark.parametrize('value', ['true', 'TRUE', '1', 'yes', ' on '])
+def test_rollout_flag_enables_compatibility(value):
+    assert parse_bool(value) is True
+
+
+@pytest.mark.parametrize('value', ['', 'flase', 'enabled'])
+def test_rollout_flag_rejects_ambiguous_values(value):
+    with pytest.raises(ValueError):
+        parse_bool(value)
 
 
 def test_parse_id_set_commas_and_spaces():
