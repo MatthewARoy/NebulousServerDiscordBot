@@ -21,20 +21,29 @@ the patch-triage workflow starts from.
 Owner: Davaned. A stale catalog is the main failure mode of this design,
 so regeneration is part of picking up a game patch, not an optional chore.
 
-1. Launch NEBULOUS with the DevAssistant mod enabled (workspace repo
-   `NebulousDevAssistant`, `build/publish.ps1 -Enable`). Wait for the main
-   menu.
+1. Extract the installed stock bundles with
+   `NebulousDevAssistant/mcp/offline_gamedata/` (see its README). Pin the
+   game version/build used for extraction. This does not require running
+   or interrupting the game.
 2. From the workspace root, run:
 
    ```
-   python NebulousDevAssistant/mcp/catalog_dump.py --out <this repo>/knowledge/catalog
+   python NebulousDevAssistant/mcp/catalog_dump.py --out <this repo>/knowledge/catalog --offline-full <dump-dir>/gamedata_full.json --game-version <version-and-build>
    ```
 
-   The script drives the in-game `gamedata` command over the DevAssistant
-   file bus and reads the game version from Player.log.
+   The script records the input SHA-256 and uses the asset/prefab names
+   assigned by `BundleManager.LoadMunitionEntries`. Save-key suffixes are
+   not always display names: `Stock/Flak Round` displays as `50mm Flak Shell`.
+   Hull class/faction membership comes from the serialized hull definitions.
 3. Review the diff (new, removed, renamed content), run the test suite
    (it validates that the hand-curated overlays below still resolve
    against the regenerated files), and commit.
+
+The legacy `--from-json <saved gamedata response>` and live mode (omit both
+source options) remain available. Those registry responses lack munition
+display names, so their labels fall back to save-key suffixes; prefer the
+offline mode for the corrected catalog. Live mode requires an already-running
+game with DevAssistant and reads its version from Player.log unless overridden.
 
 ## Hand-curated overlays (regeneration never touches these)
 

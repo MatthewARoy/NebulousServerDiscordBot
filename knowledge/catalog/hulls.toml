@@ -1,12 +1,12 @@
-# Generated file — never hand-edit. Regenerate per game patch (game running
-# with DevAssistant enabled):
-#   python NebulousDevAssistant/mcp/catalog_dump.py --out <bot-repo>/knowledge/catalog
+# Generated file — never hand-edit. Regenerate per game patch:
+#   python NebulousDevAssistant/mcp/catalog_dump.py --out <bot-repo>/knowledge/catalog --offline-full <gamedata_full.json> --game-version 0.6.2.6-public-steam25104609
 # Hand-curated overlays (aliases.toml, classes.toml) are separate files that
 # regeneration never touches.
-catalog_version = "0.6.2.5:260727-1341"
-generated = 2026-08-18
-generation_command = "python NebulousDevAssistant/mcp/catalog_dump.py --out <bot-repo>/knowledge/catalog"
+catalog_version = "0.6.2.6-public-steam25104609"
+generated = 2026-09-25
+generation_command = "python NebulousDevAssistant/mcp/catalog_dump.py --out <bot-repo>/knowledge/catalog --offline-full <gamedata_full.json> --game-version 0.6.2.6-public-steam25104609"
 kind = "hulls"
+source_sha256 = "7d20f0f78fbcf854c19fd5d08ff06ba10e5a4e7642eb78237add3bc8943a314f"
 
 [[hull]]
 id = "Stock/Axford Heavy Cruiser"
