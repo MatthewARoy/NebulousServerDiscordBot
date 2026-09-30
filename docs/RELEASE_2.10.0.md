@@ -1,6 +1,15 @@
 # 2.10.0 Discord migration release record
 
-Owner: current migration task. Date: 2026-09-25.
+Owner: current migration task. Updated: 2026-09-30.
+
+**Production cutover completed September 30.** The owner explicitly authorized
+testing and rollout. Version 2.10.0 is running with all privileged intents off,
+19 global application commands registered, and a fresh post-cutoff gateway
+connection. See [the execution record](releases/2.10.0-rollout-result.md) for the
+exact artifact, backup, live evidence, and remaining browser-upload check.
+Announcements remain unapproved and unsent. The sections below preserve the
+September 25 predeployment evidence and original plan; their pending-rollout
+statements are historical, superseded by the execution record.
 
 Current operational checklist: [rollout plan and remaining test gates](releases/2.10.0-rollout-plan.md).
 Communications are [drafts awaiting owner review](releases/2.10.0-user-messages.md);
