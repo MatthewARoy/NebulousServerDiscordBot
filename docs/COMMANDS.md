@@ -9,10 +9,14 @@ fallbacks, next-game subscriptions, and troubleshooting. Slash responses are
 visible only to the person asking. Mention the bot followed by `guide`, or DM
 `!guide`, for the same content. No website or external document is required.
 
-Public commands use Discord's `/` command picker. During the compatibility
-release, the legacy `!` prefix and its short aliases continue to work. After
-Message Content is removed, the same prefix commands remain available in DMs
-and when the bot is directly mentioned (for example, `@NebulousBot status`).
+Production 2.10.0 uses Discord's `/` command picker with all privileged intents
+off. Plain `!commands` in server channels are no longer the supported command
+surface. Legacy commands and aliases work in DMs or after a direct bot mention,
+for example `!ng` in a DM or `@NebulousServerBot ng` in a server.
+
+Slash aliases are not registered: use `/nextgame`, not `/ng`, and `/listservers`,
+not `/ls`. Prefix examples below apply to DMs; in servers, replace `!` with a
+direct bot mention. Server-only commands still require a server.
 
 ## Help
 

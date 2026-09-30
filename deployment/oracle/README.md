@@ -168,31 +168,33 @@ docker-compose pull
 docker-compose up -d
 ```
 
-### Discord command migration rollout
+### Discord command migration rollout (completed September 30, 2026)
 
-Deploying the container does not synchronize Discord application commands and
-does not change privileged intents in the Developer Portal. For the Message
-Content migration, keep those as separate, deliberate release gates:
+Production 2.10.0 runs the verified immutable Linux image with all privileged
+intents off and 19 global commands. See the
+[execution record](../../docs/releases/2.10.0-rollout-result.md) and
+[current release procedure](../../docs/releases/2.10.0-rollout-plan.md).
 
-1. Validate the branch on the separate test application and an allowlisted
-   test guild using [`docs/DISCORD_TEST_HARNESS.md`](../../docs/DISCORD_TEST_HARNESS.md).
-2. Build and retain a rollback image before the compatibility deployment.
-3. Deploy the compatibility release while production Message Content remains
-   enabled, then smoke-test legacy and mention-prefixed commands.
-4. Only after an explicit production go/no-go, invoke the guarded global
-   command sync and allow Discord's propagation window.
-5. For the cutoff stage, set `DISCORD_MESSAGE_CONTENT=false` in the production
-   environment and **recreate** the container (a restart does not reload its
-   environment). Disable Message Content in the Developer Portal and run the
-   no-intent smoke checks. Both stages use the same tested image.
+For future runtime updates, validate a separate test application, preserve a
+tested intent-off image and consistent database backup, then deploy the exact
+accepted artifact. Keep `DISCORD_MESSAGE_CONTENT=false` explicit and all Portal
+privileged intents off. Recreate the container when its environment changes;
+a restart alone does not reload it. Preserve the real production mounts/ports.
 
-The deploy script retains the currently running image under a timestamped
-rollback tag and uses SQLite's online backup API plus an integrity check.
-After Discord revokes the intent, an older intent-dependent image alone is
-not a working rollback: retain the tested 2.10.0 image with the intent off.
+Command sync is a separate owner action only when required by an authorized
+command-schema change. Never add synchronization to startup, reconnect or the
+deployment script. Verify global commands without test-guild copies masking them.
 
-Never add command synchronization to startup, reconnect, or this deployment
-script.
+The production host directory is a deployment context, not a Git checkout.
+Compose pins the verified image and uses `--no-build`; generic source-build/pull
+examples elsewhere on this page are not the immutable-artifact release procedure.
+Documentation-only updates do not require rebuilding or restarting the bot.
+
+The deploy script retains the running image and uses SQLite's online backup API
+with an integrity check. An older intent-dependent image is not a working
+post-cutoff rollback: use a tested intent-off image or repair forward. Never
+restore the database merely for an application issue. Announcements require
+separate approval of exact copy, channels and timing and are never automatic.
 
 ## 🐛 Troubleshooting
 

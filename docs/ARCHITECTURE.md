@@ -12,7 +12,7 @@ A short tour of how the project fits together.
   on a mounted block-storage volume in production.
 - **Docker** + **Docker Compose** for deployment.
 - **Oracle Cloud Infrastructure** Always Free tier for the production VM
-  (ARM64 / E2 micro).
+  (E2.1.Micro; the accepted 2.10.0 image is Linux/amd64).
 
 ## Layout
 
@@ -24,11 +24,11 @@ nebulous_bot/            The bot itself (Django app)
   ├── server_formatter.py             Discord embed rendering
   ├── steam_api.py                    Steam Web API client
   ├── statistics_tracker.py           game-session and snapshot bookkeeping
-  ├── command_logging.py              `!command` usage instrumentation
-  ├── graph_generator.py              matplotlib renderer for `!graph`
+  ├── command_logging.py              `/command` usage instrumentation
+  ├── graph_generator.py              matplotlib renderer for `/graph`
   ├── models.py                       Django ORM models
   └── migrations/                     schema history
-formation_optimizer/     Standalone library used by `!formation`
+formation_optimizer/     Standalone library used by `/formation`
 deployment/              Docker, Oracle scripts, and helpers
 docs/                    Documentation (this directory)
 ```
@@ -37,11 +37,15 @@ docs/                    Documentation (this directory)
 
 `python manage.py runbot` is the only entry point in production. It:
 
-1. Builds a `discord.commands.Bot` and registers all commands inline.
+1. Builds a `discord.ext.commands.Bot` with mention/DM fallback and registers
+   seven cogs. Public commands use hybrid slash/prefix decorators; owner
+   maintenance commands remain prefix-only. Production explicitly disables all
+   privileged intents. Application-command sync is a deliberate owner action,
+   never a startup or reconnect side effect.
 2. On `on_ready`, validates `Config`, constructs a `ServerMonitor`, attaches a
    `ServerFormatter`, and kicks off the monitoring loop.
 3. The monitoring loop polls Steam every `UPDATE_INTERVAL` seconds, updates
-   the cached server list, refreshes tracked messages, fires `!nextgame`
+   the cached server list, refreshes tracked messages, fires `/nextgame`
    notifications, and writes `PlayerSnapshot` records.
 
 The container also runs a small Gunicorn WSGI server on port 8000 (started by
@@ -52,12 +56,12 @@ The container also runs a small Gunicorn WSGI server on port 8000 (started by
 - `GameSession` — one row per detected game (lobby → in-game ≥5 min →
   debrief). Stores duration, map, players-at-start, server, validity.
 - `PlayerSnapshot` — periodic (5-minute) sample of total players, servers,
-  lobbies, and games-in-progress. Drives `!graph` and `!stats`.
-- `BotStatus` — recorded on `!refresh`; quick health log.
+  lobbies, and games-in-progress. Drives `/graph` and `/stats`.
+- `BotStatus` — recorded on `/refresh`; quick health log.
 - `CommandLog` — every command invocation: success/error, latency, context
   (guild / DM / thread), guild + user identifiers.
 
-`!stats`, `!mapstats`, `!serverstats` all aggregate from `GameSession` in
+`/stats`, `/mapstats`, `/serverstats` all aggregate from `GameSession` in
 real time — there are no precomputed rollup tables.
 
 ## State that lives in memory only
@@ -67,9 +71,11 @@ real time — there are no precomputed rollup tables.
 - `cached_servers`, `cached_all_servers` — the latest Steam snapshots.
 - `game_start_times` — per-server state-transition timestamps used to detect
   lobby→game and game→debrief transitions.
-- `next_game_waiters` — pending `!nextgame` opt-ins.
+- `next_game_waiters` — pending `/nextgame` opt-ins; users must subscribe again
+  after a restart. Keys include user, PTB, modded and new-player modes.
 - `tracked_messages` — recent command-response messages that should keep
-  refreshing (capped at 10 per channel).
+  refreshing (capped at 3 per channel). Interaction-created messages are edited using
+  bot authentication so refreshes survive interaction-token expiry.
 
 Long-running data (game history, snapshots, command logs) goes through the
 ORM into SQLite.

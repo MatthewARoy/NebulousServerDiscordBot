@@ -1,19 +1,18 @@
 # NebulousServerBot Privacy Policy
 
-_Last updated: September 6, 2026_
+_Last updated: September 30, 2026_
 
 NebulousServerBot ("the bot") is an open-source Discord bot that shows live
 multiplayer server activity for the game **Nebulous: Fleet Command**. This
-document describes what data the bot processes and stores. The bot's full
-source code is public: <https://github.com/MatthewARoy/NebulousServerDiscordBot>
+document describes what data the bot processes and stores. Use `/guide` for
+help directly inside Discord.
 
 ## What the bot reads
 
 - **Discord interactions and commands.** The bot processes the command and
   options you explicitly submit through Discord's application-command UI.
-  During the compatibility migration, the bot also receives message content
-  solely to recognize legacy `!` commands. After that privileged intent is
-  removed, mention-prefixed commands, replies to the bot, and direct messages
+  Production has Message Content, Members and Presence intents disabled.
+  Mention-prefixed commands, replies to the bot, and direct messages
   may still include message content supplied to the bot by Discord. Messages
   that are not commands are ignored — they are never stored, analyzed, or
   shared.
@@ -31,10 +30,14 @@ source code is public: <https://github.com/MatthewARoy/NebulousServerDiscordBot>
   used for debugging and understanding which features are used.
 - **Guild configuration.** Guild, channel, and role IDs configured by server
   admins (for example, the status channel).
+- **Community advice.** Advice submissions intentionally persist their text,
+  submitter ID/name, ballot location and outcome so the bot can publish approved
+  tips and retain the voting history. This feature data is separate from command
+  usage logs, which omit free-form arguments.
 - **Game statistics.** Aggregate server statistics (player counts, maps,
   session lengths) derived from Steam data. No Discord data is included.
 - **`/nextgame` waitlist.** Your user ID and chosen queue mode are held in
-  memory until you are notified or the waitlist is cleared.
+  memory until you are notified, cancel, or the bot restarts.
 
 ## What the bot does not do
 
@@ -57,9 +60,7 @@ features described above.
 
 If you do not invoke bot commands, no message content of yours is ever
 processed or stored. To request deletion of stored data associated with your
-Discord account, open an issue at
-<https://github.com/MatthewARoy/NebulousServerDiscordBot/issues> or contact
-the maintainer on Discord.
+Discord account, contact the maintainer (Davaned) on Discord.
 
 ## Changes
 
