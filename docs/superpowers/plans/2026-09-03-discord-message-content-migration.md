@@ -1,5 +1,11 @@
 # Discord Message Content migration
 
+> **Track 1 completed September 30, 2026.** This is the historical design plan.
+> The final release has 19 top-level commands including `/guide` and deployed
+> directly with all privileged intents off; the original compatibility stage was
+> omitted. See [the execution record](../../releases/2.10.0-rollout-result.md)
+> and [remaining follow-ups](../../releases/2.10.0-rollout-plan.md).
+
 **Date:** 2026-09-03
 
 **Status:** Track 0 complete; Track 1 implemented. Release candidate integration
@@ -161,7 +167,7 @@ At `f2ce4a6`, using a clean isolated dependency environment:
 
 ## Track 1 exit checklist
 
-- [x] All 18 public entries and intended advice subcommands are registered.
+- [x] All 19 final public entries (including `/guide`) and intended advice subcommands are registered.
 - [x] Operational commands are absent from the public slash picker.
 - [x] No startup path automatically synchronizes the command tree.
 - [x] Slow commands defer and tracked responses use bot-authenticated channel messages.
@@ -169,7 +175,7 @@ At `f2ce4a6`, using a clean isolated dependency environment:
 - [x] New command logging stores no raw invocation text.
 - [x] Help, privacy, deployment, and test-harness documentation are current.
 - [x] Full lint and test suites pass on Python 3.11.
-- [ ] Test application passes with Message Content disabled.
-- [ ] Release A has a verified rollback artifact.
-- [ ] Global command propagation is confirmed before the intent cutoff.
-- [ ] Production reconnects and passes smoke checks without Message Content.
+- [x] Test application passes with all privileged intents disabled.
+- [x] Verified accepted image and private backup/restore evidence retained; post-cutoff recovery requires an intent-off image.
+- [x] Production global registration and command execution confirmed; see execution record for the actual direct intent-off sequence.
+- [x] Production freshly identifies and passes smoke checks without privileged intents.

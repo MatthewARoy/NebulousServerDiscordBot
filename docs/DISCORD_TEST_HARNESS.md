@@ -6,6 +6,11 @@ puppet bot continues automated smoke checks through mention-prefixed commands.
 Discord bots cannot invoke another application's slash commands, so the puppet
 lane is useful but is not slash-command acceptance testing.
 
+The 2.10.0 migration completed September 30, 2026. See the
+[execution record](releases/2.10.0-rollout-result.md) for evidence and the remaining
+production upload check. This procedure remains the regression-testing runbook.
+The temporary migration application is stopped and its commands were cleared.
+
 ## Test application and test guild
 
 Use a separate Discord application and token for migration testing. Do not
@@ -19,8 +24,9 @@ tree during this phase.
    the intent-off acceptance pass.
 3. Run the migration branch against the test token and database/configuration
    intended for testing with `python manage.py runbot --without-message-content`.
-   The compatibility default remains enabled for production until the later
-   cutoff release.
+   Explicitly set `DISCORD_MESSAGE_CONTENT=false` in persistent configuration,
+   as in production. Leave Members and Presence off too; do not rely on the
+   legacy code fallback for Message Content.
 4. As the bot owner, directly mention the bot:
    `@Bot synccommands guild <test-guild-id>`. Mention content remains available
    without the privileged intent. The command rejects guilds outside
@@ -39,6 +45,8 @@ picker and verify:
 
 - Every intended public command and advice subcommand appears with clear
   descriptions and option names.
+- The 2.10.0 tree has 19 top-level entries; `/guide` returns a complete private
+  guide without external links. Slash aliases such as `/ng` are not registered.
 - Administrative maintenance commands do not appear.
 - `/version`, `/status`, `/listservers`, `/openlobbies`, and `/refresh`
   complete successfully.
@@ -103,3 +111,12 @@ that directly mention the application:
 This lane proves the fallback and response surface remain alive. It cannot
 prove slash registration, option transformation, interaction deferral, or
 ephemeral errors; those remain part of the human acceptance pass.
+
+## Cleanup after a temporary test
+
+Stop the isolated process/container and remove temporary credential copies.
+Clear only the temporary application's guild registrations after verifying its
+application ID and test guild; confirm its guild/global counts and the unchanged
+production global tree by readback. Otherwise a stopped bot remains selectable
+and returns “The application did not respond.” Never clear production commands
+as test cleanup. Keep private evidence and backups out of the repository.

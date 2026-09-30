@@ -87,7 +87,9 @@ In your Discord server:
 /stats
 ```
 
-See [COMMANDS.md](COMMANDS.md) for the full command reference.
+Run `/guide` for the self-contained user guide inside Discord. Short aliases
+are available through mentions or DMs; use `/nextgame`, not `/ng`, in the slash
+menu. [COMMANDS.md](COMMANDS.md) is the maintainer command reference.
 
 ## Running with Docker
 

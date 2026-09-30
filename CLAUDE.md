@@ -52,7 +52,12 @@ defines the gateway event handlers (`on_ready`, `on_guild_join`,
 before connecting to the gateway). **Commands live in seven cogs** under
 `nebulous_bot/cogs/`: setup, stats, servers, admin, formation, nextgame,
 plus advice (added 2.6.0). To find a command, grep `nebulous_bot/cogs/`
-for `@commands.command(name='...')`.
+for `@commands.hybrid_command`, `@commands.hybrid_group`, or
+`@commands.command`. Public slash commands have canonical names; short aliases
+remain available through mentions and DMs. `/guide` serves user guidance inside
+Discord. The 2.10.0 production cutover is complete; see
+`docs/releases/2.10.0-rollout-result.md`. Never auto-sync commands or send release
+announcements on startup. Exact notice copy, channels and timing need owner approval.
 
 `!help` is a custom `HelpCommand` (`nebulous_bot/help_command.py`, wired up
 in the `commands.Bot(...)` constructor) that renders category-grouped
@@ -82,7 +87,7 @@ that every 30 s (`Config.UPDATE_INTERVAL`):
    responses per channel (self-refreshing messages; retired ones get 💀 in
    the title).
 4. Fires `!nextgame` waitlist notifications. Waiter keys are
-   `(user_id, ptb_only, modded_only)` tuples — one user can wait in several
+   `(user_id, ptb_only, modded_only, newplayer_only)` tuples — one user can wait in several
    queue modes at once.
 5. Persists statistics via `StatisticsService` (`statistics_tracker.py`):
    `GameSession` rows (a "valid game" = in_game ≥5 min → debrief) and

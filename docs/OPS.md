@@ -5,6 +5,12 @@ usable RAM, 3.5 GiB swap). The shape is small but adequate — the bot ran for
 8 weeks unattended without incident before a single trigger took it down
 five times in one day. This document is the post-mortem and the runbook.
 
+Current release: **2.10.0**, deployed September 30 with all privileged intents
+off. The [execution record](releases/2.10.0-rollout-result.md) records the immutable
+image, backups and acceptance evidence. The host source directory is a deployment
+context, not a Git checkout; updating documentation on main does not require a
+production rebuild. Preserve the pinned tested image for documentation-only changes.
+
 ## The actual trigger: `dnf-makecache`
 
 `dnf-makecache.service` is a systemd timer that prebuilds Oracle Linux's dnf
@@ -53,9 +59,11 @@ echo 'vm.swappiness=10' | sudo tee /etc/sysctl.d/99-low-swap.conf
 sudo sysctl --system
 ```
 
-Plus a code change: `nebulous_bot/graph_generator.py` lazy-imports
-matplotlib + numpy on first `!graph` invocation rather than at bot startup,
-which keeps idle RSS ~80–120 MiB lighter.
+The graph module has local imports, but the formation cog intentionally imports
+the shared numpy/matplotlib dependencies eagerly during startup. Do not defer
+that initialization into the event loop: it previously blocked the gateway on
+this small host. Point-in-time RSS can exclude swapped pages and does not measure
+the full memory footprint.
 
 ## When the bot is reported "down"
 
@@ -63,8 +71,8 @@ The first hypothesis should still be SSH-wedge from memory pressure. Triage:
 
 ```bash
 # Is the VM reachable at all?
-nc -zv 64.181.240.159 22         # tcp/22
-nc -zv 64.181.240.159 8000       # bot port
+nc -zv <oracle-host> 22         # tcp/22
+nc -zv <oracle-host> 8000       # bot port
 
 # If 22 is reachable but ssh hangs at "Connection timed out during banner
 # exchange", the VM is wedged. Recovery is OCI Console → Stop → Start.
@@ -175,9 +183,12 @@ one of them in the 17:00 PST hour, and rising.
 sudo systemctl disable --now pmlogger_daily.timer pmie_daily.timer mlocate-updatedb.timer
 ```
 
-**Status: proposed, not yet applied.** Verify with `systemctl is-enabled`
-on each (should say `disabled`), then re-run the hourly bucket after a
-night and confirm the 17:00 cluster is gone.
+**Status: all three timers verified disabled on September 30, 2026.** The
+`dnf-makecache` timer was also disabled, its service masked, and swappiness was
+10. The post-cutover audit found no OOM, automatic bot restart, or blocked
+heartbeat over approximately 13 hours. This does not yet prove several clean
+nightly windows: re-run the hourly bucket after subsequent nights before
+attributing the old cluster conclusively to these timers.
 
 Deliberately *not* done: disabling the resident PCP collectors as well.
 They cost ~40-60 MiB, but killing them removes the instrumentation needed
