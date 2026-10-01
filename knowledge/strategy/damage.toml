@@ -1,0 +1,215 @@
+# Stock internal-damage scenarios, audited against game 0.6.2.6, public Steam build 25104609.
+# Sources are provenance locators only; the standalone evaluator never opens these paths.
+# Review the source values and formulas after a patch. No combat validation is claimed.
+schema_version = 1
+game_version = "0.6.2.6-public-steam25104609"
+evidence = [
+  "NebulousDevAssistant/docs/wiki_review/README.md: closed audit, build scope and reuse rules; historical matches and proposed wiki fixes are not live validation.",
+  "NebulousDevAssistant/docs/GAME_FACTS.md: Internal damage sharing and reinforced-part destruction; Wiki-audit mechanics; current source paths and serialized flags rechecked for this model.",
+  "NebulousDevAssistant/docs/wiki_review/full_review_2026-09-25/editor_package/editor_corrections.json: P-cd-9, P-cd-14, P-cd-21 (strict threshold and committed health); P-cd-205, P-cd-210, P-cd-213 (HEI ray splitting); P-cd-126 to P-cd-132 and C-muni-14 (rail falloff); P-cd-229, P-cd-236 (fracturing ray and DR); C-muni-17 (HESH affected by armor angle); P-shipsANS-67 (nose-stack component differences). Claims are navigation aids; the code and asset sources below establish the implemented subset.",
+  "C:/nebdc/src/Ships/HullPart.cs; SHA256 5ed1fb8370c56d08d0b992a776549a76a64e22c586cc10dce20efc22ad9873c9",
+  "C:/nebdc/src/Ships/HullComponent.cs; SHA256 93e981a97d014badcaae053fb4efa4649d7a296fa70c178c4feab8c64f36e58f",
+  "C:/nebdc/src/Ships/BaseHull.cs; SHA256 15b930f30b1515b531943c9405c67f8919369c48c9e736feb03e9379e4c20431",
+  "C:/nebdc/src/Game/Units/ShipController.cs; SHA256 62655b688cc4351c89d16f5387f759aa774fb68b27afe2e2fe1ae6eee9e64975",
+  "C:/nebdc/src/Munitions/MunitionsHelpers.cs; SHA256 9a0423f93179c9c587209d9750ab2ad004b2eec0efcb5939cdaa4645b5e77c35",
+  "MunitionsHelpers.cs:29-37,139-146,188-208: ray and sphere queries use 20-collider buffers before filtering damageables. Rays use layer 11; HE overlap uses all layers. Saturated rays and unverified all-layer HE coverage remain unknown in automatic review.",
+  "ShipController.cs:5553-5580: when nonstructural recipients exist, structure is excluded before damage distribution. Structural colliders still count toward raw query capacity.",
+  "C:/nebdc/src/Munitions/LightweightKineticShell.cs; SHA256 30fd92c322be17732f203f5cfdd22d72e93a6ee82ab83d2170e3c4add18b231a",
+  "C:/nebdc/src/Munitions/LightweightExplosiveShell.cs; SHA256 74140c3c42591297f2402be6e423fb4b8060f5dd1388e5ec562c37d98575d6ce",
+  "C:/nebdc/src/Munitions/ModularMissiles/Descriptors/Warheads/ImpactConeWarheadDescriptor.cs; SHA256 4393f20f18b39cfc60d94eb7d4d9ca6f75305fd0b0f7072e31d9800b91a7bb75",
+  "C:/nebdc/src/Munitions/InstancedDamagers/MultiRayConeDamager.cs; SHA256 7edc47bc77f5cb93600de74e4fb436ae86a215190a24a849bf68b860ff4ca9a7",
+  "C:/nebdc/src/Munitions/InstancedDamagers/PenetratingExplosiveDamager.cs; SHA256 2941522b6cc0dcb96e729457205618fe014212af5291984483a04918da236868",
+  "C:/nebdc/src/Munitions/InstancedDamagers/SingleRayDamager.cs; SHA256 0fd0d779959774f3e4280df5ece245c265882d234a385b577fd58d45f0404862",
+  "C:/nebdc/src/Munitions/InstancedDamagers/SingleSpherecastDamager.cs; SHA256 b9fa98f7395e8db0dc2fa308ed65bee758ca07615501bbf93100936ec2172652",
+  "C:/nebdc/src/Munitions/InstancedDamagers/SpallingRayDamager.cs; SHA256 0e1052dcfe377712819c51b0d863fd6fe7c09f03afaadd93e038b56e13e46699",
+]
+limitations = [
+  "This is a conditional packet-versus-destruction-threshold calculation, not a combat outcome, immunity verdict, HP simulation, or prediction of continued operation.",
+  "The caller supplies one exact ordered hit collection and a current hull damage-reduction fraction. A saved socket list, neighboring socket names, or a selected group does not prove that the components share a ray, sphere overlap, or protected nose volume.",
+  "Every selected component is assumed present and not destroyed. No destroyed entries, structure proxies, collider duplicates, missing recipients, ray geometry, incidence angles, armor penetration, misses, or overpenetration-mode selection are modeled.",
+  "Thresholds are stock base values from the pinned build. Mods, runtime stat changes and unrecognized components need verified current values; they must not inherit guessed thresholds.",
+  "Destruction requires resulting HP to be zero and the current individual packet to exceed DT strictly. Reinforced parts additionally require committed HP to have already been zero. Equality does not pass that gate; packet resistance does not stop HP loss or disabling.",
+  "Hull damage reduction is a supplied assumption, never inferred from saved component count. The game derives it from occupied socket fraction and current hull stats; socket size and occupied volume do not replace that fraction.",
+  "HEI and ray-cone entries evaluate one maximum ray. Larger HEI warheads increase the damage pool and potential attempts, not this stock 50 HP ray cap. Repeated rays, changing hit collections, damage-frame commits, repairs, fires, critical effects, crew losses and structural collapse are excluded.",
+  "HE shell profiles assume a penetrating internal explosion without overpenetration and all selected recipients in that same explosion overlap. AP profiles assume a penetrating hit without overpenetration and damage only the first recipient; they do not divide the packet by stack size.",
+  "Rail falloff and 500mm fracturing direct rays ignore hull DR in the serialized stock profiles. Secondary splash effects and different munitions sharing a calibre are excluded. No live firing trials were performed for this model.",
+]
+
+[[components]]
+id = "Stock/Reinforced DC Locker"
+threshold = 35
+reinforced = true
+max_health = 250
+source = "C:/nebdc/dumps/flat/components/Reinforced DC Locker.json#parts[0].fields._damageThreshold,_reinforced,_maxHealth"
+source_sha256 = "72329a19ef21f084b7bb4209135e77bac67395f8492975c01d251479f7c1f88e"
+
+[[components]]
+id = "Stock/Reinforced CIC"
+threshold = 40
+reinforced = true
+max_health = 200
+source = "C:/nebdc/dumps/flat/components/Reinforced CIC.json#parts[0].fields._damageThreshold,_reinforced,_maxHealth"
+source_sha256 = "92dd21f07766c4106aa5bfd2510870402bff4716800bd1abdf5a757d9a27fd0e"
+
+[[components]]
+id = "Stock/Reinforced Magazine"
+threshold = 40
+reinforced = true
+max_health = 150
+source = "C:/nebdc/dumps/flat/components/Reinforced Magazine.json#parts[0].fields._damageThreshold,_reinforced,_maxHealth"
+source_sha256 = "13bdf614018a530781ba8e9c266d7c88504d4df9276f8f82e14244dad65c42fb"
+
+[[components]]
+id = "Stock/Citadel CIC"
+threshold = 50
+reinforced = true
+max_health = 400
+source = "C:/nebdc/dumps/flat/components/Citadel CIC.json#parts[0].fields._damageThreshold,_reinforced,_maxHealth"
+source_sha256 = "2bcf37594732d71ed7f49952a2a747b24306c271b1debabff2f6794090975d59"
+
+[[components]]
+id = "Stock/Citadel Magazine"
+threshold = 50
+reinforced = true
+max_health = 300
+source = "C:/nebdc/dumps/flat/components/Citadel Magazine.json#parts[0].fields._damageThreshold,_reinforced,_maxHealth"
+source_sha256 = "7253566c5e31c67b6555f39d979b986b9c4fa2cef1ec6f6a7a36af5cae536cd0"
+
+[[components]]
+id = "Stock/Damage Control Complex"
+threshold = 40
+reinforced = true
+max_health = 600
+source = "C:/nebdc/dumps/flat/components/Damage Control Complex.json#parts[0].fields._damageThreshold,_reinforced,_maxHealth"
+source_sha256 = "db57fa5a6bde0fac95a8374d64d401d45ac6603c2122c34cb8f62bb7919aba74"
+
+[[components]]
+id = "Stock/Basic CIC"
+threshold = 25
+reinforced = false
+max_health = 200
+source = "C:/nebdc/dumps/flat/components/Basic CIC.json#parts[0].fields._damageThreshold,_reinforced,_maxHealth"
+source_sha256 = "3322d1bfad5996008a5cfda7ca797f6fbb3947c1cab10c958290b9c4561ebe0c"
+
+[[components]]
+id = "Stock/Auxiliary Steering"
+threshold = 20
+reinforced = true
+max_health = 300
+source = "C:/nebdc/dumps/flat/components/Auxiliary Steering.json#parts[0].fields._damageThreshold,_reinforced,_maxHealth"
+source_sha256 = "0c2ae68221ffa562e5faf23406bd3041cf4ad417618e72607cf5f94a400661bc"
+
+[[components]]
+id = "Stock/Damage Control Central"
+threshold = 35
+reinforced = false
+max_health = 200
+source = "C:/nebdc/dumps/flat/components/Damage Control Central.json#parts[0].fields._damageThreshold,_reinforced,_maxHealth"
+source_sha256 = "954a3ab52057402aa52ffe29502e5acb8d1a67cbcdc5a1ff308a551e6c907d30"
+
+[[components]]
+id = "Stock/Mount Gyros"
+threshold = 10
+reinforced = false
+max_health = 40
+source = "C:/nebdc/dumps/flat/components/Mount Gyros.json#parts[0].fields._damageThreshold,_reinforced,_maxHealth"
+source_sha256 = "96cbc91c9751c0e55e1d20d11fa52236a934259880a9ab06b4722650b49b7a28"
+
+[[components]]
+id = "Stock/FM500R Drive"
+threshold = 80
+reinforced = true
+max_health = 1500
+source = "C:/nebdc/dumps/flat/components/FM500R Drive.json#parts[0].fields._damageThreshold,_reinforced,_maxHealth"
+source_sha256 = "817a5f4a901cc09907c3f8da0589c48363806d31587fc7181f968d379e47d58e"
+
+[[threats]]
+id = "hei"
+geometry_mode = "ray"
+geometry_distance = 7.0
+label = "Stock modular HEI maximum ray"
+distribution = "even"
+packet_damage = 50
+ignores_dr = false
+assumption = "One maximum 50 HP ray from stock modular HE Impact. All selected recipients intersect this same ray; pool size and successive rays are not simulated."
+source = "C:/nebdc/dumps/flat/missilecomponents/HE Impact.json#fields._maxDamagePerRay=50,_maxRayCount=-1,_componentDamage,_rayLength=7"
+source_sha256 = "4388e45170eb97ba4aa69a9ac1dc7d4d0a52e043cf3cb28433f51135200fe6f3"
+
+[[threats]]
+id = "120-he"
+geometry_mode = "explosion"
+geometry_radius = 0.5
+label = "120mm HE internal explosion (no overpenetration)"
+distribution = "even"
+packet_damage = 50
+ignores_dr = false
+assumption = "A penetrating internal explosion without overpenetration; all selected, non-destroyed recipients are in its one sphere overlap."
+source = "C:/nebdc/dumps/flat/munitions/120mm HE Shell.json#fields._componentDamage,_overpenDamageMultiplier,_explosionRadius=0.5"
+source_sha256 = "d161fe8b4b4cee4956036847eb180cffe180408be886de65d104cd8c56d6e034"
+
+[[threats]]
+id = "250-he"
+geometry_mode = "explosion"
+geometry_radius = 0.9
+label = "250mm HE internal explosion (no overpenetration)"
+distribution = "even"
+packet_damage = 80
+ignores_dr = false
+assumption = "A penetrating internal explosion without overpenetration; all selected, non-destroyed recipients are in its one sphere overlap."
+source = "C:/nebdc/dumps/flat/munitions/250mm HE Shell.json#fields._componentDamage,_overpenDamageMultiplier,_explosionRadius=0.9"
+source_sha256 = "c4ffc526285647f49cf6bb01e7d0f1abf599628fadce3421e389b7d9d730d6ef"
+
+[[threats]]
+id = "450-he"
+geometry_mode = "explosion"
+geometry_radius = 1.5
+label = "450mm HE internal explosion (no overpenetration)"
+distribution = "even"
+packet_damage = 150
+ignores_dr = false
+assumption = "A penetrating internal explosion without overpenetration; all selected, non-destroyed recipients are in its one sphere overlap."
+source = "C:/nebdc/dumps/flat/munitions/450mm HE Shell.json#fields._componentDamage,_overpenDamageMultiplier,_explosionRadius=1.5"
+source_sha256 = "f687d0d168951fad81bdde3889ad87d909bfc65d03efaae5998a0de029d656f0"
+
+[[threats]]
+id = "450-ap"
+geometry_mode = "ray"
+geometry_distance = 11.0
+label = "450mm AP first recipient (no overpenetration)"
+distribution = "first"
+packet_damage = 100
+ignores_dr = false
+assumption = "A penetrating hit without overpenetration; only the first ordered, non-destroyed recipient receives this packet. Spalling retries search for a hit and are not simultaneous damaging rays."
+source = "C:/nebdc/dumps/flat/munitions/450mm AP Shell.json#fields._componentDamage,_castType,_alwaysSpreadDamage,_ignoreDamageReduction,_overrideComponentSearchDistance=11"
+source_sha256 = "c3b5aef06b0eaf635c3684a6823e5150e8186032419ca1ed74e36727cfe4f2a3"
+
+[[threats]]
+id = "300-rail"
+label = "300mm rail sabot ordered falloff"
+distribution = "falloff"
+packet_damage = 80
+falloff = 0.5
+ignores_dr = true
+assumption = "One ordered spherecast hit collection, all recipients not destroyed. The 80 HP pool allocates 50 percent of remaining damage per recipient (40, 20, 10, ...); hull DR is ignored."
+source = "C:/nebdc/dumps/flat/munitions/300mm AP Rail Sabot.json#fields._componentDamage,_overpenDamageMultiplier,_overpenDamageSpreadMethod,_alwaysSpreadDamage,_ignoreDamageReduction"
+source_sha256 = "2cb6335c15d09700eb08d33912237373e9980eb3e4463307df8e156343ce0247"
+
+[[threats]]
+id = "600-hesh"
+label = "600mm HE-SH maximum ray"
+distribution = "even"
+packet_damage = 60
+ignores_dr = false
+assumption = "One maximum ray from the 420 HP pool divided into 60 HP rays. All selected recipients intersect this ray. Armor entry is assumed; HE-SH does not ignore armor angling."
+source = "C:/nebdc/dumps/flat/munitions/600mm HE Shell.json#fields._componentDamage=420,_rayCount=7,_castType=3,_ignoreDamageReduction"
+source_sha256 = "da153ffe0be35a407ac456411ef9e0130e999b5471e59ab0d34bd8837ed3122c"
+
+[[threats]]
+id = "500-fracturing"
+label = "500mm fracturing block direct maximum ray"
+distribution = "even"
+packet_damage = 15
+ignores_dr = true
+assumption = "One direct ray from the 300 HP pool divided into 15 HP rays; all selected recipients intersect this ray. Hull DR is ignored. Secondary splash effects are outside this profile."
+source = "C:/nebdc/dumps/flat/munitions/500mm Fracturing Block.json#fields._componentDamage=300,_rayCount=20,_castType=3,_ignoreDamageReduction"
+source_sha256 = "910d024cf98bfb56cdf64d4689075b6851eda1f206924eb615506e396d847272"
