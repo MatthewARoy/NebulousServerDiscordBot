@@ -9,8 +9,9 @@ fallbacks, next-game subscriptions, and troubleshooting. Slash responses are
 visible only to the person asking. Mention the bot followed by `guide`, or DM
 `!guide`, for the same content. No website or external document is required.
 
-Production 2.10.0 uses Discord's `/` command picker with all privileged intents
-off. Plain `!commands` in server channels are no longer the supported command
+Production 2.11.0, deployed October 1, 2026, serves 21 global commands through
+Discord's `/` command picker with all privileged intents off. Plain `!commands`
+in server channels are no longer the supported command
 surface. Legacy commands and aliases work in DMs or after a direct bot mention,
 for example `!ng` in a DM or `@NebulousServerBot ng` in a server.
 
@@ -178,9 +179,10 @@ command help and the report; users do not need external documentation.
 
 Mention/DM equivalents retain `!shipbuilding`, `!fleetcheck`, and the
 `!shipcheck` alias. Attach the file to the message and put the same options
-in its text. The slash alias `/shipcheck` is not registered. These new
-commands require a separate deployment and deliberate owner sync before
-appearing on the production command picker; startup never syncs them.
+in its text. The slash alias `/shipcheck` is not registered. `/shipbuilding`
+and `/fleetcheck` were deployed and globally registered with 2.11.0 on
+October 1, 2026. Command synchronization remains a deliberate owner operation;
+startup never syncs commands.
 
 ### `/formation attachment:<fleet> [options]`
 Optimize a `.fleet` XML file using the typed attachment option.
