@@ -22,6 +22,10 @@ Project documentation for the Nebulous: Fleet Command Discord bot. The
   step-by-step Oracle Cloud Free Tier deployment.
 - **[OPS.md](OPS.md)** — host-side hardening for the Always Free shape
   (swappiness, earlyoom, container memory cap, health watchdog).
+- **[2.11.0 execution record](releases/2.11.0-rollout-result.md)** — current
+  production artifact, private geometry setup, acceptance and limitations.
+- **[2.10.0 execution record](releases/2.10.0-rollout-result.md)** — the
+  previous completed production rollout and Discord intent-off migration.
 
 ## Archive
 

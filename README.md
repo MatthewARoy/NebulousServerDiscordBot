@@ -15,13 +15,13 @@ fleet `.fleet` files.
 It runs the production deployment for the Nebulous community on Oracle
 Cloud's Always Free tier.
 
-> **Status:** 2.10.0 deployed September 30, 2026, with 19 global slash commands
+> **Status:** 2.11.0 deployed October 1, 2026, with 21 global slash commands
 > and all privileged intents disabled. Run `/guide` inside Discord for user help.
 > To run your own instance, follow the [Quickstart](#quickstart).
 
-The source also includes `/shipbuilding` and `/fleetcheck`. Their production
-deployment and deliberate slash-command registration are separate from merging
-this code; merging does not change the deployed 2.10.0 command surface.
+`/shipbuilding` and `/fleetcheck` are deployed and globally registered. The
+[2.11.0 execution record](docs/releases/2.11.0-rollout-result.md) records the
+verified artifact, private geometry setup and acceptance limits.
 
 ## What it looks like
 
