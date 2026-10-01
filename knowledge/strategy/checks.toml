@@ -1,0 +1,50 @@
+schema_version = 1
+# Finite advisory checks grounded in already-curated entries. These are not
+# fresh balance verification. Unsupported layout/engineering remains manual.
+
+[[checks]]
+id = "beam-particle-support"
+advice_id = "fb-001"
+dimension = "combat-package"
+title = "Review beam particle support"
+message = "This beam ship carries fewer than the two FPAs recommended in the curated advice. Review the intended beam damage thresholds before spending these slots elsewhere."
+severity = "warn"
+when = [{has = "class:beam-weapons"}, {count_lt = {component = "Stock/Focused Particle Accelerator", n = 2}}]
+
+[[checks]]
+id = "beam-fire-control"
+advice_id = "fb-042"
+dimension = "support"
+title = "Confirm the beam's fire-control provider"
+message = "This beam ship has no onboard Bullseye. Confirm how it receives a sufficiently accurate firing solution; another fleet member's equipment does not prove a live, reachable lock."
+severity = "warn"
+hulls = ["Stock/Keystone Destroyer", "Stock/Solomon Battleship"]
+shared_capability = "Stock/RF101 'Bullseye' Radar"
+when = [{has = "class:beam-weapons"}, {missing = "Stock/RF101 'Bullseye' Radar"}]
+
+[[checks]]
+id = "heavy-gun-plotting"
+advice_id = "fb-040"
+dimension = "combat-package"
+title = "Review heavy-gun plotting support"
+message = "These guns have no Gun Plotting Center. Review the accuracy requirement for the intended targets and distance. This check does not recommend stacking additional plotting centers."
+severity = "warn"
+when = [{has = "class:plotting-center-guns"}, {missing = "Stock/Gun Plotting Center"}]
+
+[[checks]]
+id = "450-he-load"
+advice_id = "fb-014"
+dimension = "combat-package"
+title = "Review the missing 450mm HE load"
+message = "No positive quantity of 450mm HE was found in this ship's fitted ammunition stores. Confirm whether the intended target set justifies the omission. Templates alone do not supply ammunition."
+severity = "warn"
+when = [{has = "class:starter-450mm-guns"}, {ammo_missing = "Stock/450mm HE Shell"}]
+
+[[checks]]
+id = "450-ap-load"
+advice_id = "fb-015"
+dimension = "combat-package"
+title = "Review the missing 450mm AP load"
+message = "No positive quantity of 450mm AP was found in this ship's fitted ammunition stores. Confirm the plan for armored targets and reinforced internal paths. Templates alone do not supply ammunition."
+severity = "warn"
+when = [{has = "class:starter-450mm-guns"}, {ammo_missing = "Stock/450mm AP Shell"}]

@@ -4,6 +4,20 @@ The bot reads its own changelog from `nebulous_bot/config.py` (`Config.CHANGELOG
 to power the in-Discord `!version` command, so that file is the source of truth
 for current and recent releases. This document mirrors it for readers on GitHub.
 
+## 2.11.0 — 2026-10-01
+
+- Review an uploaded fleet with /fleetcheck and explore build choices with /shipbuilding.
+- Compare reinforced stacks against selected damage profiles with clearly labeled assumptions and unknowns.
+- See sampled component findings and candidate additions when local geometry is available; results do not guarantee immunity.
+
+(Maintainer notes: standalone strategy library, audited packet/DT rules, bounded
+geometry sampler, additive empty-magazine candidates, and revision-aware overlay
+projection. Stock geometry is generated locally from the pinned game build and
+is not distributed. HEI and 450mm AP have conditional automatic ray support;
+HE overlap-buffer completeness, modular hulls, and unsupported paths remain
+unknown. No Drydock UI, live firing validation, production deploy, or command
+synchronization is included.)
+
 ## 2.10.0 — 2026-09-25
 
 - Use slash commands to browse servers, get advice, track games, and optimize fleets.

@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "description": "Portable evaluator cases against the canonical strategy bundle. Findings are exact, including conditional shared support and conservative unknown handling.",
+  "cases": [
+    {
+      "id": "beam-with-shared-fire-control",
+      "snapshot": {
+        "kind": "fleet", "name": "Shared beam example", "faction": "Stock/Alliance", "declared_points": null,
+        "ships": [
+          {"key": "beam", "name": "Beam ship", "hull": "Stock/Keystone Destroyer", "components": ["Stock/Mk600 Beam Cannon", "Stock/Focused Particle Accelerator", "Stock/Focused Particle Accelerator"], "ammunition": {}, "formation_guide": "spotter"},
+          {"key": "spotter", "name": "Spotter", "hull": "Stock/Sprinter Corvette", "components": ["Stock/RF101 'Bullseye' Radar"], "ammunition": {}, "formation_guide": null}
+        ]
+      },
+      "expected_findings": [{"check_id": "beam-fire-control", "ship_key": "beam", "severity": "info", "providers": ["Spotter"]}],
+      "expected_unknown_ids": []
+    },
+    {
+      "id": "lean-beam-still-needs-weapon-package",
+      "investment": "lean",
+      "snapshot": {
+        "kind": "ship", "name": "Lean beam example", "faction": "", "declared_points": null,
+        "ships": [{"key": "beam", "name": "Beam ship", "hull": "Stock/Keystone Destroyer", "components": ["Stock/Mk600 Beam Cannon", "Stock/RF101 'Bullseye' Radar"], "ammunition": {}, "formation_guide": null}]
+      },
+      "expected_findings": [{"check_id": "beam-particle-support", "ship_key": "beam", "severity": "warn", "providers": []}],
+      "expected_unknown_ids": []
+    },
+    {
+      "id": "known-heavy-gun-missing-he",
+      "snapshot": {
+        "kind": "ship", "name": "Ammo example", "faction": "", "declared_points": null,
+        "ships": [{"key": "gun", "name": "Gun ship", "hull": "Stock/Axford Heavy Cruiser", "components": ["Stock/Mk66 Cannon", "Stock/Gun Plotting Center"], "ammunition": {"Stock/450mm AP Shell": 10, "Stock/450mm HE Shell": 0}, "formation_guide": null}]
+      },
+      "expected_findings": [{"check_id": "450-he-load", "ship_key": "gun", "severity": "warn", "providers": []}],
+      "expected_unknown_ids": []
+    },
+    {
+      "id": "unknown-equipment-does-not-prove-missing-support",
+      "snapshot": {
+        "kind": "ship", "name": "Unknown example", "faction": "", "declared_points": null,
+        "ships": [{"key": "beam", "name": "Beam ship", "hull": "Stock/Keystone Destroyer", "components": ["Stock/Mk600 Beam Cannon", "ExampleMod/Unknown Support"], "ammunition": {}, "formation_guide": null}]
+      },
+      "expected_findings": [],
+      "expected_unknown_ids": ["ExampleMod/Unknown Support"]
+    },
+    {
+      "id": "removed-advice-stays-excluded",
+      "excluded_entry_ids": ["fb-001"],
+      "snapshot": {
+        "kind": "ship", "name": "Removed advice example", "faction": "", "declared_points": null,
+        "ships": [{"key": "beam", "name": "Beam ship", "hull": "Stock/Keystone Destroyer", "components": ["Stock/Mk600 Beam Cannon", "Stock/RF101 'Bullseye' Radar"], "ammunition": {}, "formation_guide": null}]
+      },
+      "expected_findings": [],
+      "expected_unknown_ids": []
+    }
+  ]
+}

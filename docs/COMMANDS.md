@@ -24,7 +24,7 @@ Discord's command picker is the primary menu. The legacy/mention command
 `!help [command|category]` (alias `!commands`) provides an embed reference:
 
 - `!help` — every command you can run, one line each, grouped by category
-  (Servers, Statistics, Next Game, Formation, Advice, Setup, Admin).
+  (Servers, Statistics, Next Game, Formation, Advice, Fleet Design, Setup, Admin).
 - `!help <command>` — summary, usage, examples, aliases and cooldown, e.g.
   `!help nextgame`. Also accepts the prefix (`!help !nextgame`).
 - `!help <category>` — every command in one group, e.g. `!help servers`.
@@ -120,6 +120,67 @@ Renders a 7-day graph of the requested metric. Metrics:
 `players online` (default), `servers`, `lobbies`, `games in progress`.
 
 ## Fleet tools
+
+### `/shipbuilding [options]`
+
+Returns ship design principles and the complete attached guide for standard
+3,000-point team PvP. Optional `options` accepts a role and `--lean`, for
+example `frontline --lean`. Roles: `frontline`, `skirmish`, `denial`,
+`capture`, `scouting`, `missile-support`, `carrier-support`. Lean investment
+does not remove essential weapon requirements. Slash replies are private.
+
+### `/fleetcheck attachment:<fleet-or-ship> [options]`
+
+Accepts exactly one `.fleet` or `.ship` file, up to 2 MiB, and returns a
+private summary plus a complete text report. The file is preserved. Optional
+role and `--lean` flags set a review lens, not a role assigned to every ship.
+The five source-linked fitting checks cover beam support/fire control,
+plotting support and supported 450 mm ammunition loads. Removed community
+advice is excluded; unavailable moderation state withholds advice while
+independent mechanics checks remain available. Zero findings is not a
+quality verdict.
+
+Regional protection defaults to `--threat hei --direction bow`. For example,
+`options:--threat 450-ap --direction port` selects a different ray profile
+and direction. Directions: `bow`, `stern`, `port`, `starboard`, `top`,
+`bottom`. A matching private geometry dataset must be configured by the
+operator. The current cache supports conditional HEI/450 AP ray samples;
+other automatic profiles or unavailable geometry yield unknown coverage.
+In particular, HE explosion overlap completeness is not established by this
+cache, so automatic 120/250/450 HE results are unknown.
+
+Reports show individual DT margins, tested/unknown probes, supporting
+recipients and their vulnerabilities, plus bounded candidates for adding
+one empty Reinforced Magazine to a vacant compatible socket. These are
+five-sample, hypothetical internal paths; armor entry, penetration,
+overpenetration, subsequent damage and full attack coverage are not solved.
+Queries reaching 20 raw collider hits, including structural hits before
+recipient filtering, are unknown. Candidate additions are withheld if their
+own or improved targets' probes depend on vulnerable or unknown support.
+Candidate cost, mass, crew/resources and capacity need checking in the
+editor. No fleet changes are applied.
+
+The optional diagnostic mode accepts
+`options:--stack SHIP_KEY:SOCKET,SOCKET --threat hei --dr 0.2`, using exact
+keys from a first report. Supply all three flags together and omit
+`--direction` for this mode. The ordered hit collection and DR are explicit
+assumptions, not inferred geometry. Its eight profiles are `hei`, `120-he`,
+`250-he`, `450-he`, `450-ap`, `300-rail`, `600-hesh`, `500-fracturing`.
+
+For manual scenarios, blue means all selected recipients are within DT
+under the assumptions; amber means DT exceeded; grey means unknown. Regional
+results additionally retain supporting-part vulnerabilities. Overlay
+projections use amber for vulnerable support and grey for unknown support
+even when the target's own status remains within DT. HP loss and disabled functions remain
+possible below DT. No calibre-wide or combat-immunity verdict is produced.
+All usage and limits are also provided inside `/shipbuilding`, `/guide`,
+command help and the report; users do not need external documentation.
+
+Mention/DM equivalents retain `!shipbuilding`, `!fleetcheck`, and the
+`!shipcheck` alias. Attach the file to the message and put the same options
+in its text. The slash alias `/shipcheck` is not registered. These new
+commands require a separate deployment and deliberate owner sync before
+appearing on the production command picker; startup never syncs them.
 
 ### `/formation attachment:<fleet> [options]`
 Optimize a `.fleet` XML file using the typed attachment option.

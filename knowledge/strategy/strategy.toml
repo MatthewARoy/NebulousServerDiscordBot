@@ -1,0 +1,278 @@
+schema_version = 1
+title = "Shipbuilding strategy for team PvP"
+context = "Standard 3,000-point team PvP, ANS and OSP. A useful ship performs an explicit job at an appropriate cost, with known support and operating assumptions. Advice is conditional; a fleet is not required to cover every role by itself."
+provenance = "Design synthesis from the curated Discord advice, local saved starter fleets inspected 2026-09-12, and the project owner's competitive guidance. These are teaching examples, not certified current built-in assets or measured optimal builds. No new community consensus or current-patch verification is claimed."
+
+[[references]]
+id = "discord-curation"
+title = "Curated Fleet Select and Fleet Building Experience advice"
+location = "knowledge/entries/fleet-building.toml"
+status = "47 attributed entries; unresolved caveats in knowledge/QUESTIONS.md"
+[[references]]
+id = "vren-construction"
+title = "A General Guide to Constructing a 3,000 Point Fleet"
+url = "https://steamcommunity.com/sharedfiles/filedetails/?id=3035810215"
+author = "vren55 and contributors"
+reviewed = 2026-09-12
+status = "Original community guide; use doctrine and tradeoff explanations, recheck patch-specific recipes"
+[[references]]
+id = "vren-starters"
+title = "So You Picked a Starter Fleet"
+url = "https://steamcommunity.com/sharedfiles/filedetails/?id=2939725175"
+author = "vren55"
+reviewed = 2026-09-12
+status = "Original starter guide; described variants differ from some inspected local copies"
+[[references]]
+id = "tethys-building"
+title = "Tethys's basics for building"
+url = "https://steamcommunity.com/sharedfiles/filedetails/?id=3552394194"
+author = "Falke-Tethys"
+reviewed = 2026-09-12
+status = "Original community guidance on modules, reinforcement, and starters; recommendations are contextual"
+
+[[principles]]
+id = "mission"
+title = "Define the job and acceptable loss"
+summary = "Choose the target, contribution to victory, and expected service life before buying equipment. Capturing, scouting, denying a point, and enabling teammates can justify a ship that deals little damage. A fleet-level role does not mean every ship in it has that role."
+questions = ["What must this ship accomplish, against which targets?", "Is it expected to trade repeatedly, withdraw, or complete one expendable attack?", "Which weaknesses will the fleet or team cover, and has that support actually been arranged?"]
+
+[[principles]]
+id = "combat-package"
+title = "Complete the engagement chain"
+summary = "Follow the chain from detection through useful targeting information, communications, weapon application, and the ammunition and engineering that sustain it. A search contact is not automatically a firing solution. Evaluate burst performance separately from sustained output. A secondary weapon is justified when it complements the primary sequence, covers a target gap, or serves a later phase."
+questions = ["Who detects the target and who supplies sufficient track quality?", "Are the ammunition and weapon buffs appropriate for the actual target and firing pattern?", "What stops working when the supporting sensor, communication link, launcher, or magazine is lost?"]
+
+[[principles]]
+id = "positioning"
+title = "Build for the intended approach and facing"
+summary = "Speed, acceleration, turning, firing arcs, signature, and cover determine whether paper firepower can be used. A broadside liner and a bow-facing cruiser have different exposure plans. Check whether the drive and mount choices let the ship approach, pre-align, fire, and disengage as intended."
+questions = ["Can it reach its engagement position before the opportunity disappears?", "Which weapons can fire together in the planned facing?", "Can it leave cover, deliver its burst, and return before retaliation?", "What happens if it is flanked or forced to turn?"]
+
+[[principles]]
+id = "survivability"
+title = "Protect functions through layout and recovery"
+summary = "Hull geometry, internal arrangement, component destruction thresholds, damage sharing, redundancy, and repair all contribute to useful survival. Protected locations can preserve critical functions; a reinforced stack can distribute damage packets across multiple parts. Layer missile defenses around the expected threats. Recovery must match exposure and expected service life."
+questions = ["Which internal locations are protected from the expected incoming directions?", "Which components share likely damage paths, and do the resulting packets exceed their destruction thresholds?", "Will losing one location remove both the main and backup copy of a critical function?", "Can defenses and repairs keep pace long enough to complete the job?", "Is extra recovery worth its points on this particular ship?"]
+
+[[principles]]
+id = "economy"
+title = "Spend where it changes the outcome"
+summary = "Every fitting consumes points, volume, a socket, or operating resources. Compare meaningful performance gains with extra hulls, ammunition, redundancy, or support elsewhere. Deliberately lean or 'cringed' ships can be sound designs. Lower investment should follow an explicit role and loss budget, not an accidental omission."
+questions = ["Does this module affect the installed weapons or systems?", "Is the next buff more valuable than another useful capability?", "Would a more durable magazine hold the intended ammunition in this socket at the actual current cost?", "Which equipment can be omitted because the ship is protected, replaceable, or single-use?"]
+
+[[principles]]
+id = "support"
+title = "Account for shared support and control demands"
+summary = "Evaluate ships in their operating groups. A missing onboard sensor or defense may be supplied elsewhere, but ownership alone does not prove range, line of sight, connectivity, availability, or player attention. Additional independent assets increase coverage and can increase control demands."
+questions = ["Which named ship or teammate supplies each missing capability?", "Will that support remain available along the planned route and after casualties?", "How many separate formations, seekers, jammers, facings, and launch cycles must the player manage?", "Does the design still meet its mission if the support ship is busy or destroyed?"]
+
+[[investment_modes]]
+id = "standard"
+title = "Sustained service"
+summary = "Default to a solid, repeatable ship with recovery and redundancy appropriate to its role, value, and exposure. This does not require every support ship to meet frontline survivability standards."
+questions = ["Can it continue contributing after the first damaging exchange?", "Are critical backups separated from common failure paths?"]
+
+[[investment_modes]]
+id = "lean"
+title = "Deliberately lean / cringed"
+summary = "Accept reduced protection, recovery, redundancy, or independence to fund the rest of the fleet. Valid examples include cheap cappers, protected missile and rail platforms, and single-use beam destroyers. Essential requirements for the intended action still apply. A cheap beam ship still needs to reach and apply its beam effectively."
+questions = ["Which ship is lean, which equipment was deliberately omitted, and where are the saved points spent?", "What must it achieve before loss is acceptable?", "Does terrain or a named support asset make the assumption credible?", "If it survives its first action, does it have a useful follow-up job?"]
+
+[[layout_concepts]]
+id = "protected-regions"
+title = "Protected internal regions"
+summary = "Internal slots are not equally exposed to gunfire. The project owner identifies the Axford's low central stack near the bottom mount as a particularly protected location. Use such regions for functions that must remain available, while considering expected incoming directions and the paths through the hull."
+status = "player-observed; exact sockets and geometry pending verification"
+source = "Project owner, design discussion, 2026-09-12"
+conditions = ["Protection depends on hull geometry, impact direction, penetration path, and weapon effect.", "A verbal location must be mapped to verified physical sockets before automatic placement advice.", "A saved socket key or list order alone does not establish adjacency or safety."]
+
+[[layout_concepts]]
+id = "reinforced-stacks"
+title = "Reinforced stacks and destruction thresholds"
+summary = "Grouping reinforced components along likely damage paths can divide damage among multiple parts. Smaller damage packets can fail the destruction threshold even when parts have exhausted their ordinary health. This can make a reinforced nose stack exceptionally resistant to some missile strikes and gunfire. Layout, component thresholds, and the attack's damage distribution must be considered together."
+status = "conditional packet calculator implemented 2026-10-01 against the wiki-audited 0.6.2.6 public build; specific arrangements still require geometry and current component data"
+source = "Project owner, design discussion, 2026-09-12; curated advice fb-038; pinned stock mechanics and asset hashes in the damage model"
+conditions = ["Parts must participate in the same damage distribution; mere proximity in a UI list proves nothing.", "Resistance is conditional on the incoming damage path and packet size relative to component thresholds.", "Do not turn an observed missile-resistant stack into an unconditional missile-immunity claim.", "Stacking can protect parts while also concentrating critical functions; assess both effects."]
+mechanics = "Even-spread damage is divided before the recipient's destruction check. Destruction requires a packet strictly above the threshold and resulting zero HP; reinforced parts additionally require already-zero committed health. Stock modular HEI has a 50 HP maximum ray, independent of warhead size. Ordinary AP uses the first recipient; rail uses falloff and ignores hull DR. Use the optional fleetcheck calculator with an explicit assumed hit collection. Not destroyed does not necessarily mean functional."
+
+[[layout_concepts]]
+id = "layout-review-contract"
+title = "What a layout evaluator must know"
+summary = "Automatic layout review needs hull-specific socket geometry and occupied volumes, the expected attack direction and weapon family, current part health and destruction-threshold behavior, and a verified mapping from save keys to physical parts. The current calculator compares an explicitly assumed group against a selected damage profile; it cannot establish that the group shares an actual hit or remains functional."
+status = "engineering requirement"
+source = "Strategy module design, 2026-09-12"
+conditions = ["Keep measured geometry separate from player claims about safe regions.", "Evaluate primary and backup function survival, not just total hull or component health.", "Use repeatable gunfire and missile trials to test a proposed arrangement after checking the mechanics."]
+
+[[roles]]
+id = "frontline"
+title = "Frontline anchor"
+summary = "Apply repeatable combat pressure while occupying space and surviving return fire. Individual escorts may still be lean support ships."
+targets = ["Enemy combatants contesting the firing lane or exposing themselves to threaten teammates"]
+dependencies = ["Usable tracks under expected jamming", "Facing and range control", "Missile and craft protection appropriate to the team plan"]
+tradeoffs = ["Useful firepower versus recovery and redundancy", "Local support equipment versus another supporting hull", "Weapon arcs versus exposed hull and internal paths"]
+success_measures = ["Time contributing useful fire", "Space held or gained", "Combat function retained after exchanges"]
+
+[[roles]]
+id = "skirmish"
+title = "Mobile skirmisher"
+summary = "Choose favorable engagements, attack vulnerable assets, and leave unfavorable fights. Mobility and information make the weapon package usable."
+targets = ["Light assets and exposed flanks within a favorable engagement window"]
+dependencies = ["Route and flank awareness", "Mobility and jamming or cover", "An answer or escape plan for heavier opponents"]
+tradeoffs = ["Burst and mobility versus prolonged durability", "Missiles for a target gap versus more primary firepower"]
+success_measures = ["Useful attacks completed", "Successful disengagements", "Pressure on flanks and supporting ships"]
+
+[[roles]]
+id = "denial"
+title = "Point or approach denial"
+summary = "Make occupying an objective or crossing an approach dangerous from a position that can be sustained or deliberately traded."
+targets = ["Capture ships or combatants entering the controlled lane"]
+dependencies = ["A firing window and a cover plan", "Pre-aligned weapons and suitable track quality", "A fallback or an explicit single-use attack plan"]
+tradeoffs = ["Repeated exposure and recovery versus a cheaper expendable ambush", "Local defenses versus allied cover"]
+success_measures = ["Enemy captures delayed or prevented", "Access denied", "Critical target removed for acceptable cost"]
+
+[[roles]]
+id = "capture"
+title = "Capture asset"
+summary = "Reach, take, and contest objectives. Sacrificing a cheap ship can be correct when the scoring or positional benefit warrants it."
+targets = ["Objectives and vulnerable enemy capture assets, where armed for that task"]
+dependencies = ["A viable route and sufficient mobility", "Awareness of denial weapons", "An explicit replacement or loss budget"]
+tradeoffs = ["Minimum useful cost versus protection that actually changes capture success", "Offensive ability versus expendability"]
+success_measures = ["Captures and recaptures", "Time and points gained", "Enemy resources diverted"]
+
+[[roles]]
+id = "scouting"
+title = "Scouting and targeting support"
+summary = "Provide information or targeting quality at the place and time the team needs it. State whether the asset detects, identifies, tracks accurately, or supplies a lock."
+targets = ["Enemy movements, flanks, and targets requiring a better firing solution"]
+dependencies = ["Appropriate sensor and communications capability", "Survivable coverage position", "Offset viewing angles where needed"]
+tradeoffs = ["Wide coverage versus accurate directional tracking", "Low signature and cost versus endurance and self-defense"]
+success_measures = ["Useful coverage and track continuity", "Attacks enabled", "Ambushes detected early enough to act"]
+
+[[roles]]
+id = "missile-support"
+title = "Backline missile support"
+summary = "Deliver planned salvos against targets valuable enough to justify their cost. The launch platform can be deliberately lean when its location and support make that viable."
+targets = ["Targets matched to the loaded seekers, warheads, penetration aids, and salvo size"]
+dependencies = ["Target information and any required command or illumination support", "Launch channels and usable inventory", "Protected firing location and a relocation plan"]
+tradeoffs = ["More missiles versus platform protection", "Salvo cost versus expected target value", "Specialized missiles versus a manageable inventory"]
+success_measures = ["Useful strikes completed before ammunition or platform loss", "Important targets removed or displaced", "Value of support provided to teammates"]
+
+[[roles]]
+id = "carrier-support"
+title = "Carrier and craft support"
+summary = "Build a launch, sensing, escort, attack, and recovery cycle. Craft inventory alone does not describe the usable force."
+targets = ["Enemy craft, exposed ships, or reconnaissance needs according to the selected air group"]
+dependencies = ["Sensor coverage for craft", "Launch and recovery throughput", "A survivable carrier position and appropriate escort or missile cover"]
+tradeoffs = ["Launch tempo versus more stored craft", "Strike load versus fighter cover", "Control demands versus simultaneous missions"]
+success_measures = ["Sustained useful sorties", "Coverage or void control", "Craft recovered and ready for the next mission"]
+
+[[build_sequence]]
+id = "brief"
+title = "Write the design brief"
+summary = "Specify faction, fleet or ship scope, role, target set, point budget, standard or lean investment, expected support, and control tolerance. Record per-ship exceptions within a mixed fleet."
+[[build_sequence]]
+id = "reference"
+title = "Select a reference package"
+summary = "Start from a suitable starter ship, game ship template, or reviewed personal design. Preserve its provenance and identify the operating assumptions being inherited. A template name is not evidence of quality."
+[[build_sequence]]
+id = "fit"
+title = "Complete and place the package"
+summary = "Choose weapons and ammunition, support their firing pattern, supply targeting and engineering, then arrange critical and reinforced parts with the intended facing and damage paths in mind. Confirm actual socket legality, power, crew, capacity, and cost in the game."
+[[build_sequence]]
+id = "allocate"
+title = "Allocate support and budget"
+summary = "Assign each shared capability to a named provider. Decide what survives one failure and what is deliberately expendable. Compare each proposed addition with its opportunity cost elsewhere in the fleet."
+[[build_sequence]]
+id = "evaluate"
+title = "Review and compare changes"
+summary = "Run the finite automatic checks, work through role and layout questions, and compare the proposed change with the original. Preserve why a warning was accepted instead of silently treating it as fixed."
+[[build_sequence]]
+id = "validate"
+title = "Validate the actual game design"
+summary = "Load and recalculate through the game, then test role-appropriate scenarios. A capper is judged by objective contribution; a lean rail ship by protected fire support; a frontline ship by useful fighting time. Neither a valid save nor zero warnings proves competitive quality."
+
+[[examples]]
+id = "oak"
+roles = ["frontline"]
+title = "TF Oak: repeated gunship package"
+faction = "ans"
+summary = "Two Axford gunships pair heavy cannons with plotting, reload support, HE/AP ammunition, fire control, recovery, and defensive equipment."
+lessons = ["Inspect the full combat package before changing an individual fitting.", "Repeated damage capability can coexist with complementary sensor equipment.", "Low control burden is a design objective."]
+dependencies = ["Facing and range control", "Team support for roles outside the gun formation"]
+source_file = "Starter Fleets - Alliance/TF Oak.fleet"
+[[examples]]
+id = "cobalt"
+roles = ["frontline"]
+title = "Cobalt Squadron: faction-specific anchor support"
+faction = "osp"
+summary = "Two Ocellos perform a similar heavy-gun role, with fire-control radars, illuminators, laser defenses, and complementary missile defenses."
+lessons = ["A shared role does not imply identical faction equipment.", "Assess how each ship supports nearby friendlies."]
+dependencies = ["Bow-facing exposure plan", "Nearby assets that can use the support"]
+source_file = "Starter Fleets - Protectorate/Cobalt Squadron.fleet"
+[[examples]]
+id = "ash"
+roles = ["denial", "skirmish"]
+title = "TF Ash: beam application and shared fire control"
+faction = "ans"
+summary = "Three beam destroyers each carry two FPAs, supported by an EW corvette. Energy Transfer lacks an onboard Bullseye while the other destroyers carry one."
+lessons = ["The approach and denial of retaliation are part of the weapon package.", "Missing onboard fire control can indicate a support dependency rather than a fitting mistake."]
+dependencies = ["Ambush or covered approach", "Shared targeting when no onboard lock is available"]
+source_file = "Starter Fleets - Alliance/TF Ash.fleet"
+[[examples]]
+id = "kyanite"
+roles = ["frontline", "skirmish"]
+title = "Kyanite Squadron: dedicated tracking support"
+faction = "osp"
+summary = "Two broadside lineships are supported by an R400 tracking tug."
+lessons = ["Distinguish detection from accurate fire control.", "Moving support to another hull preserves combatant slots but creates a dependency."]
+dependencies = ["Tracking tug orientation and survival", "Pre-aligned broadsides and protection from flanks"]
+source_file = "Starter Fleets - Protectorate/Kyanite Squadron.fleet"
+[[examples]]
+id = "zircon"
+roles = ["skirmish", "denial"]
+title = "Zircon Squadron: complementary damage sequence"
+faction = "osp"
+summary = "Plasma and 100mm liners combine armor degradation with follow-on damage, supported by an early-warning tug."
+lessons = ["Mixed weapons can form one coherent attack.", "Choose ammunition for the target's current condition."]
+dependencies = ["Ambush information", "Enough exposure time to complete the sequence"]
+source_file = "Starter Fleets - Protectorate/Zircon Squadron.fleet"
+[[examples]]
+id = "redwood"
+roles = ["frontline"]
+title = "TF Redwood: different investment by role"
+faction = "ans"
+summary = "A well-supported cannon Axford operates with economical rail destroyers. Singing Mantle has no fitted search radar or PD turrets."
+lessons = ["Frontline recovery requirements do not transfer automatically to backline ships.", "Lean support ships depend on position and shared information."]
+dependencies = ["Protected rail positions", "Reliable target information"]
+source_file = "Starter Fleets - Alliance/TF Redwood.fleet"
+[[examples]]
+id = "hemlock"
+roles = ["missile-support", "denial"]
+title = "TF Hemlock: different jobs over time"
+faction = "ans"
+summary = "A missile-focused Axford carries a beam turret as a later fallback."
+lessons = ["A secondary weapon may serve a later phase instead of diluting the first.", "Evaluate the fallback's cost against more ammunition or support."]
+dependencies = ["Protected missile deployment", "A safe opportunity for the later beam role"]
+source_file = "Starter Fleets - Alliance/TF Hemlock.fleet"
+[[examples]]
+id = "tantalum"
+roles = ["capture", "scouting", "missile-support"]
+title = "Tantalum Squadron: objectives and information"
+faction = "osp"
+summary = "Distributed scouting and capture assets operate with missile support and explicit reliance on teammates for craft protection."
+lessons = ["Objective contribution and information can justify low direct damage.", "A team fleet can deliberately leave roles to teammates."]
+dependencies = ["Independent asset control", "Allied craft cover where required"]
+source_file = "Starter Fleets - Protectorate/Tantalum Squadron.fleet"
+
+[[review_backlog]]
+id = "quantitative-layout"
+summary = "Map physical sockets and occupied volumes, verify safe-region claims, and test reinforced stacks against specified damage paths before generating placement warnings."
+[[review_backlog]]
+id = "current-performance"
+summary = "Supply current game-calculated cost, power, crew, magazine capacity, hull modifiers, weapon cadence, arcs, and damage thresholds. The identity catalog alone cannot provide them."
+[[review_backlog]]
+id = "community-questions"
+summary = "Resolve knowledge/QUESTIONS.md before automating disputed restore, ARR, DC-team, or universal component-avoidance thresholds. Preserve community provenance and patch sensitivity."
+[[review_backlog]]
+id = "creation"
+summary = "Use game ship templates as reference candidates, preserve missile and craft dependencies, and apply reviewed changes through the game's fitting and serialization APIs. This module currently reads designs and produces guidance; it does not create legal game fits."
