@@ -1,4 +1,5 @@
 import asyncio
+import importlib
 from types import SimpleNamespace as NS
 
 import discord
@@ -160,3 +161,32 @@ def test_community_entries_come_from_advice_cog(monkeypatch):
     advice = NS(_corpus=lambda: [{'id': 'fb-001'}, {'id': 'ca-3', 'rule': 'x'}])
     cog.bot = NS(get_cog=lambda name: advice if name == 'Advice' else None)
     assert cog._community_entries() == [{'id': 'ca-3', 'rule': 'x'}]
+
+
+def test_library_not_imported_when_disabled(monkeypatch):
+    imported = []
+    real_import = importlib.import_module
+    monkeypatch.setattr(importlib, 'import_module',
+                        lambda name, *a: imported.append(name) or real_import(name, *a))
+    monkeypatch.setattr(Config, 'ASK_ENABLED', False)
+    module = importlib.reload(ask_module)
+    assert 'nebulous_ask' not in imported
+    assert module.nebulous_ask is None
+
+
+def test_feedback_buttons_disable_on_timeout():
+    class Msg:
+        edited = None
+
+        async def edit(self, **kwargs):
+            Msg.edited = kwargs
+
+    async def go():
+        view = ask_module.FeedbackView(FakeAnswerer(result()), 1, 2)
+        view.message = Msg()
+        await view.on_timeout()
+        return view
+
+    view = asyncio.run(go())
+    assert all(item.disabled for item in view.children)
+    assert Msg.edited['view'] is view

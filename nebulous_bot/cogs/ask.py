@@ -7,11 +7,13 @@ answer with its sources, and feedback buttons.
 
 The cog registers only when the library is installed and configured
 (`AskCog.unavailable_reason()` returns None); otherwise the bot runs exactly as
-before. The library import is deliberately eager (module scope) for the same
+before. The library (and the anthropic SDK under it, ~50 MiB RSS) is imported
+only when ASK_ENABLED is on, and then eagerly at module scope for the same
 reason as cogs.formation: a deferred import on the production VM can stall the
 event loop for minutes.
 """
 import asyncio
+import importlib
 import logging
 from pathlib import Path
 
@@ -21,18 +23,21 @@ from discord.ext import commands, tasks
 
 from nebulous_bot.config import Config
 
-try:  # optional dependency: the private NebulousAsk library (vendor/ wheel)
-    import nebulous_ask
-except ImportError:  # pragma: no cover - exercised by the unavailable path
-    nebulous_ask = None
-
 logger = logging.getLogger(__name__)
+
+# Optional dependency: the private NebulousAsk library (vendor/ wheel).
+nebulous_ask = None
+if Config.ASK_ENABLED:
+    try:
+        nebulous_ask = importlib.import_module('nebulous_ask')
+    except ImportError:
+        logger.warning('ASK_ENABLED is on but the nebulous_ask library is not installed')
 
 MAX_QUESTION_CHARS = 500
 MAX_ANSWER_CHARS = 1800
 MAX_SOURCES_SHOWN = 6
 MAX_CONCURRENT_ANSWERS = 2
-FEEDBACK_TIMEOUT_S = 15 * 60
+FEEDBACK_TIMEOUT_S = 14 * 60  # inside the 15-minute interaction-token lifetime, so the final edit works
 _FIELD_LIMIT = 1024
 
 TIER_BADGES = {
@@ -95,6 +100,16 @@ class FeedbackView(discord.ui.View):
         self.log_id = log_id
         self.asker_id = asker_id
         self.voted = set()
+        self.message = None
+
+    async def on_timeout(self):
+        for item in self.children:
+            item.disabled = True
+        if self.message is not None:
+            try:
+                await self.message.edit(view=self)
+            except discord.HTTPException:
+                pass
 
     async def _record(self, interaction, kind):
         if interaction.user.id in self.voted:
@@ -206,7 +221,9 @@ class AskCog(commands.Cog, name='Ask'):
             await ctx.send(result.text, allowed_mentions=none)
             return
         view = FeedbackView(self.answerer, result.log_id, ctx.author.id) if result.log_id else None
-        await ctx.send(embed=build_answer_embed(question, result), view=view, allowed_mentions=none)
+        message = await ctx.send(embed=build_answer_embed(question, result), view=view, allowed_mentions=none)
+        if view is not None:
+            view.message = message
 
     @commands.command(name='askstats', hidden=True)
     @commands.is_owner()
