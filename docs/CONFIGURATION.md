@@ -67,6 +67,28 @@ SERVER_CONFIGS=[{"guild_id": 111, "status_channel_id": 222}, {"guild_id": 333, "
 | `TEST_COMMAND_BOT_IDS` | unset | Comma-separated puppet bot IDs allowed to run mention-prefixed smoke commands. Has no effect unless the guild allowlist also matches. |
 | `TEST_COMMAND_GUILD_IDS` | unset | Comma-separated test guild IDs for the puppet harness and owner-triggered guild command sync. See [DISCORD_TEST_HARNESS.md](DISCORD_TEST_HARNESS.md). |
 
+## `/ask` (optional)
+
+`/ask` answers gameplay questions from the private `nebulous_ask` library. It is
+off unless every item below is in place; otherwise the cog is not registered and
+the bot logs why at startup. The library wheel and its corpus go in the
+gitignored `vendor/` folder (built by the library's `scripts/vendor.py`); the
+Dockerfile installs the wheel only when it is present. A new slash command only
+appears in Discord after the owner runs the usual command sync.
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `ASK_ENABLED` | `false` | Master switch. |
+| `ANTHROPIC_API_KEY` | unset | Claude API key. Use a key from a workspace with a monthly spend limit. |
+| `ASK_GUILD_IDS` | unset | Guilds where `/ask` runs. Empty means no guilds (fails closed). |
+| `ASK_CHANNEL_IDS` | unset | Optional channel allowlist inside those guilds. Empty means any channel. |
+| `ASK_ALLOW_DMS` | `false` | Allow `/ask` in direct messages. |
+| `ASK_MODEL` | library default | Claude model ID. |
+| `ASK_DAILY_BUDGET_USD` | `2.0` | Spend per UTC day after which `/ask` replies that the budget is used up. |
+| `ASK_CORPUS_PATH` | `vendor/ask_corpus.sqlite` | Corpus file. |
+| `ASK_LOG_PATH` | beside `DB_PATH` (else the project root) | Answer log: questions, answers, cost, feedback. |
+| `ASK_LOG_RETENTION_DAYS` | `90` | Answer-log rows older than this are deleted daily. |
+
 ## Threshold notifications
 
 To opt in to player-count pings:

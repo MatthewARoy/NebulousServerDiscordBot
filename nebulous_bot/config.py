@@ -153,6 +153,25 @@ class Config:
     TEST_COMMAND_BOT_IDS = parse_id_set(os.getenv('TEST_COMMAND_BOT_IDS', ''))
     TEST_COMMAND_GUILD_IDS = parse_id_set(os.getenv('TEST_COMMAND_GUILD_IDS', ''))
 
+    # /ask (cogs/ask.py): answers from the optional private nebulous_ask
+    # library. Off unless enabled, installed (vendor/ wheel), given a corpus
+    # and an API key, and allowlisted per guild. The answer log lives beside
+    # the database so it survives redeploys.
+    ASK_ENABLED = parse_bool(os.getenv('ASK_ENABLED', 'false'))
+    ANTHROPIC_API_KEY = os.getenv('ANTHROPIC_API_KEY', '')
+    ASK_MODEL = os.getenv('ASK_MODEL', '')  # empty = the library's default
+    _PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    ASK_CORPUS_PATH = os.getenv('ASK_CORPUS_PATH', os.path.join(_PROJECT_ROOT, 'vendor', 'ask_corpus.sqlite'))
+    ASK_LOG_PATH = os.getenv(
+        'ASK_LOG_PATH',
+        os.path.join(os.path.dirname(os.getenv('DB_PATH')) if os.getenv('DB_PATH') else _PROJECT_ROOT,
+                     'ask_log.sqlite'))
+    ASK_DAILY_BUDGET_USD = float(os.getenv('ASK_DAILY_BUDGET_USD', '2.0'))
+    ASK_LOG_RETENTION_DAYS = int(os.getenv('ASK_LOG_RETENTION_DAYS', '90'))
+    ASK_GUILD_IDS = parse_id_set(os.getenv('ASK_GUILD_IDS', ''))
+    ASK_CHANNEL_IDS = parse_id_set(os.getenv('ASK_CHANNEL_IDS', ''))  # empty = any channel in those guilds
+    ASK_ALLOW_DMS = parse_bool(os.getenv('ASK_ALLOW_DMS', 'false'))
+
     # Version Information
     VERSION = "2.11.0"
     CHANGELOG = [
