@@ -81,3 +81,7 @@ ORACLE_SERVER_ISSUES.md
 
 # Claude Code personal settings (machine-local)
 .claude/settings.local.json
+
+# Private /ask library wheel and corpus, copied in at deploy time (never committed)
+vendor/
+ask_log*.sqlite
