@@ -159,7 +159,7 @@ class Config:
     # the database so it survives redeploys.
     ASK_ENABLED = parse_bool(os.getenv('ASK_ENABLED', 'false'))
     ANTHROPIC_API_KEY = os.getenv('ANTHROPIC_API_KEY', '')
-    ASK_MODEL = os.getenv('ASK_MODEL', '')  # empty = the library's default
+    ASK_MODEL = os.getenv('ASK_MODEL', '')  # empty = the library's default (claude-haiku-5-5)
     _PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     ASK_CORPUS_PATH = os.getenv('ASK_CORPUS_PATH', os.path.join(_PROJECT_ROOT, 'vendor', 'ask_corpus.sqlite'))
     ASK_LOG_PATH = os.getenv(

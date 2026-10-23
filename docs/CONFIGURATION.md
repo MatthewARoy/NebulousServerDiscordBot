@@ -83,7 +83,7 @@ appears in Discord after the owner runs the usual command sync.
 | `ASK_GUILD_IDS` | unset | Guilds where `/ask` runs. Empty means no guilds (fails closed). |
 | `ASK_CHANNEL_IDS` | unset | Optional channel allowlist inside those guilds. Empty means any channel. |
 | `ASK_ALLOW_DMS` | `false` | Allow `/ask` in direct messages. |
-| `ASK_MODEL` | library default | Claude model ID. |
+| `ASK_MODEL` | library default (`claude-haiku-5-5`) | Claude model ID; set it to override the default. |
 | `ASK_DAILY_BUDGET_USD` | `2.0` | Spend per UTC day after which `/ask` replies that the budget is used up. |
 | `ASK_CORPUS_PATH` | `vendor/ask_corpus.sqlite` | Corpus file. |
 | `ASK_LOG_PATH` | beside `DB_PATH` (else the project root) | Answer log: questions, answers, cost, feedback. |
