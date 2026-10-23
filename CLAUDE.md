@@ -146,3 +146,10 @@ Cross-cutting details that take multi-file reading to discover:
 - Ops runbook (OOM triage, why `dnf-makecache` is masked on the VM):
   `docs/OPS.md`. Never commit VM IPs/SSH details (gitignored
   `ORACLE_CONNECT.md` convention).
+
+## Publication and announcements
+
+- Publishing development branches and opening or updating **draft** pull requests after verification are the default authorized actions; no separate confirmation is needed. Keep credentials, local test data and unrelated work out of the publication.
+- This does not cover production deployment or Discord global-sync / intent-cutoff changes.
+- Release announcements are drafted for owner review before being sent anywhere, test channels included. Approval must cover the exact copy, destination channels and timing; never send or schedule notices automatically on deploy or startup.
+- **User-facing guides and help live inside the bot.** Don't direct users to GitHub or external guide files; present review copy in the conversation and in built-in bot responses.
