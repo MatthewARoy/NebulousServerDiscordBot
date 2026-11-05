@@ -26,6 +26,7 @@ from nebulous_bot.cogs.servers import ServersCog
 from nebulous_bot.cogs.admin import AdminCog
 from nebulous_bot.cogs.nextgame import NextGameCog
 from nebulous_bot.cogs.advice import AdviceCog
+from nebulous_bot.cogs.fleet_strategy import FleetStrategyCog
 
 # DELIBERATELY EAGER: cogs.formation imports formation_optimizer (numpy +
 # matplotlib, ~100+ MiB RSS) at module scope, so importing it HERE — at
@@ -175,6 +176,8 @@ def register_application_command_error_handler(bot: commands.Bot) -> None:
 
 async def handle_command_error(ctx: commands.Context, error: commands.CommandError) -> None:
     """Handle prefix and hybrid-command errors without leaking slash failures."""
+    if getattr(error, 'fleet_strategy_handled', False):
+        return
     if isinstance(error, commands.CommandNotFound):
         return
 
@@ -396,6 +399,7 @@ class Command(BaseCommand):
                 await bot.add_cog(FormationCog(bot))
                 await bot.add_cog(NextGameCog(bot))
                 await bot.add_cog(AdviceCog(bot))
+                await bot.add_cog(FleetStrategyCog(bot))
 
                 await bot.start(Config.DISCORD_TOKEN)
             except KeyboardInterrupt:

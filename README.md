@@ -15,9 +15,13 @@ fleet `.fleet` files.
 It runs the production deployment for the Nebulous community on Oracle
 Cloud's Always Free tier.
 
-> **Status:** 2.10.0 deployed September 30, 2026, with 19 global slash commands
+> **Status:** 2.11.0 deployed October 1, 2026, with 21 global slash commands
 > and all privileged intents disabled. Run `/guide` inside Discord for user help.
 > To run your own instance, follow the [Quickstart](#quickstart).
+
+`/shipbuilding` and `/fleetcheck` are deployed and globally registered. The
+[2.11.0 execution record](docs/releases/2.11.0-rollout-result.md) records the
+verified artifact, private geometry setup and acceptance limits.
 
 ## What it looks like
 
@@ -55,6 +59,13 @@ Cloud's Always Free tier.
 - **Fleet formation optimizer.** `/formation` accepts a `.fleet` XML file
   and returns a compacted version (with planar / symmetrical / clear-arcs
   variants) plus an optional GIF of the optimization run.
+- **Shipbuilding and fleet review.** `/shipbuilding` explains role, layout
+  and investment choices. `/fleetcheck` reviews an uploaded fleet or ship
+  without changing it. Optional private geometry enables sampled DT findings
+  and limited empty-magazine addition candidates; unsupported coverage stays
+  unknown. Reports retain vulnerable supporting parts, and the overlay
+  projection withholds blue when support is vulnerable or unknown. Neither
+  the advice nor the colors certify combat immunity; no Drydock UI is included.
 - **Production setup, not a toy.** Django for ORM/migrations/admin, Gunicorn
   for a health endpoint, Docker for packaging, Oracle Cloud deploy script,
   GitHub Actions CI.
@@ -74,6 +85,8 @@ Python 3.11 · Django 4.2 LTS · discord.py · SQLite · Docker · Oracle Cloud
 ```
 nebulous_bot/        the bot (Django app, entry point: management/commands/runbot.py)
 formation_optimizer/ standalone fleet-formation library + tests
+fleet_strategy/      independent review, packet/geometry assessment and planning APIs
+knowledge/strategy/  versioned strategy, checks and audited damage profiles
 deployment/          Docker + Oracle Cloud deploy
 docs/                full documentation
 ```
@@ -122,6 +135,7 @@ Full walkthrough: [`docs/QUICKSTART.md`](docs/QUICKSTART.md).
 - [`docs/CONFIGURATION.md`](docs/CONFIGURATION.md) — environment variables
 - [`docs/COMMANDS.md`](docs/COMMANDS.md) — every Discord command
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — how the pieces fit together
+- [`docs/STRATEGY_MODULE.md`](docs/STRATEGY_MODULE.md) — evaluator evidence, optional private geometry and integration limits
 - [`docs/OPS.md`](docs/OPS.md) — production operations notes
 - [`docs/RELEASE_2.10.0.md`](docs/RELEASE_2.10.0.md) — migration outcome and remaining follow-ups
 - [`deployment/oracle/README.md`](deployment/oracle/README.md) — Oracle

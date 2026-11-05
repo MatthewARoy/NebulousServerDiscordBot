@@ -23,6 +23,8 @@ def test_guide_fits_discord_and_describes_the_running_intent_mode(message_conten
     assert ('still work in server channels' in text) == message_content
     assert ('instead of plain' in text) != message_content
     assert '/formation' in text and '/nextgame' in text
+    assert '/shipbuilding' in text and '/fleetcheck' in text
+    assert 'combat immunity' in text and 'exact keys' in text
 
 
 @pytest.mark.parametrize('slash', [True, False])

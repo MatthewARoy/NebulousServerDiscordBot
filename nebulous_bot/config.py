@@ -154,8 +154,17 @@ class Config:
     TEST_COMMAND_GUILD_IDS = parse_id_set(os.getenv('TEST_COMMAND_GUILD_IDS', ''))
 
     # Version Information
-    VERSION = "2.10.0"
+    VERSION = "2.11.0"
     CHANGELOG = [
+        {
+            "version": "2.11.0",
+            "date": "2026-10-01",
+            "changes": [
+                "Review an uploaded fleet with /fleetcheck and explore build choices with /shipbuilding",
+                "Compare reinforced stacks against selected damage profiles with clearly labeled assumptions and unknowns",
+                "See sampled component findings and candidate additions when local geometry is available; results do not guarantee immunity"
+            ]
+        },
         {
             "version": "2.10.0",
             "date": "2026-09-25",

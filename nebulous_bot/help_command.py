@@ -44,6 +44,7 @@ CATEGORY_META = {
     'Next Game': ('🔔', 'Get pinged when a game is ready'),
     'Formation': ('🛠️', 'Fleet file tools'),
     'Advice': ('💡', 'Community knowledge base'),
+    'Fleet Design': ('📐', 'Shipbuilding and read-only fleet reviews'),
     'Setup': ('⚙️', 'Per-guild configuration (admins)'),
     'Admin': ('🤖', 'Bot status and maintenance'),
     # Not a cog — the help command itself has no category.

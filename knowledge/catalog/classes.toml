@@ -48,3 +48,15 @@ members = ["Stock/Basic CIC", "Stock/Reinforced CIC", "Stock/Citadel CIC"]
 [[class]]
 name = "magazines"
 members = ["Stock/Bulk Magazine", "Stock/Reinforced Magazine", "Stock/Citadel Magazine"]
+
+# Exact gun family named by curated fb-040.
+[[class]]
+name = "plotting-center-guns"
+members = ["Stock/Mk65 Cannon", "Stock/Mk66 Cannon", "Stock/Mk68 Cannon", "Stock/C65 Cannon"]
+
+# Initial ammunition-check coverage: guns observed with 450mm ammunition in
+# the reviewed Oak, Cobalt, and Kyanite starter copies. Not an exhaustive
+# classification of every stock or modded gun.
+[[class]]
+name = "starter-450mm-guns"
+members = ["Stock/Mk66 Cannon", "Stock/Mk68 Cannon", "Stock/C65 Cannon"]

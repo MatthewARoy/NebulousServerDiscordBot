@@ -35,6 +35,18 @@ def build_user_guide(*, message_content: bool) -> discord.Embed:
             "for example `500 -planar`. Add `-skip` to omit the animation. "
             "If another fleet is processing, wait and try again."
         )),
+        ("Build and review ships", (
+            "`/shipbuilding` — read design guidance; try **options**: `frontline --lean`\n"
+            "`/fleetcheck` — upload one `.fleet` or `.ship` using **attachment** (up to 2 MiB). "
+            "The bot returns advice and a complete report without changing the file. "
+            "Regional checks use HEI or 450 AP rays; try **options**: `--threat 450-ap --direction port`. "
+            "HE explosion profiles need the manual calculator with the current geometry cache. "
+            "Missing geometry or unsupported coverage is grey. "
+            "For a manual DT scenario, put `--stack SHIP:SOCKET,SOCKET --threat hei --dr 0.2` "
+            "in **options**, using exact keys from your first report. Manual blue is conditional, "
+            "amber exceeds DT, grey is unknown. Regional reports also flag vulnerable support. HP loss and disabled functions remain possible; "
+            "the colors do not certify combat immunity. Read the report's assumptions and limits."
+        )),
         ("Familiar commands and help", (
             ("Plain `!commands` still work in server channels during the transition. "
              "Start using slash commands now; plain server commands will stop at cutoff.\n"

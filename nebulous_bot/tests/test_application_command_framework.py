@@ -14,6 +14,7 @@ from nebulous_bot.cogs import advice as advice_module
 from nebulous_bot.cogs.admin import AdminCog
 from nebulous_bot.cogs.advice import AdviceCog
 from nebulous_bot.cogs.formation import FormationCog
+from nebulous_bot.cogs.fleet_strategy import FleetStrategyCog
 from nebulous_bot.cogs.nextgame import NextGameCog
 from nebulous_bot.cogs.servers import ServersCog
 from nebulous_bot.cogs.setup import SetupCog
@@ -232,6 +233,7 @@ async def _build_complete_bot():
         FormationCog,
         NextGameCog,
         AdviceCog,
+        FleetStrategyCog,
     ):
         await bot.add_cog(cog_type(bot))
     return bot
@@ -260,6 +262,8 @@ def test_complete_public_application_command_tree_is_test_ready(monkeypatch):
         "serverstats",
         "graph",
         "advice",
+        "shipbuilding",
+        "fleetcheck",
     }
 
     top_level = bot.tree.get_commands()

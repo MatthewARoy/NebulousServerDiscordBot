@@ -5,11 +5,16 @@ usable RAM, 3.5 GiB swap). The shape is small but adequate — the bot ran for
 8 weeks unattended without incident before a single trigger took it down
 five times in one day. This document is the post-mortem and the runbook.
 
-Current release: **2.10.0**, deployed September 30 with all privileged intents
-off. The [execution record](releases/2.10.0-rollout-result.md) records the immutable
-image, backups and acceptance evidence. The host source directory is a deployment
+Current release: **2.11.0**, deployed October 1 with 21 global commands and all
+privileged intents off. The [execution record](releases/2.11.0-rollout-result.md)
+records the immutable image, optional private geometry, backups and acceptance
+evidence. The host source directory is a deployment
 context, not a Git checkout; updating documentation on main does not require a
 production rebuild. Preserve the pinned tested image for documentation-only changes.
+
+The [2.10.0 record](releases/2.10.0-rollout-result.md) remains the historical
+reference for the Discord intent-off migration. One-time `/nextgame`
+subscriptions reset on restart; user guidance remains inside `/guide`.
 
 ## The actual trigger: `dnf-makecache`
 
