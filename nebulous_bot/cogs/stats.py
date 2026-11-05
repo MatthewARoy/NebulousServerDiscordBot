@@ -478,7 +478,14 @@ class StatsCog(commands.Cog, name='Statistics'):
                 )
 
             embed.set_image(url=f"attachment://{graph_file.filename}")
-            embed.set_footer(text="Data from PlayerSnapshot records (5-minute intervals)")
+            if field_name == 'total_players':
+                footer = (
+                    "People on listed servers, sampled every 5 minutes. "
+                    "Player-hosted lobbies and players in menus aren't included."
+                )
+            else:
+                footer = "Sampled every 5 minutes. Counts servers with at least one player."
+            embed.set_footer(text=footer)
 
             # Delete loading message and send graph
             await loading_msg.delete()

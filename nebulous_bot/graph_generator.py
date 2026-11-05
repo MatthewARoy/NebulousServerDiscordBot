@@ -46,7 +46,7 @@ class GraphGenerator:
             Tuple of (field_name, display_name)
 
         Examples:
-            "players online" -> ("total_players", "Players Online")
+            "players online" -> ("total_players", "Players on Servers")
             "servers" -> ("total_servers", "Active Servers")
             "lobbies" -> ("open_lobbies", "Open Lobbies")
             "games" -> ("games_in_progress", "Games In Progress")
@@ -55,10 +55,10 @@ class GraphGenerator:
 
         # Map common phrases to database fields
         mappings = {
-            'players': ('total_players', 'Players Online'),
-            'players online': ('total_players', 'Players Online'),
-            'player count': ('total_players', 'Players Online'),
-            'online': ('total_players', 'Players Online'),
+            'players': ('total_players', 'Players on Servers'),
+            'players online': ('total_players', 'Players on Servers'),
+            'player count': ('total_players', 'Players on Servers'),
+            'online': ('total_players', 'Players on Servers'),
 
             'servers': ('total_servers', 'Active Servers'),
             'server count': ('total_servers', 'Active Servers'),
@@ -83,7 +83,7 @@ class GraphGenerator:
                 return value
 
         # Default to players online
-        return ('total_players', 'Players Online')
+        return ('total_players', 'Players on Servers')
 
     @staticmethod
     def create_graph(

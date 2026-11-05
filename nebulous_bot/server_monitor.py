@@ -968,7 +968,12 @@ class ServerMonitor:
             # Run statistics update in a thread pool to avoid blocking
             import asyncio
             loop = asyncio.get_event_loop()
-            await loop.run_in_executor(None, self.statistics_service.update, self.cached_servers)
+            await loop.run_in_executor(
+                None,
+                self.statistics_service.update,
+                self.cached_servers,
+                self.cached_all_servers,
+            )
         except Exception as e:
             logger.error(f"Error updating statistics: {e}", exc_info=True)
     
