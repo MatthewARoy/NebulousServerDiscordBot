@@ -11,11 +11,55 @@ from discord.ext import commands
 import logging
 import asyncio
 import io
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from nebulous_bot.config import Config
 
 logger = logging.getLogger('nebulous_bot')
+
+# A window opening just before its first Steam sample still counts as covered.
+STEAM_NOTE_GRACE = timedelta(hours=1)
+
+
+def format_player_activity(avg_on_servers, peak_on_servers, avg_per_game, avg_on_steam=None, peak_on_steam=None):
+    """Player Activity field. Steam lines appear only once there is Steam data."""
+    lines = [
+        f"**Avg on Servers:** {avg_on_servers:.1f}",
+        f"**Peak on Servers:** {peak_on_servers}",
+        f"**Avg Players/Game:** {avg_per_game:.1f}",
+    ]
+    if avg_on_steam is not None and peak_on_steam is not None:
+        lines += [
+            f"**Avg on Steam:** {avg_on_steam:.1f}",
+            f"**Peak on Steam:** {peak_on_steam}",
+        ]
+    return "\n".join(lines)
+
+
+def format_current_status(snapshot):
+    """Current Status field. An unknown Steam count is left out, not shown as 0."""
+    lines = [f"**Players on Servers:** {snapshot.total_players}"]
+    if snapshot.steam_concurrent is not None:
+        lines.append(f"**Players on Steam:** {snapshot.steam_concurrent}")
+    lines += [
+        f"**Active Servers:** {snapshot.total_servers}",
+        f"**Games In Progress:** {snapshot.games_in_progress}",
+    ]
+    return "\n".join(lines)
+
+
+def format_steam_note(steam_since, window_start, tz):
+    """Footer note on what Steam counts, and when its data starts if the window is longer.
+
+    Steam figures began long after server figures, so an "All Time" average
+    would otherwise look like it covers the whole history.
+    """
+    if steam_since is None:
+        return None
+    note = "Steam counts everyone running the game"
+    if window_start is None or steam_since > window_start + STEAM_NOTE_GRACE:
+        note += f", tracked since {steam_since.astimezone(tz).strftime('%b %d, %Y')}"
+    return note
 
 
 class StatsCog(commands.Cog, name='Statistics'):
@@ -46,9 +90,8 @@ class StatsCog(commands.Cog, name='Statistics'):
         await ctx.defer()
 
         from nebulous_bot.models import GameSession, PlayerSnapshot
-        from django.db.models import Count, Avg, Sum
+        from django.db.models import Count, Avg, Max, Min, Q, Sum
         from django.utils import timezone as django_timezone
-        from datetime import timedelta
         from asgiref.sync import sync_to_async
         from zoneinfo import ZoneInfo
 
@@ -107,8 +150,12 @@ class StatsCog(commands.Cog, name='Statistics'):
             if start_date:
                 player_snapshots = player_snapshots.filter(timestamp__gte=start_date)
 
+            # One pass over the rows; Avg, Max and Min all ignore null Steam counts.
             player_stats = player_snapshots.aggregate(
-                avg_players=Avg('total_players')
+                avg_players=Avg('total_players'),
+                avg_steam=Avg('steam_concurrent'),
+                peak_steam=Max('steam_concurrent'),
+                steam_since=Min('timestamp', filter=Q(steam_concurrent__isnull=False)),
             )
 
             # Get actual max
@@ -136,7 +183,8 @@ class StatsCog(commands.Cog, name='Statistics'):
                 'max_players': max_players,
                 'recent_snapshot': recent_snapshot,
                 'first_game': first_game,
-                'top_maps': list(top_maps)
+                'top_maps': list(top_maps),
+                'window_start': start_date,
             }, timeframe_text
 
         result, timeframe_text = await get_statistics()
@@ -187,24 +235,21 @@ class StatsCog(commands.Cog, name='Statistics'):
         avg_players_game = result['stats']['avg_players'] or 0
         embed.add_field(
             name="👥 Player Activity",
-            value=(
-                f"**Avg Players Online:** {avg_players:.1f}\n"
-                f"**Peak Players:** {result['max_players']}\n"
-                f"**Avg Players/Game:** {avg_players_game:.1f}"
+            value=format_player_activity(
+                avg_players,
+                result['max_players'],
+                avg_players_game,
+                result['player_stats']['avg_steam'],
+                result['player_stats']['peak_steam'],
             ),
             inline=True
         )
 
         # Current stats
         if result['recent_snapshot']:
-            snap = result['recent_snapshot']
             embed.add_field(
                 name="📈 Current Status",
-                value=(
-                    f"**Players Online:** {snap.total_players}\n"
-                    f"**Active Servers:** {snap.total_servers}\n"
-                    f"**Games In Progress:** {snap.games_in_progress}"
-                ),
+                value=format_current_status(result['recent_snapshot']),
                 inline=True
             )
 
@@ -220,7 +265,11 @@ class StatsCog(commands.Cog, name='Statistics'):
                 inline=False
             )
 
-        embed.set_footer(text="Use /mapstats for map details • /serverstats for server details • Reach out to Davaned for more info")
+        footer = "Use /mapstats for map details • /serverstats for server details • Reach out to Davaned for more info"
+        steam_note = format_steam_note(result['player_stats']['steam_since'], result['window_start'], pst)
+        if steam_note:
+            footer = f"{steam_note}\n{footer}"
+        embed.set_footer(text=footer)
         await ctx.send(embed=embed)
 
     @commands.hybrid_command(
@@ -382,7 +431,7 @@ class StatsCog(commands.Cog, name='Statistics'):
     )
     @app_commands.rename(graph_args='metric')
     @commands.cooldown(1, 15, commands.BucketType.channel)
-    @app_commands.describe(graph_args='Metric to graph, such as players online, servers, or lobbies')
+    @app_commands.describe(graph_args='Metric to graph: players, steam, servers, lobbies, or games')
     async def show_graph(self, ctx, *, graph_args: str = "players online"):
         """
         Display a graph of data over the last week.
@@ -390,6 +439,7 @@ class StatsCog(commands.Cog, name='Statistics'):
         Usage: !graph [value]
         Examples:
             !graph players online
+            !graph steam
             !graph servers
             !graph lobbies
             !graph games in progress
@@ -404,7 +454,6 @@ class StatsCog(commands.Cog, name='Statistics'):
         from nebulous_bot.models import PlayerSnapshot
         from nebulous_bot.graph_generator import GraphGenerator
         from django.utils import timezone as django_timezone
-        from datetime import timedelta
         from asgiref.sync import sync_to_async
 
         # Parse the graph type from arguments
@@ -421,11 +470,7 @@ class StatsCog(commands.Cog, name='Statistics'):
                 timestamp__gte=week_ago
             ).order_by('timestamp')
 
-            # Extract data points for the requested field
-            data_points = []
-            for snapshot in snapshots:
-                value = getattr(snapshot, field_name, 0)
-                data_points.append((snapshot.timestamp, float(value)))
+            data_points = GraphGenerator.extract_points(snapshots, field_name)
 
             return data_points, field_name, display_name
 
@@ -478,7 +523,19 @@ class StatsCog(commands.Cog, name='Statistics'):
                 )
 
             embed.set_image(url=f"attachment://{graph_file.filename}")
-            embed.set_footer(text="Data from PlayerSnapshot records (5-minute intervals)")
+            if field_name == 'total_players':
+                footer = (
+                    "People on listed servers, sampled every 5 minutes. Player-hosted lobbies "
+                    "and menus aren't included; use the steam metric for everyone."
+                )
+            elif field_name == 'steam_concurrent':
+                footer = (
+                    "Everyone Steam reports running the game, sampled every 5 minutes. "
+                    "Includes menus, solo play and player-hosted lobbies."
+                )
+            else:
+                footer = "Sampled every 5 minutes. Counts servers with at least one player."
+            embed.set_footer(text=footer)
 
             # Delete loading message and send graph
             await loading_msg.delete()
