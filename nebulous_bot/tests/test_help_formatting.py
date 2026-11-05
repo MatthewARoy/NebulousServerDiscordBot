@@ -46,6 +46,7 @@ GRAPH_DOC = """
         Usage: !graph [value]
         Examples:
             !graph players online
+            !graph steam
             !graph servers
             !graph lobbies
             !graph games in progress
@@ -97,6 +98,7 @@ def test_examples_header_takes_the_indented_lines_below_it():
     assert sections.usage == ["!graph [value]"]
     assert sections.examples == [
         "!graph players online",
+        "!graph steam",
         "!graph servers",
         "!graph lobbies",
         "!graph games in progress",

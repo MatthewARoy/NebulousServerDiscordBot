@@ -25,6 +25,57 @@ class SteamAPI:
             await self.session.close()
         self.session = None
 
+    def _ensure_session(self) -> aiohttp.ClientSession:
+        """Return the shared HTTP session, creating it on first use."""
+        if not self.session or self.session.closed:
+            ssl_context = ssl.create_default_context(cafile=certifi.where())
+            connector = aiohttp.TCPConnector(ssl=ssl_context)
+            # aiohttp's default total is 300s — fine for a script, far too
+            # long for a 30s poll loop, where a hung Steam connection would
+            # stall five minutes of cycles. The per-server A2S sweep is
+            # capped separately at 15s, outside this budget.
+            self.session = aiohttp.ClientSession(
+                connector=connector,
+                timeout=aiohttp.ClientTimeout(total=Config.STEAM_API_TIMEOUT),
+            )
+        return self.session
+
+    # This runs inside the monitor cycle and only decorates a snapshot, so it
+    # gets a much shorter leash than the server list call.
+    CONCURRENT_PLAYERS_TIMEOUT = 5  # seconds
+
+    @staticmethod
+    def parse_concurrent_players(data: Optional[Dict]) -> Optional[int]:
+        """Read GetNumberOfCurrentPlayers' reply; None unless Steam says it's good."""
+        response = (data or {}).get('response') or {}
+        count = response.get('player_count')
+        if response.get('result') != 1 or type(count) is not int or count < 0:
+            return None
+        return count
+
+    async def get_concurrent_players(self) -> Optional[int]:
+        """Everyone Steam reports running the game right now, or None if unknown.
+
+        Unlike the server list, this includes menus, solo play and player-hosted
+        lobbies. A failure must never cost the snapshot it accompanies, so every
+        problem comes back as None.
+        """
+        session = self._ensure_session()
+        try:
+            url = "https://api.steampowered.com/ISteamUserStats/GetNumberOfCurrentPlayers/v1/"
+            async with session.get(
+                url,
+                params={'appid': Config.NEBULOUS_APP_ID},
+                timeout=aiohttp.ClientTimeout(total=self.CONCURRENT_PLAYERS_TIMEOUT),
+            ) as response:
+                if response.status != 200:
+                    logger.warning(f"Steam player count request failed with status {response.status}")
+                    return None
+                return self.parse_concurrent_players(await response.json())
+        except Exception as e:
+            logger.warning(f"Error fetching Steam player count: {type(e).__name__}: {e}")
+            return None
+
     async def get_game_servers(self) -> Optional[List[Dict]]:
         """
         Get ALL game servers for Nebulous: Fleet Command using Steam Web API,
@@ -42,17 +93,7 @@ class SteamAPI:
         while None means we don't know. Callers must not install None as a
         fresh result — see ServerMonitor._update_server_list.
         """
-        if not self.session or self.session.closed:
-            ssl_context = ssl.create_default_context(cafile=certifi.where())
-            connector = aiohttp.TCPConnector(ssl=ssl_context)
-            # aiohttp's default total is 300s — fine for a script, far too
-            # long for a 30s poll loop, where a hung Steam connection would
-            # stall five minutes of cycles. The per-server A2S sweep is
-            # capped separately at 15s, outside this budget.
-            self.session = aiohttp.ClientSession(
-                connector=connector,
-                timeout=aiohttp.ClientTimeout(total=Config.STEAM_API_TIMEOUT),
-            )
+        self._ensure_session()
 
         try:
             url = "https://api.steampowered.com/IGameServersService/GetServerList/v1/"

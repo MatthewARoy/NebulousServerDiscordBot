@@ -382,7 +382,7 @@ class StatsCog(commands.Cog, name='Statistics'):
     )
     @app_commands.rename(graph_args='metric')
     @commands.cooldown(1, 15, commands.BucketType.channel)
-    @app_commands.describe(graph_args='Metric to graph, such as players online, servers, or lobbies')
+    @app_commands.describe(graph_args='Metric to graph: players, steam, servers, lobbies, or games')
     async def show_graph(self, ctx, *, graph_args: str = "players online"):
         """
         Display a graph of data over the last week.
@@ -390,6 +390,7 @@ class StatsCog(commands.Cog, name='Statistics'):
         Usage: !graph [value]
         Examples:
             !graph players online
+            !graph steam
             !graph servers
             !graph lobbies
             !graph games in progress
@@ -421,11 +422,7 @@ class StatsCog(commands.Cog, name='Statistics'):
                 timestamp__gte=week_ago
             ).order_by('timestamp')
 
-            # Extract data points for the requested field
-            data_points = []
-            for snapshot in snapshots:
-                value = getattr(snapshot, field_name, 0)
-                data_points.append((snapshot.timestamp, float(value)))
+            data_points = GraphGenerator.extract_points(snapshots, field_name)
 
             return data_points, field_name, display_name
 
@@ -480,8 +477,13 @@ class StatsCog(commands.Cog, name='Statistics'):
             embed.set_image(url=f"attachment://{graph_file.filename}")
             if field_name == 'total_players':
                 footer = (
-                    "People on listed servers, sampled every 5 minutes. "
-                    "Player-hosted lobbies and players in menus aren't included."
+                    "People on listed servers, sampled every 5 minutes. Player-hosted lobbies "
+                    "and menus aren't included; use the steam metric for everyone."
+                )
+            elif field_name == 'steam_concurrent':
+                footer = (
+                    "Everyone Steam reports running the game, sampled every 5 minutes. "
+                    "Includes menus, solo play and player-hosted lobbies."
                 )
             else:
                 footer = "Sampled every 5 minutes. Counts servers with at least one player."

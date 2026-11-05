@@ -76,7 +76,8 @@ def test_snapshot_writes_the_summarized_totals():
         tracker.take_snapshot(servers)
 
     create.assert_called_once_with(
-        total_players=4, total_servers=1, open_lobbies=0, games_in_progress=1
+        total_players=4, total_servers=1, open_lobbies=0, games_in_progress=1,
+        steam_concurrent=None,
     )
 
 
@@ -94,9 +95,15 @@ def make_service():
 
     class FakePlayers:
         seen = None
+        steam = None
+        due = True
 
-        def take_snapshot(self, servers):
+        def should_take_snapshot(self):
+            return self.due
+
+        def take_snapshot(self, servers, steam_concurrent=None):
             self.seen = servers
+            self.steam = steam_concurrent
 
     service.game_tracker = FakeGames()
     service.player_tracker = FakePlayers()
@@ -122,13 +129,56 @@ def test_update_keeps_an_empty_all_server_list_rather_than_falling_back():
     assert service.player_tracker.seen == []
 
 
-def test_monitor_hands_statistics_both_server_caches():
+def make_monitor(steam_count=47):
     monitor = ServerMonitor.__new__(ServerMonitor)
     monitor.statistics_service = make_service()
     monitor.cached_servers = [server(players=5)]
     monitor.cached_all_servers = monitor.cached_servers + [server(players=6, bots=2)]
 
+    class FakeSteam:
+        calls = 0
+
+        async def get_concurrent_players(self):
+            self.calls += 1
+            return steam_count
+
+    monitor.steam_api = FakeSteam()
+    return monitor
+
+
+def test_monitor_hands_statistics_both_server_caches():
+    monitor = make_monitor()
+
     asyncio.run(monitor._update_statistics())
 
     assert monitor.statistics_service.player_tracker.seen is monitor.cached_all_servers
     assert monitor.statistics_service.game_tracker.seen == monitor.cached_servers
+
+
+def test_monitor_passes_steam_count_when_a_snapshot_is_due():
+    monitor = make_monitor(steam_count=47)
+
+    asyncio.run(monitor._update_statistics())
+
+    assert monitor.steam_api.calls == 1
+    assert monitor.statistics_service.player_tracker.steam == 47
+
+
+def test_monitor_skips_the_steam_call_between_snapshots():
+    monitor = make_monitor()
+    monitor.statistics_service.player_tracker.due = False
+
+    asyncio.run(monitor._update_statistics())
+
+    assert monitor.steam_api.calls == 0
+    assert monitor.statistics_service.game_tracker.seen == monitor.cached_servers
+
+
+def test_failed_steam_count_still_writes_the_snapshot():
+    tracker = PlayerCountTracker()
+
+    with patch('nebulous_bot.statistics_tracker.PlayerSnapshot.objects.create') as create:
+        tracker.take_snapshot([server(players=5)], None)
+
+    assert create.call_args.kwargs['total_players'] == 5
+    assert create.call_args.kwargs['steam_concurrent'] is None

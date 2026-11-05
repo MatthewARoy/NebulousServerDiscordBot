@@ -248,18 +248,19 @@ class PlayerCountTracker:
         now = django_timezone.now()
         return (now - self.last_snapshot_time) >= self.snapshot_interval
     
-    def take_snapshot(self, servers: List[Dict]):
+    def take_snapshot(self, servers: List[Dict], steam_concurrent: Optional[int] = None):
         """
         Take a snapshot of current player counts across all servers.
 
         Args:
             servers: Unfiltered list of server dictionaries
+            steam_concurrent: Steam's whole-game player count, None if unknown
         """
         if not self.should_take_snapshot():
             return
 
         totals = summarize_servers(servers)
-        PlayerSnapshot.objects.create(**totals)
+        PlayerSnapshot.objects.create(**totals, steam_concurrent=steam_concurrent)
 
         self.last_snapshot_time = django_timezone.now()
         logger.debug(f"Snapshot taken: {totals['total_players']} players across {totals['total_servers']} servers")
@@ -276,13 +277,19 @@ class StatisticsService:
         self.game_tracker = GameSessionTracker()
         self.player_tracker = PlayerCountTracker()
     
-    def update(self, servers: List[Dict], all_servers: Optional[List[Dict]] = None):
+    def update(
+        self,
+        servers: List[Dict],
+        all_servers: Optional[List[Dict]] = None,
+        steam_concurrent: Optional[int] = None,
+    ):
         """
         Main update method called from the monitoring loop.
 
         Args:
             servers: Display-filtered server states, used for game sessions
             all_servers: Every listed server, used for population snapshots
+            steam_concurrent: Steam's whole-game player count, None if unknown
         """
         # First call after startup: reattach ongoing games from the DB.
         # Safe here (executor thread), unsafe in __init__ (event loop).
@@ -297,7 +304,10 @@ class StatisticsService:
         
         # Take player count snapshot if needed (every 5 minutes)
         try:
-            self.player_tracker.take_snapshot(servers if all_servers is None else all_servers)
+            self.player_tracker.take_snapshot(
+                servers if all_servers is None else all_servers,
+                steam_concurrent,
+            )
         except Exception as e:
             logger.error(f"Error taking player snapshot: {e}", exc_info=True)
 

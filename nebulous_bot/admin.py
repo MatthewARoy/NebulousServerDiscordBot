@@ -51,7 +51,7 @@ class GameSessionAdmin(admin.ModelAdmin):
 
 @admin.register(PlayerSnapshot)
 class PlayerSnapshotAdmin(admin.ModelAdmin):
-    list_display = ('timestamp', 'total_players', 'total_servers', 'open_lobbies', 'games_in_progress')
+    list_display = ('timestamp', 'total_players', 'steam_concurrent', 'total_servers', 'open_lobbies', 'games_in_progress')
     list_filter = ('timestamp',)
     readonly_fields = ('timestamp',)
 

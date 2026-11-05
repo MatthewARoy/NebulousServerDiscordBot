@@ -967,12 +967,18 @@ class ServerMonitor:
         try:
             # Run statistics update in a thread pool to avoid blocking
             import asyncio
+            # Only spend the request on a cycle that will write a snapshot.
+            steam_concurrent = None
+            if self.statistics_service.player_tracker.should_take_snapshot():
+                steam_concurrent = await self.steam_api.get_concurrent_players()
+
             loop = asyncio.get_event_loop()
             await loop.run_in_executor(
                 None,
                 self.statistics_service.update,
                 self.cached_servers,
                 self.cached_all_servers,
+                steam_concurrent,
             )
         except Exception as e:
             logger.error(f"Error updating statistics: {e}", exc_info=True)
