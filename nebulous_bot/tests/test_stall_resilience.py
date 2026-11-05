@@ -198,7 +198,7 @@ def test_a_sustained_forbidden_streak_evicts_the_message(forbidden_monitor):
 def _tracker():
     from nebulous_bot.statistics_tracker import GameSessionTracker
 
-    tracker = GameSessionTracker.__new__(GameSessionTracker)
+    tracker = GameSessionTracker()
     tracker.active_sessions = {'s1': 42}
     return tracker
 

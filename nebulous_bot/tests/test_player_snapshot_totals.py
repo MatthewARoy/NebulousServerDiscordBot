@@ -90,8 +90,8 @@ def make_service():
         def ensure_recovered(self):
             pass
 
-        def update_server_state(self, state):
-            self.seen = (self.seen or []) + [state]
+        def observe(self, servers, all_servers):
+            self.seen = (servers, all_servers)
 
     class FakePlayers:
         seen = None
@@ -110,7 +110,7 @@ def make_service():
     return service
 
 
-def test_update_snapshots_all_servers_but_tracks_games_on_the_filtered_list():
+def test_update_hands_both_lists_to_game_tracking_and_all_servers_to_snapshots():
     service = make_service()
     filtered = [server(players=5)]
     everything = filtered + [server(players=6, bots=2)]
@@ -118,7 +118,7 @@ def test_update_snapshots_all_servers_but_tracks_games_on_the_filtered_list():
     service.update(filtered, everything)
 
     assert service.player_tracker.seen is everything
-    assert service.game_tracker.seen == filtered
+    assert service.game_tracker.seen == (filtered, everything)
 
 
 def test_update_keeps_an_empty_all_server_list_rather_than_falling_back():
@@ -152,7 +152,9 @@ def test_monitor_hands_statistics_both_server_caches():
     asyncio.run(monitor._update_statistics())
 
     assert monitor.statistics_service.player_tracker.seen is monitor.cached_all_servers
-    assert monitor.statistics_service.game_tracker.seen == monitor.cached_servers
+    assert monitor.statistics_service.game_tracker.seen == (
+        monitor.cached_servers, monitor.cached_all_servers
+    )
 
 
 def test_monitor_passes_steam_count_when_a_snapshot_is_due():
@@ -171,7 +173,9 @@ def test_monitor_skips_the_steam_call_between_snapshots():
     asyncio.run(monitor._update_statistics())
 
     assert monitor.steam_api.calls == 0
-    assert monitor.statistics_service.game_tracker.seen == monitor.cached_servers
+    assert monitor.statistics_service.game_tracker.seen == (
+        monitor.cached_servers, monitor.cached_all_servers
+    )
 
 
 def test_failed_steam_count_still_writes_the_snapshot():
