@@ -1,378 +1,139 @@
-#!/bin/bash
-# Deployment script for Oracle Cloud Infrastructure
-# This script helps deploy your bot to an existing OCI VM
-# Prerequisites: 
-#   - OCI VM already set up with Docker
-#   - SSH access configured
-#   - .env file ready
+#!/usr/bin/env bash
+# Deploy the bot to the Oracle VM the way 2.10/2.11 were released: a verified
+# CI image (or the image already running), pinned in the live compose file and
+# started with --no-build. It never rsyncs source and never builds on the VM.
 #
-# Usage:
-#   Option 1: Source config file first
-#     source deployment/oracle/oci-config.sh
-#     ./deployment/oracle/deploy-to-oracle.sh
+#   OCI_VM_HOST=<ip> deployment/oracle/deploy-to-oracle.sh                  # dry run (default)
+#   OCI_VM_HOST=<ip> deployment/oracle/deploy-to-oracle.sh --live           # re-apply config, same image
+#   OCI_VM_HOST=<ip> deployment/oracle/deploy-to-oracle.sh --live --image-dir DIR
+#   OCI_VM_HOST=<ip> deployment/oracle/deploy-to-oracle.sh --rollback /home/opc/bot-release-<stamp>
 #
-#   Option 2: Set environment variables manually
-#     export OCI_VM_HOST=your-vm-ip
-#     export OCI_VM_USER=opc
-#     export OCI_SSH_KEY=~/.ssh/id_ed25519
-#     ./deployment/oracle/deploy-to-oracle.sh
+# DIR holds CI's "nebulous-bot-image" artifact for a commit on origin/main:
+#   gh run download <run-id> -n nebulous-bot-image -D DIR
 #
-#   Option 3: Non-interactive mode
-#     BUILD_ON_VM=y ./deployment/oracle/deploy-to-oracle.sh
-#     or
-#     BUILD_ON_VM=n ./deployment/oracle/deploy-to-oracle.sh
-
-set -e
-
-# Try to load config file if it exists
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-if [ -f "$SCRIPT_DIR/oci-config.sh" ]; then
-    source "$SCRIPT_DIR/oci-config.sh"
-fi
-
-# Configuration (can be overridden by oci-config.sh or environment variables)
-VM_USER="${OCI_VM_USER:-opc}"
-VM_HOST="${OCI_VM_HOST}"
-VM_SSH_KEY="${OCI_SSH_KEY:-~/.ssh/id_ed25519}"
-PROJECT_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )/../.." && pwd )"
-REMOTE_DIR="${REMOTE_DIR:-~/NebulousServerDiscordBot}"
-CONTAINER_NAME="${CONTAINER_NAME:-nebulous-discord-bot}"
-BACKUP_KEEP="${BACKUP_KEEP:-2}"  # Keep last 2 deployment backups
-REMOTE_BACKUP_DIR="${REMOTE_BACKUP_DIR:-/home/opc/nebulous-data/backups}"
-PERSISTENT_DB_PATH="/home/opc/nebulous-data/db.sqlite3"
-
-# Deploy only committed source. Virtual environments and local secrets are
-# ignored by Git and excluded from transfer below.
-if ! git -C "$PROJECT_ROOT" diff --quiet ||
-   ! git -C "$PROJECT_ROOT" diff --cached --quiet ||
-   [ -n "$(git -C "$PROJECT_ROOT" ls-files --others --exclude-standard)" ]; then
-    echo "Refusing to deploy an uncommitted working tree."
-    exit 1
-fi
-
-echo "🚀 Deploying Nebulous Discord Bot to Oracle Cloud"
-echo "=================================================="
-
-# Validate inputs
-if [ -z "$VM_HOST" ]; then
-    echo "❌ Error: OCI_VM_HOST not set"
-    echo "   Usage: OCI_VM_HOST=your-vm-ip ./deploy-to-oracle.sh"
-    exit 1
-fi
-
-# Check if .env exists
-if [ ! -f "$PROJECT_ROOT/.env" ]; then
-    echo "❌ Error: .env file not found in project root"
-    echo "   Please create .env file with your configuration"
-    exit 1
-fi
-
-echo "📋 Configuration:"
-echo "   VM Host: $VM_HOST"
-echo "   VM User: $VM_USER"
-echo "   SSH Key: $VM_SSH_KEY"
-echo "   Container: $CONTAINER_NAME"
-echo "   Database: $PERSISTENT_DB_PATH"
-echo "   Backup dir: $REMOTE_BACKUP_DIR (keep last $BACKUP_KEEP deployment backups)"
-echo ""
-
-# Test SSH connection
-echo "🔌 Testing SSH connection..."
-if ! ssh -i "$VM_SSH_KEY" -o ConnectTimeout=5 "$VM_USER@$VM_HOST" "echo 'Connection successful'" &> /dev/null; then
-    echo "❌ Error: Cannot connect to VM via SSH"
-    echo "   Please check:"
-    echo "   - VM is running"
-    echo "   - SSH key is correct"
-    echo "   - Security list allows SSH (port 22)"
-    exit 1
-fi
-echo "✅ SSH connection successful"
-
-# Check Docker on remote
-echo "🐳 Checking Docker installation..."
-if ! ssh -i "$VM_SSH_KEY" "$VM_USER@$VM_HOST" "command -v docker" &> /dev/null; then
-    echo "❌ Error: Docker not installed on VM"
-    echo "   Please run setup-oracle-vm.sh on the VM first"
-    exit 1
-fi
-echo "✅ Docker is installed"
-
-# Preserve the exact running image before a build can replace its tag.
-ROLLBACK_TAG="nebulous-bot:rollback-$(date -u +%Y%m%d-%H%M%S)"
-ssh -i "$VM_SSH_KEY" "$VM_USER@$VM_HOST" "CONTAINER_NAME=$CONTAINER_NAME ROLLBACK_TAG=$ROLLBACK_TAG bash -s" <<'ROLLBACK_EOF'
+# Runs from Git Bash on Windows, macOS or Linux. It needs bash, ssh, scp, git and
+# sha256sum or shasum. Each remote step runs deployment/oracle/remote_deploy.py
+# on the VM. See docs/releases/ for the acceptance testing a new image needs first.
 set -euo pipefail
-if docker inspect "$CONTAINER_NAME" >/dev/null 2>&1; then
-    running_image=$(docker inspect --format '{{.Image}}' "$CONTAINER_NAME")
-    docker image tag "$running_image" "$ROLLBACK_TAG"
-    test "$(docker image inspect --format '{{.Id}}' "$ROLLBACK_TAG")" = "$running_image"
-    echo "Rollback image retained: $ROLLBACK_TAG ($running_image)"
-fi
-ROLLBACK_EOF
+# Git Bash: never rewrite /home/opc/... arguments into Windows paths.
+export MSYS_NO_PATHCONV=1 MSYS2_ARG_CONV_EXCL='*'
 
-# Detect Docker Compose command on remote (v2 uses 'docker compose', v1 uses 'docker-compose')
-echo "🔍 Detecting Docker Compose version..."
-DOCKER_COMPOSE_CMD=$(ssh -i "$VM_SSH_KEY" "$VM_USER@$VM_HOST" "if docker compose version &>/dev/null; then echo 'docker compose'; elif docker-compose version &>/dev/null; then echo 'docker-compose'; else echo 'NOT_FOUND'; fi")
-if [ "$DOCKER_COMPOSE_CMD" = "NOT_FOUND" ]; then
-    echo "❌ Error: Docker Compose not found on VM"
-    echo "   Please install Docker Compose on the VM:"
-    echo "   sudo curl -L \"https://github.com/docker/compose/releases/latest/download/docker-compose-\$(uname -s)-\$(uname -m)\" -o /usr/local/bin/docker-compose"
-    echo "   sudo chmod +x /usr/local/bin/docker-compose"
-    exit 1
-fi
-echo "✅ Using Docker Compose: $DOCKER_COMPOSE_CMD"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REMOTE_PY="$SCRIPT_DIR/remote_deploy.py"
+VM_HOST="${OCI_VM_HOST:-}"
+VM_USER="${OCI_VM_USER:-opc}"
+SSH_KEY="${OCI_SSH_KEY:-$HOME/.ssh/id_ed25519}"
+REMOTE_DIR="${REMOTE_DIR:-/home/opc/NebulousServerDiscordBot}"
+DATA_DIR="${DATA_DIR:-/home/opc/nebulous-data}"
+CONTAINER_NAME="${CONTAINER_NAME:-nebulous-discord-bot}"
+RELEASE_ROOT="${RELEASE_ROOT:-/home/opc}"
 
-# Create remote directory
-echo "📁 Creating remote directory..."
-ssh -i "$VM_SSH_KEY" "$VM_USER@$VM_HOST" "mkdir -p $REMOTE_DIR/logs"
+MODE=dry-run
+IMAGE_DIR=""
+ROLLBACK_DIR=""
+ASSUME_YES=n
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --live) MODE=live ;;
+        --image-dir) IMAGE_DIR="${2:?--image-dir needs a directory}"; shift ;;
+        --rollback) MODE=rollback; ROLLBACK_DIR="${2:?--rollback needs a release directory}"; shift ;;
+        --yes) ASSUME_YES=y ;;
+        -h|--help) sed -n '2,16p' "$0"; exit 0 ;;
+        *) echo "Unknown argument: $1 (see --help)" >&2; exit 64 ;;
+    esac
+    shift
+done
 
-# Backup existing database BEFORE deployment (critical: happens before container stops)
-echo "💾 Creating database backup before deployment..."
-echo "   ⚠️  This backup protects your data - do not skip!"
-ssh -i "$VM_SSH_KEY" "$VM_USER@$VM_HOST" "BACKUP_KEEP=$BACKUP_KEEP REMOTE_BACKUP_DIR=$REMOTE_BACKUP_DIR PERSISTENT_DB=$PERSISTENT_DB_PATH bash -s" <<'EOF'
-set -euo pipefail  # Strict error handling
-KEEP="${BACKUP_KEEP:-2}"
-BACKUP_DIR="${REMOTE_BACKUP_DIR:-/home/opc/nebulous-data/backups}"
-DB_FILE="${PERSISTENT_DB_PATH:-/home/opc/nebulous-data/db.sqlite3}"
-TIMESTAMP=$(date -u +%Y%m%d-%H%M%S)
-
-echo "   - Backup dir: $BACKUP_DIR"
-echo "   - Keep last: $KEEP backups"
-echo "   - Source DB: $DB_FILE"
-
-# Verify source database exists and is readable
-if [ ! -f "$DB_FILE" ]; then
-    echo "   ⚠️  Warning: Database file not found at $DB_FILE"
-    echo "   ⚠️  Skipping backup (this may be a new deployment)"
-    exit 0  # Don't fail deployment if no DB exists yet
-fi
-
-# Verify database is not empty (basic sanity check)
-DB_SIZE=$(stat -f%z "$DB_FILE" 2>/dev/null || stat -c%s "$DB_FILE" 2>/dev/null || echo "0")
-if [ "$DB_SIZE" -lt 1000 ]; then
-    echo "   ⚠️  Warning: Database file is very small ($DB_SIZE bytes) - may be empty or corrupted"
-    echo "   ⚠️  Proceeding with backup anyway..."
-fi
-
-# Create backup directory
-mkdir -p "$BACKUP_DIR" || {
-    echo "   ❌ Error: Cannot create backup directory $BACKUP_DIR"
-    exit 1
+die() { echo "❌ $*" >&2; exit 1; }
+confirm() {
+    [ "$ASSUME_YES" = y ] && return 0
+    local reply
+    read -r -p "$1 [y/N] " reply
+    [ "$reply" = y ] || [ "$reply" = Y ] || die "aborted; nothing changed by this step"
 }
 
-# Create backup with timestamp
-BACKUP_FILE="$BACKUP_DIR/db-deploy-$TIMESTAMP.sqlite3"
-# A byte copy can omit committed WAL pages or race an active transaction.
-# SQLite's online backup API takes a consistent snapshot while the bot runs.
-python3 - "$DB_FILE" "$BACKUP_FILE" <<'SQLITE_BACKUP_PY'
-from pathlib import Path
-from contextlib import closing
-import sqlite3
-import sys
-import time
+# A CRLF checkout breaks the shebang and the program piped to the VM.
+if grep -q $'\r' "$0"; then die "$0 has CRLF line endings; re-checkout with LF (see .gitattributes)"; fi
+[ -n "$VM_HOST" ] || die "OCI_VM_HOST is not set (the VM address lives in ORACLE_CONNECT.md)"
+[ -f "$REMOTE_PY" ] || die "missing $REMOTE_PY"
+[ -f "$SSH_KEY" ] || die "SSH key not found: $SSH_KEY (set OCI_SSH_KEY)"
 
-source, destination = map(Path, sys.argv[1:])
-if not source.is_file() or destination.exists():
-    raise SystemExit("Backup requires an existing source and a new destination")
-deadline = time.monotonic() + 120
-def progress(status, remaining, total):
-    if time.monotonic() > deadline:
-        raise TimeoutError("SQLite backup exceeded 120 seconds")
-try:
-    with closing(sqlite3.connect(source.resolve().as_uri() + "?mode=ro", uri=True, timeout=10)) as src:
-        with closing(sqlite3.connect(destination)) as dst:
-            src.backup(dst, pages=256, progress=progress, sleep=0.1)
-            if dst.execute("PRAGMA integrity_check").fetchone() != ("ok",):
-                raise RuntimeError("Backup integrity check failed")
-except BaseException:
-    destination.unlink(missing_ok=True)
-    raise
-print("   Consistent SQLite backup verified")
-SQLITE_BACKUP_PY
+SSH_OPTS=(-i "$SSH_KEY" -o BatchMode=yes -o ConnectTimeout=15 -o ServerAliveInterval=30)
+TARGET="$VM_USER@$VM_HOST"
+COMMON=(--repo "$REMOTE_DIR" --data "$DATA_DIR" --container "$CONTAINER_NAME" --release-root "$RELEASE_ROOT")
 
-# Verify backup was created successfully
-if [ ! -f "$BACKUP_FILE" ]; then
-    echo "   ❌ Error: Backup file was not created"
-    exit 1
+# remote <phase> [args...]: run one remote_deploy.py phase on the VM.
+remote() {
+    local cmd="python3 -" arg
+    for arg in "$@" "${COMMON[@]}"; do cmd="$cmd $(printf '%q' "$arg")"; done
+    tr -d '\r' < "$REMOTE_PY" | ssh "${SSH_OPTS[@]}" "$TARGET" "$cmd"
+}
+
+if [ "$MODE" = rollback ]; then
+    confirm "Restore $ROLLBACK_DIR on the VM and recreate the production container?"
+    remote rollback --release "$ROLLBACK_DIR"
+    exit $?
 fi
 
-BACKUP_SIZE=$(stat -f%z "$BACKUP_FILE" 2>/dev/null || stat -c%s "$BACKUP_FILE" 2>/dev/null || echo "0")
-# Online backups include committed WAL pages; their size can legitimately
-# differ from the main source file. PRAGMA integrity_check above is the gate.
-
-echo "   ✅ Backup created: $BACKUP_FILE ($(numfmt --to=iec-i --suffix=B $BACKUP_SIZE 2>/dev/null || echo ${BACKUP_SIZE}B))"
-
-# Clean up old backups - keep only the last KEEP backups
-# Only delete files matching the deploy backup pattern to avoid accidental deletion
-OLD_BACKUPS=$(ls -1t "$BACKUP_DIR"/db-deploy-*.sqlite3 2>/dev/null | tail -n +$((KEEP + 1)) || true)
-if [ -n "$OLD_BACKUPS" ]; then
-    echo "   🗑️  Removing old backups (keeping last $KEEP):"
-    echo "$OLD_BACKUPS" | while read -r old_backup; do
-        if [ -f "$old_backup" ]; then
-            echo "      - Removing: $(basename "$old_backup")"
-            rm -f "$old_backup" || echo "      ⚠️  Warning: Failed to remove $old_backup"
-        fi
+if [ -n "$IMAGE_DIR" ]; then
+    for f in nebulous-bot.tar.gz SHA256SUMS source-revision.txt; do
+        [ -f "$IMAGE_DIR/$f" ] || die "$IMAGE_DIR/$f is missing (download the CI artifact)"
     done
-else
-    echo "   ℹ️  No old backups to remove"
-fi
-
-# Final verification: list remaining backups
-REMAINING=$(ls -1t "$BACKUP_DIR"/db-deploy-*.sqlite3 2>/dev/null | wc -l || echo "0")
-echo "   📊 Total deployment backups remaining: $REMAINING"
-EOF
-
-BACKUP_EXIT_CODE=$?
-if [ $BACKUP_EXIT_CODE -ne 0 ]; then
-    echo ""
-    echo "❌ ERROR: Database backup failed!"
-    echo "   Deployment stopped to protect your data."
-    echo "   Please check the backup directory and database file manually."
-    exit 1
-fi
-
-# Copy .env file
-echo "📝 Copying .env file..."
-scp -i "$VM_SSH_KEY" "$PROJECT_ROOT/.env" "$VM_USER@$VM_HOST:$REMOTE_DIR/.env"
-
-# Check if docker-compose.yml already exists on VM
-echo "📝 Checking for existing docker-compose.yml..."
-EXISTING_COMPOSE=$(ssh -i "$VM_SSH_KEY" "$VM_USER@$VM_HOST" "test -f $REMOTE_DIR/docker-compose.yml && echo 'EXISTS' || echo 'NOT_FOUND'")
-
-# Build and push Docker image (if using Docker Hub)
-echo ""
-if [ -n "$BUILD_ON_VM" ]; then
-    # Non-interactive mode - use environment variable
-    echo "📦 Using BUILD_ON_VM=$BUILD_ON_VM (non-interactive mode)"
-elif [ "$EXISTING_COMPOSE" = "EXISTS" ]; then
-    echo "📦 Docker Image Options:"
-    echo "   1. Build on VM (recommended for ARM64, will overwrite existing docker-compose.yml)"
-    echo "   2. Use existing docker-compose.yml on VM"
-    echo ""
-    read -p "Build image on VM? (y/n) " -n 1 -r
-    echo
-    BUILD_ON_VM=$REPLY
-else
-    echo "📦 No docker-compose.yml found on VM"
-    echo "   Building on VM to create docker-compose.yml..."
-    echo ""
-    BUILD_ON_VM="y"
-fi
-
-if [[ "$BUILD_ON_VM" =~ ^[Yy]$ ]]; then
-    echo "🔨 Building Docker image on VM..."
-    
-    # Copy project files (excluding large directories). The transfer is
-    # exclude-based, so knowledge/ (entries/ and catalog/) rides along and
-    # the Dockerfile's `COPY . .` bakes it into the image — no include
-    # rule needed when files are added under knowledge/.
-    echo "📤 Copying project files..."
-    rsync -avz --exclude '__pycache__' \
-               --exclude '*.pyc' \
-               --exclude '.git' \
-               --exclude '/.claude/worktrees' \
-               --exclude '.venv' \
-               --exclude '.venv-*' \
-               --exclude '.uv-cache' \
-               --exclude '.migration-test' \
-               --exclude '.pytest_cache' \
-               --exclude '.ruff_cache' \
-               --exclude 'venv' \
-               --exclude 'db.sqlite3' \
-               --exclude 'db.*.sqlite3' \
-               --exclude 'staging' \
-               --exclude '*.log' \
-               --exclude '*.log.*' \
-               --exclude 'node_modules' \
-               --exclude '.env' \
-               --exclude '.env.*' \
-               --exclude '*.sqlite3*' \
-               --exclude 'database-backups' \
-               --exclude 'oci-config.local.sh' \
-               --exclude '/research/' \
-               --exclude '/scripts/collect_qol_research.py' \
-               --exclude '/scripts/process_qol_research.py' \
-               --exclude 'ORACLE_CONNECT.md' \
-               --exclude 'ORACLE_SERVER_ISSUES.md' \
-               -e "ssh -i $VM_SSH_KEY" \
-               "$PROJECT_ROOT/" "$VM_USER@$VM_HOST:$REMOTE_DIR/"
-    
-    # Create docker-compose.yml with build context
-    echo "📝 Creating docker-compose.yml with build context..."
-    ssh -i "$VM_SSH_KEY" "$VM_USER@$VM_HOST" "cat > $REMOTE_DIR/docker-compose.yml" <<'COMPOSE_EOF'
-services:
-  bot:
-    build:
-      context: .
-      dockerfile: deployment/docker/Dockerfile
-    container_name: nebulous-discord-bot
-    env_file:
-      - .env
-    environment:
-      - DJANGO_SETTINGS_MODULE=nebulous_project.settings
-      - PYTHONUNBUFFERED=1
-      - DB_PATH=/mnt/data/db.sqlite3
-    volumes:
-      - /home/opc/nebulous-data:/mnt/data
-      - ./logs:/app/logs
-    ports:
-      # Loopback only: gunicorn also serves Django admin on this port.
-      - "127.0.0.1:8000:8000"
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/').read()"]
-      # 120s, not the compose default 30s: each probe starts a fresh
-      # Python interpreter, and on the 503 MiB Oracle box those cold
-      # page-ins are a measurable share of container block I/O.
-      interval: 120s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-COMPOSE_EOF
-    
-    # Build on VM
-    echo "🔨 Building Docker image..."
-    ssh -i "$VM_SSH_KEY" "$VM_USER@$VM_HOST" "cd $REMOTE_DIR && $DOCKER_COMPOSE_CMD build" || {
-        echo "⚠️  Build failed, trying with docker compose..."
-        ssh -i "$VM_SSH_KEY" "$VM_USER@$VM_HOST" "cd $REMOTE_DIR && docker compose build"
-    }
-else
-    # Use existing docker-compose.yml
-    if [ "$EXISTING_COMPOSE" = "EXISTS" ]; then
-        echo "✅ Using existing docker-compose.yml on VM"
-        echo "⚠️  Make sure it has a valid image name or build configuration"
+    if command -v sha256sum >/dev/null 2>&1; then
+        (cd "$IMAGE_DIR" && sha256sum -c --quiet SHA256SUMS) || die "checksum mismatch in $IMAGE_DIR"
     else
-        echo "❌ Error: No docker-compose.yml found on VM"
-        echo ""
-        echo "This shouldn't happen - the script should have auto-selected build option."
-        exit 1
+        (cd "$IMAGE_DIR" && shasum -a 256 -c --quiet SHA256SUMS) || die "checksum mismatch in $IMAGE_DIR"
     fi
+    REVISION="$(tr -d '\r\n ' < "$IMAGE_DIR/source-revision.txt")"
+    git -C "$SCRIPT_DIR" fetch -q origin main || die "git fetch failed"
+    git -C "$SCRIPT_DIR" merge-base --is-ancestor "$REVISION" origin/main \
+        || die "image revision $REVISION is not on origin/main"
+    echo "✅ Image archive checksum ok; revision $REVISION is on origin/main"
 fi
 
-# Stop existing container
-echo "🛑 Stopping existing container..."
-ssh -i "$VM_SSH_KEY" "$VM_USER@$VM_HOST" "cd $REMOTE_DIR && $DOCKER_COMPOSE_CMD down || true"
+echo "== Preflight (read-only) on $CONTAINER_NAME"
+if [ -n "$IMAGE_DIR" ]; then remote preflight --new-image; else remote preflight; fi
 
-# Start new container
-echo "🚀 Starting bot container..."
-ssh -i "$VM_SSH_KEY" "$VM_USER@$VM_HOST" "cd $REMOTE_DIR && $DOCKER_COMPOSE_CMD up -d"
+if [ "$MODE" = dry-run ]; then
+    echo "Dry run complete; nothing changed. Re-run with --live to deploy."
+    exit 0
+fi
 
-# Wait a moment
-sleep 3
+confirm "Recreate the production container now? The bot is offline for 1-2 minutes and in-memory /nextgame waiters are lost."
 
-# Check status
-echo "📊 Checking container status..."
-ssh -i "$VM_SSH_KEY" "$VM_USER@$VM_HOST" "cd $REMOTE_DIR && $DOCKER_COMPOSE_CMD ps"
+STAMP="$(date -u +%Y%m%d-%H%M%S)"
+RELEASE="$RELEASE_ROOT/bot-release-$STAMP"
+echo "== Backup into $RELEASE"
+remote backup --release "$RELEASE" --stamp "$STAMP"
 
-# Show logs
-echo ""
-echo "📋 Recent logs:"
-ssh -i "$VM_SSH_KEY" "$VM_USER@$VM_HOST" "cd $REMOTE_DIR && $DOCKER_COMPOSE_CMD logs --tail=50"
+IMAGE_ARGS=()
+if [ -n "$IMAGE_DIR" ]; then
+    echo "== Upload and load the image archive"
+    scp "${SSH_OPTS[@]}" "$IMAGE_DIR/nebulous-bot.tar.gz" "$IMAGE_DIR/SHA256SUMS" \
+        "$IMAGE_DIR/source-revision.txt" "$TARGET:$RELEASE/"
+    remote load --release "$RELEASE"
+    IMAGE_ARGS=(--accepted)
+fi
 
-echo ""
-echo "✅ Deployment complete!"
-echo ""
-echo "📊 Useful commands:"
-echo "   View logs: ssh $VM_USER@$VM_HOST 'cd $REMOTE_DIR && docker compose logs -f'"
-echo "   Check status: ssh $VM_USER@$VM_HOST 'cd $REMOTE_DIR && docker compose ps'"
-echo "   Restart: ssh $VM_USER@$VM_HOST 'cd $REMOTE_DIR && docker compose restart'"
-echo "   Stop: ssh $VM_USER@$VM_HOST 'cd $REMOTE_DIR && docker compose down'"
+echo "== Apply"
+if ! remote apply --release "$RELEASE" ${IMAGE_ARGS[@]+"${IMAGE_ARGS[@]}"}; then
+    echo "Apply failed; restoring the backup." >&2
+    remote rollback --release "$RELEASE" || die "ROLLBACK FAILED: run $0 --rollback $RELEASE"
+    exit 2
+fi
+
+echo "== Verify"
+set +e
+remote status --release "$RELEASE" ${IMAGE_ARGS[@]+"${IMAGE_ARGS[@]}"}
+rc=$?
+set -e
+case $rc in
+    0) echo "✅ Deployed and verified. Release record: $RELEASE" ;;
+    2) echo "Hard failure; restoring the backup." >&2
+       remote rollback --release "$RELEASE" || die "ROLLBACK FAILED: run $0 --rollback $RELEASE"
+       exit 2 ;;
+    3) echo "⚠️  Soft failure: production left as deployed. To undo: $0 --rollback $RELEASE" >&2
+       exit 3 ;;
+    *) echo "Status check could not run (exit $rc). To undo: $0 --rollback $RELEASE" >&2
+       exit "$rc" ;;
+esac

@@ -16,7 +16,8 @@ deployment/
 │   ├── ORACLE_SETUP_CHECKLIST.md
 │   ├── docker-compose.oracle.yml   # OCI-tuned compose
 │   ├── setup-oracle-vm.sh          # one-time VM setup
-│   ├── deploy-to-oracle.sh         # deploy from local
+│   ├── deploy-to-oracle.sh         # image-based deploy/rollback (dry run by default)
+│   ├── remote_deploy.py            # the steps it runs on the VM
 │   └── oci-config.sh
 └── scripts/
     ├── load-env.sh                 # safely source .env (handles JSON values)
@@ -46,8 +47,8 @@ docker compose -f deployment/docker/docker-compose.yml up --build
 See [`oracle/README.md`](oracle/README.md) for the full guide.
 
 ```bash
-# from local machine, after setting up the VM once
-./deployment/oracle/deploy-to-oracle.sh
+# from Git Bash/macOS/Linux, after the first manual deploy; dry run by default
+OCI_VM_HOST=<vm> ./deployment/oracle/deploy-to-oracle.sh [--image-dir DIR] [--live]
 ```
 
 ## See also

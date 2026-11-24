@@ -34,14 +34,17 @@ so a release is not done until **both** changelog locations are updated.
 
 4. **Run the verify loop** (`.claude/skills/verify/SKILL.md`), then commit.
 
-5. **Deploy** — the user runs this themselves (needs SSH key + `.env` +
-   `deployment/oracle/oci-config.sh`, which are not in the repo):
+5. **Deploy**: the user runs this themselves. It needs their SSH key and the
+   VM address from the gitignored `ORACLE_CONNECT.md`. The script ships CI's
+   verified image artifact, never source, and dry-runs by default:
    ```
-   ./deployment/oracle/deploy-to-oracle.sh
+   gh run download <run-id> -n nebulous-bot-image -D <dir>
+   OCI_VM_HOST=<vm> ./deployment/oracle/deploy-to-oracle.sh --image-dir <dir>         # dry run
+   OCI_VM_HOST=<vm> ./deployment/oracle/deploy-to-oracle.sh --image-dir <dir> --live
    ```
-   Optionally set `DEPLOYMENT_TIME` (ISO-8601) in the VM env so `!status`
-   shows the deploy time. Remind the user; do not attempt the deploy
-   yourself unless they've provided the config and asked.
+   It stamps `DEPLOYMENT_TIME` itself. Run the isolated acceptance in
+   `docs/releases/` first. Remind the user; do not attempt the deploy
+   yourself unless they have explicitly asked for it.
 
 6. **Post-deploy check**: `!version` in Discord should show the new number;
    `!status` should show monitoring running.

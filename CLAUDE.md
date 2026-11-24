@@ -39,8 +39,10 @@ DISCORD_TOKEN=... .venv/Scripts/python manage.py runbot     # run the bot (needs
 
 Full verification checklist (run before committing): `.claude/skills/verify/SKILL.md`.
 Release/version-bump procedure: `.claude/skills/release/SKILL.md`.
-Deploy is `deployment/oracle/deploy-to-oracle.sh` — user-run, needs local
-SSH config not in the repo.
+Deploy is `deployment/oracle/deploy-to-oracle.sh`. It is user-run and needs
+local SSH config not in the repo. It ships CI's verified image (or re-applies
+config to the running one) with `--no-build`, never rsyncs source or builds on
+the VM, and dry-runs by default. See `deployment/oracle/README.md` § Updating.
 
 ## Architecture
 

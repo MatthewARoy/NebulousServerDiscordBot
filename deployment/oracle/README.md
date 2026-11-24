@@ -49,21 +49,11 @@ Add your configuration (see `ORACLE_CLOUD_MIGRATION_GUIDE.md` for details).
 
 ### Step 3: Deploy
 
-**Option A: Automated Deployment (from local machine)**
+The first deploy on a fresh VM is manual (below). After that, update with
+`deploy-to-oracle.sh` (see [Updating](#-updating)): it changes an existing
+deployment and does not bootstrap one.
 
-```bash
-# Set your VM details
-export OCI_VM_HOST=your-vm-public-ip
-export OCI_VM_USER=ubuntu
-export OCI_SSH_KEY=~/.ssh/id_rsa
-
-# Run deployment script
-cd deployment/oracle
-chmod +x deploy-to-oracle.sh
-./deploy-to-oracle.sh
-```
-
-**Option B: Manual Deployment (on VM)**
+**Manual first deployment (on VM)**
 
 ```bash
 # On the VM
@@ -92,7 +82,8 @@ docker-compose logs -f
 
 - **`setup-oracle-vm.sh`**: Initial VM setup script (installs Docker, configures firewall)
 - **`docker-compose.oracle.yml`**: Docker Compose configuration for OCI
-- **`deploy-to-oracle.sh`**: Automated deployment script from local machine
+- **`deploy-to-oracle.sh`**: image-based deploy, config re-apply and rollback (dry run by default)
+- **`remote_deploy.py`**: the steps it runs on the VM (stdlib only, Python 3.9)
 - **`README.md`**: This file
 
 ## 🔧 Configuration
@@ -148,25 +139,43 @@ curl http://localhost:8000/health/
 
 ## 🔄 Updating
 
-### Method 1: Using Deployment Script
+Production runs a verified CI image pinned by ID in
+`/home/opc/NebulousServerDiscordBot/docker-compose.yml` and started with
+`--no-build`. Never rsync source or build on the VM: the 1/8-OCPU, ~500 MiB host
+can't afford it. `deploy-to-oracle.sh` runs the 2.10/2.11 procedure from Git
+Bash on Windows, macOS or Linux. It **dry-runs by default**, which prints the
+exact compose diff and the names of the `.env` keys it would set.
 
 ```bash
-# From local machine
-./deployment/oracle/deploy-to-oracle.sh
+export OCI_VM_HOST=<vm address from ORACLE_CONNECT.md>   # OCI_SSH_KEY defaults to ~/.ssh/id_ed25519
+
+# Re-apply config to the running image (port binding, DJANGO_SECRET_KEY):
+./deployment/oracle/deploy-to-oracle.sh            # dry run
+./deployment/oracle/deploy-to-oracle.sh --live
+
+# Ship a new image: CI's "nebulous-bot-image" artifact for a commit on origin/main.
+# Run the isolated acceptance in docs/releases/ first.
+gh run download <run-id> -n nebulous-bot-image -D /tmp/nebulous-image
+./deployment/oracle/deploy-to-oracle.sh --image-dir /tmp/nebulous-image          # dry run
+./deployment/oracle/deploy-to-oracle.sh --image-dir /tmp/nebulous-image --live
+
+# Undo a deploy (restores that release's .env + compose snapshot, then recreates):
+./deployment/oracle/deploy-to-oracle.sh --rollback /home/opc/bot-release-<stamp>
 ```
 
-### Method 2: Manual Update
+A live run first writes `/home/opc/bot-release-<UTC stamp>/` containing the
+`.env` and compose snapshot, a `nebulous-bot:rollback-<stamp>` image tag, and an
+online SQLite backup proven by `integrity_check` and a restored copy. It then
+pins the image, binds 8000 to `127.0.0.1`, keeps `DISCORD_MESSAGE_CONTENT=false`,
+generates `DJANGO_SECRET_KEY` only if it is missing, and recreates the
+container. `remote_deploy.py status` then checks the result. Hard failures
+(wrong image, restarts, unhealthy, port not on loopback, no real secret) roll
+back automatically. Soft ones (gateway or monitoring log lines, ERROR lines, DB
+checks) leave production as deployed and print the rollback command. Recreating
+the container drops in-memory `/nextgame` waiters.
 
-```bash
-# On VM
-cd ~/nebulous-bot
-
-# Pull latest image
-docker-compose pull
-
-# Restart
-docker-compose up -d
-```
+On Windows, the repo's `.gitattributes` keeps both deploy files LF-only, and the
+script refuses to run from a CRLF checkout.
 
 ### Discord command migration rollout (completed September 30, 2026)
 
