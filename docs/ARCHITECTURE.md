@@ -50,6 +50,8 @@ docs/                    Documentation (this directory)
 
 The container also runs a small Gunicorn WSGI server on port 8000 (started by
 `start-server.sh`) purely so the orchestrator can hit `/health/` for liveness.
+The same server mounts Django admin, so the port is published on
+`127.0.0.1` only (`nebulous_bot/tests/test_deploy_hardening.py` enforces it).
 
 ## Data model (high level)
 

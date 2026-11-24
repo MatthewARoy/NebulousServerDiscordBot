@@ -166,9 +166,6 @@ sudo ufw default allow outgoing
 # Allow SSH
 sudo ufw allow 22/tcp
 
-# Allow health check port (optional, for external monitoring)
-sudo ufw allow 8000/tcp
-
 # Check status
 sudo ufw status
 ```
@@ -264,7 +261,7 @@ After setup, you should have:
 | Docker | ✅ Installed | Version 24+ |
 | Docker Compose | ✅ Installed | Latest version |
 | SQLite | ✅ Installed | For database operations |
-| Firewall | ✅ Configured | SSH + port 8000 allowed |
+| Firewall | ✅ Configured | SSH only (8000 is loopback-bound) |
 | Application Dir | ✅ Created | ~/nebulous-bot |
 
 ---

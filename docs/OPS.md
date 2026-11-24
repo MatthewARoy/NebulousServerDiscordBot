@@ -77,7 +77,8 @@ The first hypothesis should still be SSH-wedge from memory pressure. Triage:
 ```bash
 # Is the VM reachable at all?
 nc -zv <oracle-host> 22         # tcp/22
-nc -zv <oracle-host> 8000       # bot port
+# Port 8000 is bound to 127.0.0.1 on the VM, so check it over SSH:
+ssh <oracle-host> 'curl -fsS localhost:8000/health/'
 
 # If 22 is reachable but ssh hangs at "Connection timed out during banner
 # exchange", the VM is wedged. Recovery is OCI Console → Stop → Start.
