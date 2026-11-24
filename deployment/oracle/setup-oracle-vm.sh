@@ -63,7 +63,6 @@ sudo ufw --force enable
 sudo ufw default deny incoming
 sudo ufw default allow outgoing
 sudo ufw allow 22/tcp
-sudo ufw allow 8000/tcp
 echo "✅ Firewall configured"
 
 # Check for block storage

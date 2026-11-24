@@ -1,1 +1,4 @@
 exports/
+# Raw Discord exports hold community members' messages, IDs and usernames.
+# They are curation input only (the bot never reads them), so keep them local.
+raw/

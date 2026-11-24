@@ -12,7 +12,8 @@ canonical format and pipeline are specified in
 ## Inputs
 
 - A raw dump: `knowledge/raw/<channel_id>-<date>.json` (produce one first
-  with `python scripts/export_thread.py <id>` if needed).
+  with `python scripts/export_thread.py <id>` if needed). Raw dumps are
+  gitignored; never commit them. Only `entries/` and `QUESTIONS.md` are committed.
 - Existing entries: `knowledge/entries/*.toml`.
 - Tag vocabulary: `knowledge/tags.toml`.
 

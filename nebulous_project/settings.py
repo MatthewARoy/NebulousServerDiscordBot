@@ -4,6 +4,7 @@ Optimized for containerized Azure deployment.
 """
 
 import os
+import secrets
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -13,8 +14,30 @@ load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Values that have appeared in this public repo as defaults or examples.
+# They are treated as unset, so the bot never signs with a key anyone can read.
+_PUBLIC_PLACEHOLDER_KEYS = frozenset({
+    'django-insecure-change-this-in-production',
+    'your_django_secret_here',
+    'your-generated-secret-key',
+})
+
+
+def resolve_secret_key(value):
+    """Return ``value`` if it is a real secret, else a random per-process key.
+
+    Nothing here signs data that must outlive the process (no signed cookies,
+    password-reset links or ``signing.dumps``), so a random fallback is safe:
+    at worst a Django admin session ends when the container restarts.
+    """
+    candidate = (value or '').strip()
+    if candidate and candidate not in _PUBLIC_PLACEHOLDER_KEYS:
+        return value
+    return secrets.token_urlsafe(50)
+
+
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-change-this-in-production')
+SECRET_KEY = resolve_secret_key(os.getenv('DJANGO_SECRET_KEY'))
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'False').lower() in ('true', '1', 't')

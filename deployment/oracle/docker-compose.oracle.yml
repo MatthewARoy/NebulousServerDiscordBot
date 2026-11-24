@@ -31,7 +31,8 @@ services:
       # Mount logs directory
       - ./logs:/app/logs
     ports:
-      - "8000:8000"
+      # Loopback only: gunicorn also serves Django admin on this port.
+      - "127.0.0.1:8000:8000"
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/').read()"]
