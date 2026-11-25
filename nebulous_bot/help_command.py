@@ -44,6 +44,7 @@ CATEGORY_META = {
     'Next Game': ('🔔', 'Get pinged when a game is ready'),
     'Formation': ('🛠️', 'Fleet file tools'),
     'Advice': ('💡', 'Community knowledge base'),
+    'Ask': ('🧠', 'Gameplay questions answered with sources'),
     'Fleet Design': ('📐', 'Shipbuilding and read-only fleet reviews'),
     'Setup': ('⚙️', 'Per-guild configuration (admins)'),
     'Admin': ('🤖', 'Bot status and maintenance'),

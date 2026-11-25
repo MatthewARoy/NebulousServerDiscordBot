@@ -45,6 +45,11 @@ COPY --chown=botuser:botuser . .
 # Make startup script executable (before switching to non-root user)
 RUN chmod +x /app/start-server.sh
 
+# Optional /ask library: the private nebulous_ask wheel and its corpus are
+# copied into vendor/ (gitignored) at deploy time. Without a wheel the image
+# is unchanged and /ask stays off.
+RUN if ls vendor/*.whl >/dev/null 2>&1; then pip install --no-cache-dir vendor/*.whl; fi
+
 # Switch to non-root user
 USER botuser
 

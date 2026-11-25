@@ -1,6 +1,6 @@
 # NebulousServerBot Privacy Policy
 
-_Last updated: September 30, 2026_
+_Last updated: October 22, 2026_
 
 NebulousServerBot ("the bot") is an open-source Discord bot that shows live
 multiplayer server activity for the game **Nebulous: Fleet Command**. This
@@ -38,11 +38,22 @@ help directly inside Discord.
   session lengths) derived from Steam data. No Discord data is included.
 - **`/nextgame` waitlist.** Your user ID and chosen queue mode are held in
   memory until you are notified, cancel, or the bot restarts.
+- **`/ask` questions.** Where `/ask` is enabled, the bot stores your question,
+  the answer, your Discord user ID, the sources used, token usage and cost,
+  and any 👍/👎 rating, so the maintainer can control spending and review
+  wrong or unanswered questions. These records are deleted after 90 days.
+
+## Services the bot uses
+
+- **Anthropic (Claude API).** When you use `/ask`, the text of your question
+  and the knowledge-base excerpts retrieved for it are sent to Anthropic's
+  Claude API to write the answer. Nothing is sent for other commands.
 
 ## What the bot does not do
 
 - No reading, storing, or analysis of non-command messages.
-- No selling or sharing of data with third parties.
+- No selling or sharing of data with third parties, other than sending `/ask`
+  questions to Anthropic to answer them.
 - No use of any data to train machine learning or AI models.
 - No tracking of presence, member lists, or any activity outside explicit
   command usage.
