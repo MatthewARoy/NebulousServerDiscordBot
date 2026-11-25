@@ -24,7 +24,7 @@ def build_user_guide(*, message_content: bool) -> discord.Embed:
         ("Statistics and advice", (
             "`/stats` — game statistics; try **timeframe**: `week`\n"
             "`/mapstats` and `/serverstats` — popular maps and servers\n"
-            "`/graph` — player counts and other trends\n"
+            "`/graph` — player counts and other trends; try **metric**: `steam`\n"
             "`/advice search` — search tips; try **query**: `missile defense`\n"
             "`/advice add` — propose advice for a community vote"
         )),

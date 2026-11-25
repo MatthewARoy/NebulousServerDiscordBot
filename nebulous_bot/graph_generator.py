@@ -46,19 +46,26 @@ class GraphGenerator:
             Tuple of (field_name, display_name)
 
         Examples:
-            "players online" -> ("total_players", "Players Online")
+            "players online" -> ("total_players", "Players on Servers")
             "servers" -> ("total_servers", "Active Servers")
             "lobbies" -> ("open_lobbies", "Open Lobbies")
             "games" -> ("games_in_progress", "Games In Progress")
+            "steam" -> ("steam_concurrent", "Steam Players")
         """
         args_lower = args.lower().strip()
 
-        # Map common phrases to database fields
+        # Map common phrases to database fields. Steam comes first because
+        # partial matching takes the first hit: "steam players" contains "players".
         mappings = {
-            'players': ('total_players', 'Players Online'),
-            'players online': ('total_players', 'Players Online'),
-            'player count': ('total_players', 'Players Online'),
-            'online': ('total_players', 'Players Online'),
+            'steam': ('steam_concurrent', 'Steam Players'),
+            'steam players': ('steam_concurrent', 'Steam Players'),
+            'everyone': ('steam_concurrent', 'Steam Players'),
+            'whole game': ('steam_concurrent', 'Steam Players'),
+
+            'players': ('total_players', 'Players on Servers'),
+            'players online': ('total_players', 'Players on Servers'),
+            'player count': ('total_players', 'Players on Servers'),
+            'online': ('total_players', 'Players on Servers'),
 
             'servers': ('total_servers', 'Active Servers'),
             'server count': ('total_servers', 'Active Servers'),
@@ -83,7 +90,17 @@ class GraphGenerator:
                 return value
 
         # Default to players online
-        return ('total_players', 'Players Online')
+        return ('total_players', 'Players on Servers')
+
+    @staticmethod
+    def extract_points(snapshots, field_name: str) -> List[Tuple[datetime, float]]:
+        """(timestamp, value) pairs for a field, skipping rows with no value."""
+        points = []
+        for snapshot in snapshots:
+            value = getattr(snapshot, field_name, None)
+            if value is not None:
+                points.append((snapshot.timestamp, float(value)))
+        return points
 
     @staticmethod
     def create_graph(
@@ -195,6 +212,8 @@ class GraphGenerator:
             color = '#F39C12'  # Orange
         elif 'games' in field_name.lower():
             color = '#E74C3C'  # Red
+        elif 'steam' in field_name.lower():
+            color = '#9B59B6'  # Purple
 
         title = f'{display_name} - Last 7 Days'
 

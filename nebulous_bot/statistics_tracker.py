@@ -209,6 +209,28 @@ class GameSessionTracker:
             game_session.save(update_fields=['max_players_during_game', 'updated_at'])
 
 
+def human_players(server: Dict) -> int:
+    """People on a server. Valve's A2S convention counts bots inside `players`."""
+    return max(0, server.get('players', 0) - server.get('bots', 0))
+
+
+def summarize_servers(servers: List[Dict]) -> Dict[str, int]:
+    """Population totals for one snapshot.
+
+    Pass the unfiltered server list. The default display filter hides whole
+    servers, so summing over it silently drops every person on a server that
+    has a bot or a "private"-style name. Only servers with at least one person
+    count toward the server, lobby and game totals.
+    """
+    populated = [s for s in servers if human_players(s) > 0]
+    return {
+        'total_players': sum(human_players(s) for s in populated),
+        'total_servers': len(populated),
+        'open_lobbies': sum(1 for s in populated if s.get('status') == 'lobby'),
+        'games_in_progress': sum(1 for s in populated if s.get('status') == 'in_game'),
+    }
+
+
 class PlayerCountTracker:
     """
     Tracks player count snapshots over time.
@@ -226,30 +248,22 @@ class PlayerCountTracker:
         now = django_timezone.now()
         return (now - self.last_snapshot_time) >= self.snapshot_interval
     
-    def take_snapshot(self, servers: List[Dict]):
+    def take_snapshot(self, servers: List[Dict], steam_concurrent: Optional[int] = None):
         """
         Take a snapshot of current player counts across all servers.
-        
+
         Args:
-            servers: List of server dictionaries
+            servers: Unfiltered list of server dictionaries
+            steam_concurrent: Steam's whole-game player count, None if unknown
         """
         if not self.should_take_snapshot():
             return
-        
-        total_players = sum(s.get('players', 0) for s in servers)
-        total_servers = len(servers)
-        open_lobbies = len([s for s in servers if s.get('status') == 'lobby'])
-        games_in_progress = len([s for s in servers if s.get('status') == 'in_game'])
-        
-        PlayerSnapshot.objects.create(
-            total_players=total_players,
-            total_servers=total_servers,
-            open_lobbies=open_lobbies,
-            games_in_progress=games_in_progress
-        )
-        
+
+        totals = summarize_servers(servers)
+        PlayerSnapshot.objects.create(**totals, steam_concurrent=steam_concurrent)
+
         self.last_snapshot_time = django_timezone.now()
-        logger.debug(f"Snapshot taken: {total_players} players across {total_servers} servers")
+        logger.debug(f"Snapshot taken: {totals['total_players']} players across {totals['total_servers']} servers")
 
 
 class StatisticsService:
@@ -263,12 +277,19 @@ class StatisticsService:
         self.game_tracker = GameSessionTracker()
         self.player_tracker = PlayerCountTracker()
     
-    def update(self, servers: List[Dict]):
+    def update(
+        self,
+        servers: List[Dict],
+        all_servers: Optional[List[Dict]] = None,
+        steam_concurrent: Optional[int] = None,
+    ):
         """
         Main update method called from the monitoring loop.
-        
+
         Args:
-            servers: List of current server states
+            servers: Display-filtered server states, used for game sessions
+            all_servers: Every listed server, used for population snapshots
+            steam_concurrent: Steam's whole-game player count, None if unknown
         """
         # First call after startup: reattach ongoing games from the DB.
         # Safe here (executor thread), unsafe in __init__ (event loop).
@@ -283,7 +304,10 @@ class StatisticsService:
         
         # Take player count snapshot if needed (every 5 minutes)
         try:
-            self.player_tracker.take_snapshot(servers)
+            self.player_tracker.take_snapshot(
+                servers if all_servers is None else all_servers,
+                steam_concurrent,
+            )
         except Exception as e:
             logger.error(f"Error taking player snapshot: {e}", exc_info=True)
 

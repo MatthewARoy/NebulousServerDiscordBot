@@ -240,6 +240,9 @@ class PlayerSnapshot(models.Model):
     total_servers = models.IntegerField(default=0)
     open_lobbies = models.IntegerField(default=0)
     games_in_progress = models.IntegerField(default=0)
+    # Steam's count of everyone running the game, including people no server
+    # list can see. Null for older rows and when the Steam call failed.
+    steam_concurrent = models.IntegerField(null=True, blank=True)
     
     class Meta:
         ordering = ['-timestamp']
